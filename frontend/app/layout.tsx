@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 import { ThemeProvider } from "next-themes";
+import { WebSocketProvider } from "@/components/providers/WebSocketProvider";
+import { ReconciliationModal } from "@/components/features/ReconciliationModal";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,7 +35,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AppShell>{children}</AppShell>
+          <WebSocketProvider>
+            <AppShell>{children}</AppShell>
+            <ReconciliationModal />
+          </WebSocketProvider>
         </ThemeProvider>
       </body>
     </html>

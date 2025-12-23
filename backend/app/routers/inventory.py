@@ -33,17 +33,53 @@ async def process_invoice(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing invoice: {str(e)}")
 
-from app.services.matching_service import get_matching_service, MatchingService
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing invoice: {str(e)}")
 
-@router.post("/match-invoice")
+from app.services.matching_service import run_matching_background_task
+from app.services.websocket_manager import manager
+from fastapi import BackgroundTasks, WebSocket, WebSocketDisconnect
+from sqlmodel import Session
+from app.database import get_session
+from app.models import Invoice
+
+@router.websocket("/ws/notifications/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int):
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user_id)
+
+@router.post("/match-invoice", status_code=202)
 async def match_invoice(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     user_id: int = 1, # Default/Mock user ID for now
-    matching_service: MatchingService = Depends(get_matching_service)
+    session: Session = Depends(get_session)
 ):
     try:
         contents = await file.read()
-        result = await matching_service.process_and_match(user_id, contents)
-        return result
+        
+        # Create persistent Invoice record with 'processing' status
+        new_invoice = Invoice(status="processing", user_id=user_id)
+        session.add(new_invoice)
+        session.commit()
+        session.refresh(new_invoice)
+        
+        # Dispatch background task
+        background_tasks.add_task(
+            run_matching_background_task, 
+            user_id, 
+            new_invoice.id, 
+            contents
+        )
+        
+        return {
+            "message": "Invoice processing started",
+            "invoice_id": new_invoice.id,
+            "status": "processing"
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error matching invoice: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error starting invoice matching: {str(e)}")

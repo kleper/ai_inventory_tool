@@ -21,6 +21,7 @@ class Invoice(SQLModel, table=True):
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     user: Optional[User] = Relationship(back_populates="invoices")
     items: List["Item"] = Relationship(back_populates="invoice")
+    status: str = Field(default="processing") # processing, completed, failed
 
 class Item(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
