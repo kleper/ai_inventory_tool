@@ -6,7 +6,7 @@ AI-powered inventory management tool.
 - **Frontend**: Next.js 15, Tailwind CSS, ShadcnUI (mocked)
 - **Backend**: FastAPI
 - **Database**: PostgreSQL
-- **Infrastructure**: Docker Compose
+- **Infrastructure**: Docker Compose (See [RULES.md](RULES.md) for usage)
 
 ## Prerequisites
 - Docker & Docker Compose
