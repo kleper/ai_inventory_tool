@@ -5,7 +5,7 @@ from sqlmodel import SQLModel
 from alembic import context
 
 # Import models to register them with metadata
-from models import User, Item, Invoice
+from app.models import User, Item, Invoice
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

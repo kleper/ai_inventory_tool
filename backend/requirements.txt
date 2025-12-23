@@ -4,3 +4,6 @@ python-multipart
 sqlmodel
 alembic
 psycopg2-binary
+openai
+python-dotenv
+python-magic
