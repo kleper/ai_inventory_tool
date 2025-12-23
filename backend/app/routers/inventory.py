@@ -32,3 +32,18 @@ async def process_invoice(
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing invoice: {str(e)}")
+
+from app.services.matching_service import get_matching_service, MatchingService
+
+@router.post("/match-invoice")
+async def match_invoice(
+    file: UploadFile = File(...),
+    user_id: int = 1, # Default/Mock user ID for now
+    matching_service: MatchingService = Depends(get_matching_service)
+):
+    try:
+        contents = await file.read()
+        result = await matching_service.process_and_match(user_id, contents)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error matching invoice: {str(e)}")
