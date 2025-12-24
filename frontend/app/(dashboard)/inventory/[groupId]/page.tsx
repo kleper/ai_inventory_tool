@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal, ArrowLeft, Camera, Upload } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -119,6 +119,12 @@ export default function FolderDetailPage() {
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>Scan Item</DialogTitle>
+                                        <DialogDescription>
+                                            Take a photo of the item you want to add to this folder.
+                                        </DialogDescription>
+                                    </DialogHeader>
                                     <CameraCapture onCapture={handleCapture} />
                                 </DialogContent>
                             </Dialog>
@@ -130,6 +136,12 @@ export default function FolderDetailPage() {
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>Upload Invoice</DialogTitle>
+                                        <DialogDescription>
+                                            Upload an invoice to extract items and match them to your inventory.
+                                        </DialogDescription>
+                                    </DialogHeader>
                                     <InvoiceUpload onFileSelect={handleInvoiceUpload} />
                                 </DialogContent>
                             </Dialog>

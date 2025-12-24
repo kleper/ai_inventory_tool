@@ -7,30 +7,39 @@ router = APIRouter(prefix="/api/v1/inventory", tags=["inventory"])
 from app.dependencies.auth import get_current_user
 from app.models import User
 
-@router.post("/process-object", response_model=ItemExtracted)
+@router.post("/process-object", response_model=Item)
 async def process_object(
     group_id: Optional[int] = None,
     file: UploadFile = File(...),
     llm_service: LLMService = Depends(get_llm_service),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
 ):
     try:
         contents = await file.read()
         item_data = await llm_service.analyze_object(contents, user_id=current_user.id)
-        # In a real implementation, we would save the item to DB here with group_id.
-        # Currently the endpoint returns data to frontend, which then (presumably) calls another endpoint or state?
-        # Re-reading Plan: The previous logic relied on returning extracted data.
-        # But if we want to SAVE it to a group, we should persist it here or updating the flow.
-        # For Phase 8 MVP: We'll return the data. User saves it?
-        # Actually, Phase 3 summary said "Mock API".
-        # Let's see if there is a 'create_item' endpoint?
-        # The 'get_items' reads from DB. But 'process_object' mocks return?
-        # Wait, if `process_object` just returns JSON, the `group_id` param does nothing unless we save.
-        # I should check if there is a SAVE endpoint.
-        pass
+        
+        # Create Item
+        new_item = Item(
+            name=item_data.name,
+            description=item_data.description,
+            category=item_data.category,
+            price=item_data.estimated_price,
+            user_id=current_user.id,
+            group_id=group_id,
+            status="pending_price" if not item_data.estimated_price else "completed"
+        )
+        session.add(new_item)
+        session.commit()
+        session.refresh(new_item)
+        
+        return new_item
     except ValueError as e:
+        print(f"ValueError processing object: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error processing object: {str(e)}")
 
 @router.post("/process-invoice")
