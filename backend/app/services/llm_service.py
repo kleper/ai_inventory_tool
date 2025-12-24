@@ -1,14 +1,14 @@
 from fastapi import UploadFile
 import base64
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 from pydantic import BaseModel
 from typing import Optional, List
 import json
 import magic
 import os
-import openai
 from app.services.monitoring import monitoring_service
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -51,34 +51,43 @@ class MatchingResult(BaseModel):
     confidence_score: float # 0.0 a 1.0
 
 class LLMService:
-    def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY")
+    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None, model: str = "gpt-4o"):
+        self.api_key = api_key or settings.LLM_API_KEY
+        self.base_url = base_url or settings.LLM_BASE_URL
+        self.model = model or settings.LLM_MODEL
+        
+        # Fallback to legacy OPENAI_API_KEY if LLM_API_KEY not set
         if not self.api_key:
-            # For development, we might not have a key, but service should be instantiated.
-            # We will handle missing key error at runtime.
-            pass
-        else:
-            openai.api_key = self.api_key
+            self.api_key = os.getenv("OPENAI_API_KEY")
+
+        if not self.api_key:
+            logger.warning("LLM API Key is missing. Service will return mock data or fail.")
+    
+    def _encode_image(self, image_bytes: bytes) -> str:
+        return base64.b64encode(image_bytes).decode('utf-8')
+
+    def _get_mime_type(self, image_bytes: bytes) -> str:
+        mime = magic.Magic(mime=True)
+        return mime.from_buffer(image_bytes)
 
     async def analyze_object(self, image_bytes: bytes, user_id: Optional[int] = None) -> ItemExtracted:
         if user_id:
             monitoring_service.check_quota(user_id)
 
         if not self.api_key:
-            # Return mock data if no key
             return ItemExtracted(
                 name="Mock Object",
                 category="Electronics",
-                description="This is a mock analysis because OPENAI_API_KEY is missing."
+                description="This is a mock analysis because LLM_API_KEY is missing."
             )
 
         base64_image = self._encode_image(image_bytes)
         mime_type = self._get_mime_type(image_bytes)
         
         try:
-            client = openai.AsyncOpenAI(api_key=self.api_key)
+            client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
             response = await client.chat.completions.create(
-                model="gpt-4o",  # Use gpt-4o for vision
+                model=self.model,
                 messages=[
                     {
                         "role": "system",
@@ -103,17 +112,16 @@ class LLMService:
             content = response.choices[0].message.content
             usage = response.usage
             
-            # Log Usage
-            if user_id:
+            if user_id and usage:
                 try:
                     monitoring_service.log_usage(
                         user_id=user_id,
                         task_type="OBJECT_DETECTION",
-                        model_name="gpt-4o",
+                        model_name=self.model,
                         prompt_tokens=usage.prompt_tokens,
                         completion_tokens=usage.completion_tokens,
                         status="SUCCESS",
-                        input_image_url="[Blob Data]" # ideally we have a URL if stored S3, else blob
+                        input_image_url="[Blob Data]"
                     )
                 except Exception as log_err:
                      logger.error(f"Failed to log usage: {log_err}")
@@ -125,22 +133,18 @@ class LLMService:
             raise ValueError(f"LLM Processing failed: {str(e)}")
 
     async def analyze_invoice(self, image_bytes: bytes, target_item_name: Optional[str] = None) -> Optional[float]:
-        # Legacy method kept for backward compatibility if needed, or deprecate.
-        # For now, just a wrapper around more complex logic or kept as is.
         pass
 
     async def extract_invoice_data(self, image_bytes: bytes) -> List[InvoiceItem]:
-        base64_image = base64.b64encode(image_bytes).decode('utf-8')
-        
+        base64_image = self._encode_image(image_bytes)
+        mime_type = self._get_mime_type(image_bytes)
+
         class InvoiceExtraction(BaseModel):
             items: List[InvoiceItem]
 
-        # This method uses the old client. It should be updated to AsyncOpenAI if it's to be kept.
-        # For now, I'll assume the user wants to keep the original implementation style for this specific method.
-        # If the user wants to update this to the new client style, they should specify.
-        client = OpenAI(api_key=self.api_key) # Using the synchronous client for this method as per original
+        client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         response = client.beta.chat.completions.parse(
-            model="gpt-4o",
+            model=self.model,
             messages=[
                 {
                     "role": "system",
@@ -150,7 +154,7 @@ class LLMService:
                     "role": "user",
                     "content": [
                         {"type": "text", "text": "Extrae los ítems de esta factura."},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                        {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{base64_image}"}}
                     ],
                 }
             ],
@@ -159,20 +163,15 @@ class LLMService:
         return response.choices[0].message.parsed.items
 
     async def identify_matches(self, pending_items: List, invoice_items: List[InvoiceItem]) -> List[MatchingResult]:
-        # Prepare context for LLM
-        # We need to serialize pending_items to a format the LLM can understand (e.g. JSON-like string)
         inventory_context = [{"id": item.id, "name": item.name, "description": item.description} for item in pending_items]
         invoice_context = [{"raw_name": item.raw_name, "price": item.price} for item in invoice_items]
 
         class MatchList(BaseModel):
             matches: List[MatchingResult]
 
-        # This method uses the old client. It should be updated to AsyncOpenAI if it's to be kept.
-        # For now, I'll assume the user wants to keep the original implementation style for this specific method.
-        # If the user wants to update this to the new client style, they should specify.
-        client = OpenAI(api_key=self.api_key) # Using the synchronous client for this method as per original
+        client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         response = client.beta.chat.completions.parse(
-            model="gpt-4o",
+            model=self.model,
             messages=[
                 {
                     "role": "system",
@@ -195,9 +194,9 @@ class LLMService:
         mime_type = self._get_mime_type(image_bytes)
         
         try:
-            client = openai.AsyncOpenAI(api_key=self.api_key)
+            client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
             response = await client.beta.chat.completions.parse(
-                model="gpt-4o",
+                model=self.model,
                 messages=[
                     {
                         "role": "system",
@@ -220,12 +219,12 @@ class LLMService:
             )
             
             usage = response.usage
-            if user_id:
+            if user_id and usage:
                 try:
                     monitoring_service.log_usage(
                          user_id=user_id,
                          task_type="INVOICE_MATCHING",
-                         model_name="gpt-4o",
+                         model_name=self.model,
                          prompt_tokens=usage.prompt_tokens,
                          completion_tokens=usage.completion_tokens,
                          status="SUCCESS",
@@ -238,14 +237,10 @@ class LLMService:
             return response.choices[0].message.parsed
             
         except Exception as e:
-             # Log failure?
              if user_id:
-                  monitoring_service.log_usage(user_id, "INVOICE_MATCHING", "gpt-4o", 0, 0, "FAILED")
+                  monitoring_service.log_usage(user_id, "INVOICE_MATCHING", self.model, 0, 0, "FAILED")
              raise ValueError(f"LLM Processing failed: {str(e)}")
 
 # Singleton or dependency injection helper
 def get_llm_service():
-    api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY environment variable is not set")
-    return LLMService(api_key=api_key)
+    return LLMService()

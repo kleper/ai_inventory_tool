@@ -6,6 +6,11 @@ class Settings(BaseSettings):
     # App
     DOMAIN: str = "http://localhost:3000"
     
+    # LLM
+    LLM_API_KEY: Optional[str] = None
+    LLM_MODEL: str = "gpt-4o"
+    LLM_BASE_URL: Optional[str] = None
+
     # Email
     MAIL_USERNAME: str
     MAIL_PASSWORD: str
