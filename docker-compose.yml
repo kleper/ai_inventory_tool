@@ -26,7 +26,7 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     container_name: smartinventory_frontend
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     # Volumes removed to ensure we use the standalone build from the image
     # volumes:
     #   - ./frontend:/app
