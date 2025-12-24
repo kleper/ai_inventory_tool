@@ -1,12 +1,16 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from typing import Optional
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect
+from typing import Optional, List
+from datetime import datetime
+from sqlmodel import Session, select
+
 from app.services.llm_service import get_llm_service, LLMService, ItemExtracted
+from app.dependencies.auth import get_current_user, get_inventory_scope
+from app.models import User, Item, Invoice
+from app.services.matching_service import run_matching_background_task
+from app.services.websocket_manager import manager
+from app.database import get_session
 
 router = APIRouter(prefix="/api/v1/inventory", tags=["inventory"])
-
-from app.dependencies.auth import get_current_user
-from app.dependencies.auth import get_current_user
-from app.models import User, Item, Invoice
 
 @router.post("/process-object", response_model=Item)
 async def process_object(
@@ -62,17 +66,7 @@ async def process_invoice(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing invoice: {str(e)}")
 
-from app.services.matching_service import run_matching_background_task
-from app.services.websocket_manager import manager
-from fastapi import BackgroundTasks, WebSocket, WebSocketDisconnect
-from sqlmodel import Session, select
-from app.database import get_session
-from datetime import datetime
-from datetime import datetime
 
-
-from app.dependencies.auth import get_inventory_scope
-from typing import List
 
 @router.post("/items", response_model=Item)
 async def create_item(
