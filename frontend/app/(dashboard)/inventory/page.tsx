@@ -3,6 +3,7 @@
 import { InventoryFolderCard } from "@/components/features/InventoryFolderCard";
 import { Button } from "@/components/ui/button";
 import { Plus, FolderPlus } from "lucide-react";
+import { API_BASE_URL } from "@/lib/config";
 import useSWR from "swr";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -13,7 +14,7 @@ import { toast } from "sonner";
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function InventoryFoldersPage() {
-  const { data: groups, error, isLoading, mutate } = useSWR(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/groups`, fetcher);
+  const { data: groups, error, isLoading, mutate } = useSWR(`${API_BASE_URL}/api/v1/groups`, fetcher);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -22,7 +23,7 @@ export default function InventoryFoldersPage() {
     e.preventDefault();
     setIsCreating(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/groups`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/groups`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newGroupName })

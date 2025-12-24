@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import useSWR from "swr";
+import useSWR from 'swr';
+import { API_BASE_URL } from '@/lib/config';
 import { Plus, Users, Loader2, Folder } from "lucide-react";
 import { toast } from "sonner";
 import { ShareModal } from "./ShareModal";
@@ -20,7 +21,7 @@ interface GroupManagerProps {
 }
 
 export function GroupManager({ activeGroupId, onGroupSelect }: GroupManagerProps) {
-    const { data: groups, mutate } = useSWR<Group[]>(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/groups`, fetcher);
+    const { data: groups, mutate } = useSWR<Group[]>(`${API_BASE_URL}/api/v1/groups`, fetcher);
     const [isCreating, setIsCreating] = useState(false);
     const [newGroupName, setNewGroupName] = useState("");
     const [groupToShare, setGroupToShare] = useState<Group | null>(null);
@@ -30,7 +31,7 @@ export function GroupManager({ activeGroupId, onGroupSelect }: GroupManagerProps
         if (!newGroupName) return;
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/groups`, {
+            const res = await fetch(`${API_BASE_URL}/api/v1/groups`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name: newGroupName })

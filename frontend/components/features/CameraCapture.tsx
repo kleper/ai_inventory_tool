@@ -12,7 +12,12 @@ export function CameraCapture({ onCapture }: { onCapture: (image: string) => voi
     const startCamera = async () => {
         try {
             const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment" }
+                video: {
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                },
+                audio: false
             });
             setStream(mediaStream);
             if (videoRef.current) {
@@ -21,7 +26,21 @@ export function CameraCapture({ onCapture }: { onCapture: (image: string) => voi
             setIsActive(true);
         } catch (err) {
             console.error("Error accessing camera:", err);
-            alert("Could not access camera");
+            // Fallback for some devices or if high res fails
+            try {
+                const fallbackStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" },
+                    audio: false
+                });
+                setStream(fallbackStream);
+                if (videoRef.current) {
+                    videoRef.current.srcObject = fallbackStream;
+                }
+                setIsActive(true);
+            } catch (retryErr) {
+                console.error("Retry failed:", retryErr);
+                alert("Could not access camera. Please check permissions.");
+            }
         }
     };
 
@@ -70,6 +89,7 @@ export function CameraCapture({ onCapture }: { onCapture: (image: string) => voi
                         ref={videoRef}
                         autoPlay
                         playsInline
+                        muted
                         className="w-full h-auto max-h-[60vh] object-cover"
                     />
                     <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-6">

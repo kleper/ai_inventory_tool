@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/lib/config";
 import { Loader2, UserPlus, X } from "lucide-react";
 
 interface ShareModalProps {
@@ -23,7 +24,7 @@ export function ShareModal({ group, isOpen, onClose }: ShareModalProps) {
         setIsLoading(true);
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/groups/${group.id}/share`, {
+            const res = await fetch(`${API_BASE_URL}/api/v1/groups/${group.id}/share`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, permission })

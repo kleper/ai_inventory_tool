@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { InventoryCard, InventoryCardSkeleton } from "@/components/features/InventoryCard";
 import { CameraCapture } from "@/components/features/CameraCapture";
+import { API_BASE_URL } from "@/lib/config";
 import { InvoiceUpload } from "@/components/features/InvoiceUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ export default function FolderDetailPage() {
 
     // Fetch Items
     const { data: items, error, isLoading, mutate } = useSWR(
-        groupId ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1/inventory/items?group_id=${groupId}` : null,
+        groupId ? `${API_BASE_URL}/api/v1/inventory/items?group_id=${groupId}` : null,
         fetcher
     );
 
@@ -48,7 +49,7 @@ export default function FolderDetailPage() {
             formData.append("file", file);
             formData.append("group_id", groupId);
 
-            const apiRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/inventory/process-object?group_id=${groupId}`, {
+            const apiRes = await fetch(`${API_BASE_URL}/api/v1/inventory/process-object?group_id=${groupId}`, {
                 method: "POST",
                 body: formData
             });
@@ -73,7 +74,7 @@ export default function FolderDetailPage() {
             // TODO: User ID should be dynamic from session context? Yes, typically backend infers from token or we pass it?
             // The existing API example used user_id=1 query param. Let's fix that later or keep reusing for now.
             // Ideally backend gets user from JWT.
-            const apiRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/inventory/match-invoice?user_id=1&group_id=${groupId}`, {
+            const apiRes = await fetch(`${API_BASE_URL}/api/v1/inventory/match-invoice?user_id=1&group_id=${groupId}`, {
                 method: "POST",
                 body: formData
             });

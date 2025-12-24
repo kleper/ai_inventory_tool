@@ -10,6 +10,8 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 import { CameraCapture } from "./CameraCapture";
 import { InvoiceUpload } from "./InvoiceUpload";
+import { ReconciliationModal } from "./ReconciliationModal";
+import { API_BASE_URL } from "@/lib/config";
 import { useState } from "react";
 import { GroupManager } from "./GroupManager";
 import { toast } from "sonner";
@@ -27,8 +29,8 @@ export function InventoryDashboard() {
 
     // 2. Data Fetching with SWR
     const url = activeGroupId
-        ? `http://localhost:8000/api/v1/inventory/items?group_id=${activeGroupId}`
-        : "http://localhost:8000/api/v1/inventory/items";
+        ? `${API_BASE_URL}/api/v1/inventory/items?group_id=${activeGroupId}`
+        : `${API_BASE_URL}/api/v1/inventory/items`;
 
     // Use mutate to refresh after upload
     const { data: items, error, isLoading, mutate } = useSWR(url, fetcher);
@@ -46,7 +48,7 @@ export function InventoryDashboard() {
             if (activeGroupId) formData.append("group_id", activeGroupId.toString());
 
             // Note: backend expects query param for optional int usually, but let's try query param for safety
-            const apiRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/inventory/process-object?group_id=${activeGroupId || ''}`, {
+            const apiRes = await fetch(`${API_BASE_URL}/api/v1/inventory/process-object?group_id=${activeGroupId || ''}`, {
                 method: "POST",
                 body: formData
             });
@@ -68,7 +70,7 @@ export function InventoryDashboard() {
             const formData = new FormData();
             formData.append("file", file);
 
-            const apiRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/inventory/match-invoice?user_id=1&group_id=${activeGroupId || ''}`, {
+            const apiRes = await fetch(`${API_BASE_URL}/api/v1/inventory/match-invoice?user_id=1&group_id=${activeGroupId || ''}`, {
                 method: "POST",
                 body: formData
             });

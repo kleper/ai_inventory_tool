@@ -4,13 +4,15 @@ import { useMemo } from 'react';
 import useSWR from 'swr';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Loader2, DollarSign, Activity } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { API_BASE_URL } from "@/lib/config";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export function AnalyticsDashboard() {
-    const { data, error, isLoading } = useSWR(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/stats/usage`, fetcher);
+    const { data, error, isLoading } = useSWR(`${API_BASE_URL}/api/v1/admin/stats/usage`, fetcher);
 
     // Calculate totals
     const totals = useMemo(() => {

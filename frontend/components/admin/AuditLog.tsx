@@ -1,13 +1,15 @@
 "use client";
 
 import useSWR from 'swr';
+import { Input } from "@/components/ui/input";
+import { API_BASE_URL } from "@/lib/config";
 import { useState } from 'react';
 import { Loader2, Terminal, Image as ImageIcon, CheckCircle, XCircle } from 'lucide-react';
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export function AuditLog() {
-    const { data: logs, error, isLoading } = useSWR(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/admin/audit`, fetcher);
+    const { data: logs, error, isLoading } = useSWR(`${API_BASE_URL}/api/v1/admin/audit`, fetcher);
     const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
 
     if (error) return <div className="p-4 text-red-500">Failed to load audit logs</div>;

@@ -19,6 +19,8 @@ interface User {
 
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { AuditLog } from "@/components/admin/AuditLog";
+import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/lib/config";
 import { LayoutDashboard, Users, FileText } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -41,7 +43,7 @@ export default function AdminDashboard() {
     }, [status, session, router]);
 
     const { data: users, error, mutate } = useSWR<User[]>(
-        process.env.NEXT_PUBLIC_API_URL + "/api/v1/admin/users",
+        API_BASE_URL + "/api/v1/admin/users",
         fetcher
     );
 
@@ -51,7 +53,7 @@ export default function AdminDashboard() {
         setIsInviting(true);
 
         try {
-            const res = await fetch(process.env.NEXT_PUBLIC_API_URL + "/api/v1/admin/invitations", {
+            const res = await fetch(API_BASE_URL + "/api/v1/admin/invitations", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: inviteEmail, created_by_id: 1 }) // Hardcoded creator for demo
@@ -87,8 +89,8 @@ export default function AdminDashboard() {
                 <button
                     onClick={() => setActiveTab("overview")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "overview"
-                            ? "bg-white dark:bg-neutral-700 shadow-sm text-gray-900 dark:text-white"
-                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        ? "bg-white dark:bg-neutral-700 shadow-sm text-gray-900 dark:text-white"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         }`}
                 >
                     <LayoutDashboard className="w-4 h-4" /> Analytics
@@ -96,8 +98,8 @@ export default function AdminDashboard() {
                 <button
                     onClick={() => setActiveTab("users")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "users"
-                            ? "bg-white dark:bg-neutral-700 shadow-sm text-gray-900 dark:text-white"
-                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        ? "bg-white dark:bg-neutral-700 shadow-sm text-gray-900 dark:text-white"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         }`}
                 >
                     <Users className="w-4 h-4" /> Users
@@ -105,8 +107,8 @@ export default function AdminDashboard() {
                 <button
                     onClick={() => setActiveTab("audit")}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "audit"
-                            ? "bg-white dark:bg-neutral-700 shadow-sm text-gray-900 dark:text-white"
-                            : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        ? "bg-white dark:bg-neutral-700 shadow-sm text-gray-900 dark:text-white"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         }`}
                 >
                     <FileText className="w-4 h-4" /> Audit Log
