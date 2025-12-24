@@ -24,7 +24,7 @@ class MatchingService:
         
         # 2. Call LLM with Reasoned Extraction
         try:
-            llm_response = await self.llm.extract_data_with_reasoning(invoice_bytes, inventory_list)
+            llm_response = await self.llm.extract_data_with_reasoning(invoice_bytes, user_id=user_id)
         except Exception as e:
             # Log error and re-raise or handle
             print(f"LLM Error: {e}")

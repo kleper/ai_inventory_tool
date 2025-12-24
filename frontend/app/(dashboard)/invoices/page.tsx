@@ -14,7 +14,7 @@ export default function InvoicesPage() {
 
             <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl border border-gray-200 dark:border-neutral-800 shadow-sm">
                 <h2 className="text-lg font-semibold mb-4">Upload New Invoice</h2>
-                <InvoiceUpload />
+                <InvoiceUpload onFileSelect={(file) => alert(`Uploading ${file.name} (Mock)`)} />
             </div>
 
             <div>

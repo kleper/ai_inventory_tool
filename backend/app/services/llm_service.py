@@ -6,7 +6,11 @@ from typing import Optional, List
 import json
 import magic
 import os
-import openainimos
+import openai
+from app.services.monitoring import monitoring_service
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Definimos la estructura que queremos recibir
 class ItemExtracted(BaseModel):
@@ -56,7 +60,10 @@ class LLMService:
         else:
             openai.api_key = self.api_key
 
-    async def analyze_object(self, image_bytes: bytes) -> ItemExtracted:
+    async def analyze_object(self, image_bytes: bytes, user_id: Optional[int] = None) -> ItemExtracted:
+        if user_id:
+            monitoring_service.check_quota(user_id)
+
         if not self.api_key:
             # Return mock data if no key
             return ItemExtracted(
@@ -94,6 +101,23 @@ class LLMService:
                 response_format={ "type": "json_object" }
             )
             content = response.choices[0].message.content
+            usage = response.usage
+            
+            # Log Usage
+            if user_id:
+                try:
+                    monitoring_service.log_usage(
+                        user_id=user_id,
+                        task_type="OBJECT_DETECTION",
+                        model_name="gpt-4o",
+                        prompt_tokens=usage.prompt_tokens,
+                        completion_tokens=usage.completion_tokens,
+                        status="SUCCESS",
+                        input_image_url="[Blob Data]" # ideally we have a URL if stored S3, else blob
+                    )
+                except Exception as log_err:
+                     logger.error(f"Failed to log usage: {log_err}")
+
             data = json.loads(content)
             return ItemExtracted(**data)
 
@@ -162,6 +186,62 @@ class LLMService:
             response_format=MatchList,
         )
         return response.choices[0].message.parsed.matches
+
+    async def extract_data_with_reasoning(self, image_bytes: bytes, user_id: Optional[int] = None) -> InvoiceMatchResponse:
+        if user_id:
+            monitoring_service.check_quota(user_id)
+            
+        base64_image = self._encode_image(image_bytes)
+        mime_type = self._get_mime_type(image_bytes)
+        
+        try:
+            client = openai.AsyncOpenAI(api_key=self.api_key)
+            response = await client.beta.chat.completions.parse(
+                model="gpt-4o",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert invoice analyst. Extract data and identify matches. Use Chain of Thought reasoning."
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Analyze this invoice."},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{mime_type};base64,{base64_image}"
+                                },
+                            },
+                        ],
+                    }
+                ],
+                response_format=InvoiceMatchResponse
+            )
+            
+            usage = response.usage
+            if user_id:
+                try:
+                    monitoring_service.log_usage(
+                         user_id=user_id,
+                         task_type="INVOICE_MATCHING",
+                         model_name="gpt-4o",
+                         prompt_tokens=usage.prompt_tokens,
+                         completion_tokens=usage.completion_tokens,
+                         status="SUCCESS",
+                         input_image_url="[Invoice Blob]",
+                         output_json=response.choices[0].message.content
+                    )
+                except Exception as log_err:
+                     logger.error(f"Failed to log usage: {log_err}")
+
+            return response.choices[0].message.parsed
+            
+        except Exception as e:
+             # Log failure?
+             if user_id:
+                  monitoring_service.log_usage(user_id, "INVOICE_MATCHING", "gpt-4o", 0, 0, "FAILED")
+             raise ValueError(f"LLM Processing failed: {str(e)}")
 
 # Singleton or dependency injection helper
 def get_llm_service():

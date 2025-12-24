@@ -5,7 +5,7 @@ from sqlmodel import SQLModel
 from alembic import context
 
 # Import models to register them with metadata
-from app.models import User, Item, Invoice
+from app.models import User, Item, Invoice, Invitation, InventoryGroup, SharedAccess
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -57,7 +57,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    from database import engine
+    from app.database import engine
     
     # We use the engine from database.py which already has the correct URL
     # But Alembic usually creates its own engine from the config.

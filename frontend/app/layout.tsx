@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AppShell } from "@/components/layout/AppShell";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { WebSocketProvider } from "@/components/providers/WebSocketProvider";
-import { ReconciliationModal } from "@/components/features/ReconciliationModal";
+import { AuthProvider } from "@/components/providers/AuthProvider";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,12 +34,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <WebSocketProvider>
-            <AppShell>{children}</AppShell>
-            <ReconciliationModal />
-          </WebSocketProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <WebSocketProvider>
+              {children}
+              <Toaster />
+            </WebSocketProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

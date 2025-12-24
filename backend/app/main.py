@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.routers import inventory
+from app.routers import inventory, admin, groups, auth
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,6 +20,11 @@ async def mock_auth_middleware(request: Request, call_next):
     return response
 
 app.include_router(inventory.router)
+app.include_router(admin.router)
+app.include_router(groups.router)
+app.include_router(auth.router)
+from app.routers import admin_stats
+app.include_router(admin_stats.router)
 
 @app.get("/")
 def read_root():

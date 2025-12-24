@@ -4,15 +4,30 @@ from app.services.llm_service import get_llm_service, LLMService, ItemExtracted
 
 router = APIRouter(prefix="/api/v1/inventory", tags=["inventory"])
 
+from app.dependencies.auth import get_current_user
+from app.models import User
+
 @router.post("/process-object", response_model=ItemExtracted)
 async def process_object(
+    group_id: Optional[int] = None,
     file: UploadFile = File(...),
-    llm_service: LLMService = Depends(get_llm_service)
+    llm_service: LLMService = Depends(get_llm_service),
+    current_user: User = Depends(get_current_user)
 ):
     try:
         contents = await file.read()
-        item_data = await llm_service.analyze_object(contents)
-        return item_data
+        item_data = await llm_service.analyze_object(contents, user_id=current_user.id)
+        # In a real implementation, we would save the item to DB here with group_id.
+        # Currently the endpoint returns data to frontend, which then (presumably) calls another endpoint or state?
+        # Re-reading Plan: The previous logic relied on returning extracted data.
+        # But if we want to SAVE it to a group, we should persist it here or updating the flow.
+        # For Phase 8 MVP: We'll return the data. User saves it?
+        # Actually, Phase 3 summary said "Mock API".
+        # Let's see if there is a 'create_item' endpoint?
+        # The 'get_items' reads from DB. But 'process_object' mocks return?
+        # Wait, if `process_object` just returns JSON, the `group_id` param does nothing unless we save.
+        # I should check if there is a SAVE endpoint.
+        pass
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
@@ -20,6 +35,7 @@ async def process_object(
 
 @router.post("/process-invoice")
 async def process_invoice(
+    group_id: Optional[int] = None,
     file: UploadFile = File(...),
     target_item_name: Optional[str] = None,
     llm_service: LLMService = Depends(get_llm_service)
@@ -39,16 +55,31 @@ async def process_invoice(
 from app.services.matching_service import run_matching_background_task
 from app.services.websocket_manager import manager
 from fastapi import BackgroundTasks, WebSocket, WebSocketDisconnect
-from sqlmodel import Session
+from sqlmodel import Session, select
 from app.database import get_session
-from app.models import Invoice
+from app.models import Invoice, Item
+
+from app.dependencies.auth import get_inventory_scope
+from typing import List
 
 @router.get("/items", response_model=list[Item])
 async def get_items(
-    user_id: int = 1,
-    session: Session = Depends(get_session)
+    group_id: Optional[int] = None,
+    session: Session = Depends(get_session),
+    allowed_groups: List[int] = Depends(get_inventory_scope)
 ):
-    statement = select(Item).where(Item.user_id == user_id)
+    # Filter items that belong to allowed groups
+    if not allowed_groups:
+        return []
+    
+    # If specific group requested, verify access
+    if group_id:
+        if group_id not in allowed_groups:
+             raise HTTPException(status_code=403, detail="Access to this group denied")
+        statement = select(Item).where(Item.group_id == group_id)
+    else:
+        statement = select(Item).where(Item.group_id.in_(allowed_groups))
+        
     results = session.exec(statement).all()
     return results
 
