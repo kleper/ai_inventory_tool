@@ -15,7 +15,7 @@ class ShareRequest(BaseModel):
     email: str
     permission: str = "VIEWER" # VIEWER, EDITOR
 
-@router.post("/", response_model=InventoryGroup)
+@router.post("", response_model=InventoryGroup)
 async def create_group(
     group: GroupCreate,
     current_user: User = Depends(get_current_user),
@@ -27,7 +27,7 @@ async def create_group(
     session.refresh(new_group)
     return new_group
 
-@router.get("/", response_model=List[InventoryGroup])
+@router.get("", response_model=List[InventoryGroup])
 async def list_groups(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)

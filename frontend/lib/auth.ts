@@ -3,27 +3,34 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google";
 
 export const authOptions: NextAuthOptions = {
+    debug: true, // Enable NextAuth debugging
     providers: [
         CredentialsProvider({
             name: 'Credentials',
             credentials: {
                 username: { label: "Username", type: "text" },
+                email: { label: "Email", type: "text" },
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials, req) {
-                if (!credentials?.username || !credentials?.password) return null;
+                // Support both username and email fields from client
+                const userIdentifier = credentials?.username || credentials?.email;
+                const password = credentials?.password;
+
+                if (!userIdentifier || !password) return null;
 
                 try {
-                    // Use internal docker network alias if on server side, or public if client? 
+                    // Use internal docker network alias if on server side
                     // Authorize runs on server side.
-                    const backendUrl = process.env.INTERNAL_BACKEND_URL || "http://backend:8000";
-                    console.log(`Connecting to backend auth: ${backendUrl}`); // Debug log
+                    const backendUrl = process.env.INTERNAL_API_URL || "http://backend:8000";
+                    console.log(`[AUTH-DEBUG] Connecting to backend auth at: ${backendUrl}`);
+                    console.log(`[AUTH-DEBUG] Attempting login for: ${userIdentifier}`);
 
                     const res = await fetch(`${backendUrl}/api/v1/auth/login`, {
                         method: 'POST',
                         body: JSON.stringify({
-                            email: credentials.username, // NextAuth default field is username
-                            password: credentials.password
+                            email: userIdentifier, // NextAuth default field is username
+                            password: password
                         }),
                         headers: { "Content-Type": "application/json" }
                     });
@@ -56,8 +63,8 @@ export const authOptions: NextAuthOptions = {
             try {
                 // Backend is at http://backend:8000 internal docker network
                 // But NextAuth runs on Server side in frontend container.
-                // We need to use internal docker network DNS if running in docker
-                const backendUrl = process.env.INTERNAL_BACKEND_URL || "http://backend:8000";
+                // Use internal docker network DNS if running in docker
+                const backendUrl = process.env.INTERNAL_API_URL || "http://backend:8000";
                 const res = await fetch(`${backendUrl}/api/v1/auth/validate-registration`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

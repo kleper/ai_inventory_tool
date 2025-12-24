@@ -34,13 +34,15 @@ export const config = {
     matcher: [
         /*
          * Match all request paths except for the ones starting with:
-         * - api (API routes, NextAuth routes)
+         * - api/auth (NextAuth routes need to be public initially for signin)
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - manifest.json (PWA manifest)
          * - favicon.ico (favicon file)
          * - sw.js, workbox-*.js (Service Worker)
+         * - login (Login page needs to be public)
+         * - register (If we had one)
          */
-        "/((?!api|_next/static|_next/image|manifest.json|favicon.ico|sw.js|workbox).*)",
+        "/((?!api/auth|_next/static|_next/image|manifest.json|favicon.ico|sw.js|workbox|login|icons).*)",
     ],
 }

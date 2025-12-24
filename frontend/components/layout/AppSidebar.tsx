@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, FolderOpen, Scan, FileText, Settings, User } from "lucide-react";
+import { UserNav } from "./UserNav";
 
 const NAV_ITEMS = [
-    { label: "Inventory", href: "/inventory", icon: LayoutDashboard },
-    { label: "Scan Item", href: "/scan", icon: Scan },
-    { label: "My Folders", href: "/inventory/folders", icon: FolderOpen }, // Placeholder
+    { label: "Home", href: "/", icon: LayoutDashboard },
+    { label: "Inventories", href: "/inventory", icon: FolderOpen },
     { label: "Invoices", href: "/invoices", icon: FileText },
     { label: "Admin", href: "/admin", icon: Settings }, // Should check role
 ];
@@ -32,8 +32,8 @@ export function AppSidebar() {
                             key={item.href}
                             href={item.href}
                             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                                    ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
-                                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-800"
+                                ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                                : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-800"
                                 }`}
                         >
                             <item.icon className="w-5 h-5" />
@@ -44,13 +44,7 @@ export function AppSidebar() {
             </nav>
 
             <div className="p-4 border-t border-gray-200 dark:border-neutral-800">
-                <Link
-                    href="/profile"
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-neutral-800"
-                >
-                    <User className="w-5 h-5" />
-                    Profile
-                </Link>
+                <UserNav />
             </div>
         </aside>
     );

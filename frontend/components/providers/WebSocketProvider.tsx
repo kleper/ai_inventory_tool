@@ -32,12 +32,15 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         const user = session?.user as any;
         if (!user?.id) return; // Wait for auth
 
-        // Determine WS URL (assuming localhost for dev)
+        // Determine WS URL (use current window host which is the Next.js proxy)
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const host = window.location.hostname === "localhost" ? "localhost:8000" : window.location.host;
+        const host = window.location.host; // e.g. localhost:3000 or mydomain.com
 
-        // Correct URL matching backend: /api/v1/inventory/ws/{user_id}
-        const wsUrl = `ws://${host}/api/v1/inventory/ws/${user.id}`;
+        // Connect via the Proxy path: /api/proxy/api/v1/inventory/ws/{user_id}
+        // The rewrite rule /api/proxy/:path* -> INTERNAL/:path* will handle this.
+        // If INTERNAL is http://backend:8000, then /api/proxy/api/v1... -> http://backend:8000/api/v1...
+        // Note: For WS, Next.js rewrites support upgrade.
+        const wsUrl = `${protocol}//${host}/api/proxy/api/v1/inventory/ws/${user.id}`;
 
         console.log(`Msg: Connecting WS to ${wsUrl}`);
         const socket = new WebSocket(wsUrl);
