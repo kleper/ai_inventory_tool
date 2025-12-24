@@ -2,10 +2,11 @@ from fastapi import UploadFile
 import base64
 from openai import OpenAI
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+import json
+import magic
 import os
-
-from typing import List
+import openainimos
 
 # Definimos la estructura que queremos recibir
 class ItemExtracted(BaseModel):
@@ -18,6 +19,27 @@ class InvoiceItem(BaseModel):
     raw_name: str
     price: float
 
+class InvoiceSummary(BaseModel):
+    vendor: str
+    date: Optional[str] = None
+    total: Optional[float] = None
+
+class MatchItem(BaseModel):
+    inventory_item_id: int
+    invoice_line_name: str
+    extracted_price: float
+    confidence: float
+    reasoning: str
+
+class UnmatchedItem(BaseModel):
+    name: str
+    price: float
+
+class InvoiceMatchResponse(BaseModel):
+    invoice_summary: InvoiceSummary
+    matches: List[MatchItem]
+    unmatched_items: List[UnmatchedItem]
+
 class MatchingResult(BaseModel):
     inventory_item_id: int
     invoice_item_name: str
@@ -25,40 +47,63 @@ class MatchingResult(BaseModel):
     confidence_score: float # 0.0 a 1.0
 
 class LLMService:
-    def __init__(self, api_key: str):
-        self.client = OpenAI(api_key=api_key)
+    def __init__(self):
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        if not self.api_key:
+            # For development, we might not have a key, but service should be instantiated.
+            # We will handle missing key error at runtime.
+            pass
+        else:
+            openai.api_key = self.api_key
 
     async def analyze_object(self, image_bytes: bytes) -> ItemExtracted:
-        # Convertir imagen a base64 para el LLM
-        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+        if not self.api_key:
+            # Return mock data if no key
+            return ItemExtracted(
+                name="Mock Object",
+                category="Electronics",
+                description="This is a mock analysis because OPENAI_API_KEY is missing."
+            )
+
+        base64_image = self._encode_image(image_bytes)
+        mime_type = self._get_mime_type(image_bytes)
         
-        response = self.client.beta.chat.completions.parse(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Eres un experto en inventarios. Identifica el objeto en la foto y extrae datos concisos."
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": "Describe este objeto para un inventario."},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                    ],
-                }
-            ],
-            response_format=ItemExtracted,
-        )
-        return response.choices[0].message.parsed
+        try:
+            client = openai.AsyncOpenAI(api_key=self.api_key)
+            response = await client.chat.completions.create(
+                model="gpt-4o",  # Use gpt-4o for vision
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an expert inventory manager. Extract the main object name, a short category (1-2 words), and a brief description (1 sentence) from the image. Return JSON."
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Analyze this image and extract inventory data."},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{mime_type};base64,{base64_image}"
+                                },
+                            },
+                        ],
+                    }
+                ],
+                max_tokens=300,
+                response_format={ "type": "json_object" }
+            )
+            content = response.choices[0].message.content
+            data = json.loads(content)
+            return ItemExtracted(**data)
+
+        except Exception as e:
+            raise ValueError(f"LLM Processing failed: {str(e)}")
 
     async def analyze_invoice(self, image_bytes: bytes, target_item_name: Optional[str] = None) -> Optional[float]:
-        # Legacy method kept for backward compatibility or simple use cases
-        # ... (implementation omitted for brevity if not strictly needed anymore, 
-        # but kept to match previous file state if we want to preserve it. 
-        # The user requested specific updates, let's allow this to coexist or just replace if we want to go full semantic)
-        # For this task, I will leave existing methods if possible, but the replace_file_content replaces the block.
-        # I'll implement the new methods requested.
-        pass 
+        # Legacy method kept for backward compatibility if needed, or deprecate.
+        # For now, just a wrapper around more complex logic or kept as is.
+        pass
 
     async def extract_invoice_data(self, image_bytes: bytes) -> List[InvoiceItem]:
         base64_image = base64.b64encode(image_bytes).decode('utf-8')
@@ -66,7 +111,11 @@ class LLMService:
         class InvoiceExtraction(BaseModel):
             items: List[InvoiceItem]
 
-        response = self.client.beta.chat.completions.parse(
+        # This method uses the old client. It should be updated to AsyncOpenAI if it's to be kept.
+        # For now, I'll assume the user wants to keep the original implementation style for this specific method.
+        # If the user wants to update this to the new client style, they should specify.
+        client = OpenAI(api_key=self.api_key) # Using the synchronous client for this method as per original
+        response = client.beta.chat.completions.parse(
             model="gpt-4o",
             messages=[
                 {
@@ -94,7 +143,11 @@ class LLMService:
         class MatchList(BaseModel):
             matches: List[MatchingResult]
 
-        response = self.client.beta.chat.completions.parse(
+        # This method uses the old client. It should be updated to AsyncOpenAI if it's to be kept.
+        # For now, I'll assume the user wants to keep the original implementation style for this specific method.
+        # If the user wants to update this to the new client style, they should specify.
+        client = OpenAI(api_key=self.api_key) # Using the synchronous client for this method as per original
+        response = client.beta.chat.completions.parse(
             model="gpt-4o",
             messages=[
                 {

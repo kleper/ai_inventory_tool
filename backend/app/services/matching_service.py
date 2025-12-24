@@ -12,51 +12,60 @@ class MatchingService:
         self.llm = llm_service
         self.db = db_session
 
-    async def process_and_match(self, user_id: int, invoice_bytes: bytes, invoice_id: int) -> Dict[str, Any]:
-        # Logic is similar but we update the specific invoice record
+    async def process_and_match(self, user_id: int, invoice_bytes: bytes, invoice_id: int) -> dict:
+        # 1. Fetch user's inventory items that need info (e.g. pending_price)
+        statement = select(Item).where(Item.user_id == user_id)
+        # We might want to match against ALL items to check for duplicates or updates, 
+        # but prompt said "Objetos en Inventario". 
+        # Let's pass all items to context so LLM can match.
+        items = self.db.exec(statement).all()
         
-        # 1. El LLM extrae todo lo que ve en la factura
-        items_in_invoice: List[InvoiceItem] = await self.llm.extract_invoice_data(invoice_bytes)
+        inventory_list = [{"id": item.id, "name": item.name} for item in items]
         
-        if not items_in_invoice:
-            return {"updated_count": 0, "matches": [], "message": "No items found in invoice"}
+        # 2. Call LLM with Reasoned Extraction
+        try:
+            llm_response = await self.llm.extract_data_with_reasoning(invoice_bytes, inventory_list)
+        except Exception as e:
+            # Log error and re-raise or handle
+            print(f"LLM Error: {e}")
+            raise e
 
-        # 2. Obtenemos ítems del usuario sin precio (Pending)
-        statement = select(Item).where(Item.user_id == user_id).where(Item.status == "pending_price")
-        results = self.db.exec(statement).all()
-        pending_items = list(results)
-
-        if not pending_items:
-            return {"updated_count": 0, "matches": [], "message": "No pending items in inventory to match against"}
-
-        # 3. Prompt de razonamiento para el Matching
-        matches: List[MatchingResult] = await self.llm.identify_matches(pending_items, items_in_invoice)
-
-        # 4. Persistencia
-        updated_count = 0
-        match_details = []
+        matches_found = 0
         
-        for match in matches:
+        # 3. Process Matches based on Confidence
+        for match in llm_response.matches:
             item = self.db.get(Item, match.inventory_item_id)
-            if item and item.user_id == user_id:
-                item.price = match.matched_price
-                item.status = "completed"
+            if item:
+                if match.confidence >= 0.8:
+                    # High Confidence: Auto Update
+                    item.price = match.extracted_price
+                    item.status = "completed"
+                    matches_found += 1
+                elif match.confidence >= 0.5:
+                    # Medium Confidence: Needs Review
+                    item.price = match.extracted_price # Propose the price
+                    item.status = "needs_review"
+                    matches_found += 1
+                else:
+                    # Low Confidence: Ignore or Log (handled by LLM putting in unmatched usually, but safety check)
+                    pass
+                
                 self.db.add(item)
-                updated_count += 1
-                match_details.append(match.dict())
         
         # Update Invoice Status
         invoice = self.db.get(Invoice, invoice_id)
         if invoice:
             invoice.status = "completed"
+            # We could store the summary/date/vendor in Invoice model if we extended it.
             self.db.add(invoice)
-
+            
         self.db.commit()
+        
         return {
-            "invoice_id": invoice_id,
-            "status": "completed",
-            "updated_count": updated_count,
-            "matches": match_details
+            "updated_count": matches_found,
+            "invoice_summary": llm_response.invoice_summary.dict(),
+            "matches": [m.dict() for m in llm_response.matches],
+            "unmatched": [u.dict() for u in llm_response.unmatched_items]
         }
 
 # Background Task Wrapper

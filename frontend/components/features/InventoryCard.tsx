@@ -38,14 +38,16 @@ export function InventoryCard({ item }: { item: Item }) {
                 {/* Status Badge Overlay */}
                 <div className="absolute top-2 right-2">
                     {item.status === 'pending_price' ? (
-                        // Replaced non-existent Badge component with standard Tailwind if import fails, but let's assume "Badge" is just a div equivalent if Shadcn missing.
-                        // Using Tailwind classes directly that resemble Shadcn badges.
                         <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full shadow-sm">
                             <Clock className="w-3 h-3" /> Pending
                         </span>
                     ) : item.status === 'completed' ? (
                         <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full shadow-sm">
                             <CheckCircle2 className="w-3 h-3" /> Done
+                        </span>
+                    ) : item.status === 'needs_review' ? (
+                        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-yellow-700 bg-yellow-50 border border-yellow-200 px-2 py-1 rounded-full shadow-sm">
+                            <AlertCircle className="w-3 h-3" /> Review
                         </span>
                     ) : (
                         <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2 py-1 rounded-full shadow-sm animate-pulse">
