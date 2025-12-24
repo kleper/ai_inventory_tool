@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
-from pathlib import Path
+
 
 class Settings(BaseSettings):
     # App
@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     VALIDATE_CERTS: bool = True
 
     model_config = {
-        "env_file": str(Path(__file__).resolve().parent.parent.parent.parent / ".env"),
+        "env_file": ".env",
         "extra": "ignore"
     }
 
