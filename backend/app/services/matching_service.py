@@ -71,8 +71,11 @@ async def run_matching_background_task(user_id: int, invoice_id: int, invoice_by
             result = await service.process_and_match(user_id, invoice_bytes, invoice_id)
             # Notify User via WebSocket
             await manager.send_personal_message({
-                "type": "invoice_processed",
-                "data": result
+                "type": "INVOICE_PROCESSED",
+                "invoice_id": str(invoice_id),
+                "status": "success",
+                "matches_found": result["updated_count"],
+                "data": result # Keep full result in data for Modal
             }, user_id)
             
         except Exception as e:

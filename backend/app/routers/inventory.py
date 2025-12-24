@@ -43,14 +43,24 @@ from sqlmodel import Session
 from app.database import get_session
 from app.models import Invoice
 
-@router.websocket("/ws/notifications/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, user_id: int):
+@router.get("/items", response_model=list[Item])
+async def get_items(
+    user_id: int = 1,
+    session: Session = Depends(get_session)
+):
+    statement = select(Item).where(Item.user_id == user_id)
+    results = session.exec(statement).all()
+    return results
+
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint_standard(websocket: WebSocket, user_id: int):
     await manager.connect(websocket, user_id)
     try:
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket, user_id)
+
 
 @router.post("/match-invoice", status_code=202)
 async def match_invoice(

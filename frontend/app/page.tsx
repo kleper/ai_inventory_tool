@@ -18,7 +18,7 @@ export default function Home() {
         </button>
       </div>
 
-      <InventoryDashboard items={items} />
+      <InventoryDashboard />
     </div>
   );
 }
