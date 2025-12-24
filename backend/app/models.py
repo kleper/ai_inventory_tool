@@ -85,6 +85,7 @@ class Item(SQLModel, table=True):
     description: Optional[str] = None
     category: Optional[str] = None
     price: Optional[float] = None
+    quantity: int = Field(default=1)
     image_url: Optional[str] = None
     status: str = Field(default="pending_price") # pending_price, completed, needs_review
     created_at: datetime = Field(default_factory=datetime.utcnow)

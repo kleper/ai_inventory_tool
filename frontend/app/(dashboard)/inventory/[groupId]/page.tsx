@@ -6,6 +6,7 @@ import { InventoryCard, InventoryCardSkeleton } from "@/components/features/Inve
 import { CameraCapture } from "@/components/features/CameraCapture";
 import { API_BASE_URL } from "@/lib/config";
 import { InvoiceUpload } from "@/components/features/InvoiceUpload";
+import { ManualItemDialog } from "@/components/features/ManualItemDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal, ArrowLeft, Camera, Upload } from "lucide-react";
@@ -145,6 +146,8 @@ export default function FolderDetailPage() {
                                     <InvoiceUpload onFileSelect={handleInvoiceUpload} />
                                 </DialogContent>
                             </Dialog>
+
+                            <ManualItemDialog groupId={groupId} onSuccess={() => mutate()} />
                         </div>
                     </div>
 

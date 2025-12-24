@@ -5,7 +5,8 @@ from app.services.llm_service import get_llm_service, LLMService, ItemExtracted
 router = APIRouter(prefix="/api/v1/inventory", tags=["inventory"])
 
 from app.dependencies.auth import get_current_user
-from app.models import User
+from app.dependencies.auth import get_current_user
+from app.models import User, Item, Invoice
 
 @router.post("/process-object", response_model=Item)
 async def process_object(
@@ -66,10 +67,30 @@ from app.services.websocket_manager import manager
 from fastapi import BackgroundTasks, WebSocket, WebSocketDisconnect
 from sqlmodel import Session, select
 from app.database import get_session
-from app.models import Invoice, Item
+from datetime import datetime
+from datetime import datetime
+
 
 from app.dependencies.auth import get_inventory_scope
 from typing import List
+
+@router.post("/items", response_model=Item)
+async def create_item(
+    item_data: Item, # Using Item model directly effectively implies we take its fields. optional id ignored.
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    # Override/Setup server-side fields
+    item_data.id = None # Ensure new
+    item_data.user_id = current_user.id
+    item_data.created_at = datetime.utcnow() # Reset time or use default
+    if item_data.status == "pending_price" and item_data.price is not None:
+         item_data.status = "completed"
+    
+    session.add(item_data)
+    session.commit()
+    session.refresh(item_data)
+    return item_data
 
 @router.get("/items", response_model=list[Item])
 async def get_items(
