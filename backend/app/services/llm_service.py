@@ -91,7 +91,7 @@ class LLMService:
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert inventory manager. Extract the main object name, a short category (1-2 words), and a brief description (1 sentence) from the image. Return JSON."
+                        "content": "You are an expert inventory manager. Extract the main object name, a short category (1-2 words), and a brief description (1 sentence) from the image. Return JSON with keys: 'name', 'description', 'category', 'estimated_price' (number or null)."
                     },
                     {
                         "role": "user",
