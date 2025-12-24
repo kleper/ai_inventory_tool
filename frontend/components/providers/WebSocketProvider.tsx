@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
+import { useSession } from "next-auth/react";
 
 interface WebSocketContextType {
     isConnected: boolean;
@@ -17,25 +18,28 @@ const WebSocketContext = createContext<WebSocketContextType>({
 export const useWebSocket = () => useContext(WebSocketContext);
 
 export const WebSocketProvider = ({ children }: { children: React.ReactNode }) => {
+    const { data: session } = useSession();
+    // Version Log to verify cache clearing
+    useEffect(() => { console.log("WebSocketProvider Loaded: Version Fix_1.2 (No notifications path)"); }, []);
+
     const [isConnected, setIsConnected] = useState(false);
     const [lastMessage, setLastMessage] = useState<any>(null);
     const ws = useRef<WebSocket | null>(null);
     const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
 
-    // Mock user_id for now, in real app this comes from auth
-    const userId = 1;
-
     const connect = () => {
         if (ws.current?.readyState === WebSocket.OPEN) return;
+        const user = session?.user as any;
+        if (!user?.id) return; // Wait for auth
 
         // Determine WS URL (assuming localhost for dev)
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         const host = window.location.hostname === "localhost" ? "localhost:8000" : window.location.host;
-        // Note: On Docker, port might be different or proxied. Assuming backend exposed on 8000.
-        // In dev, Next.js proxy might be needed or direct connection.
-        // For now, let's try direct to backend:8000 if localhost, else relative if proxied.
-        const wsUrl = `ws://localhost:8000/api/v1/inventory/ws/notifications/${userId}`;
 
+        // Correct URL matching backend: /api/v1/inventory/ws/{user_id}
+        const wsUrl = `ws://${host}/api/v1/inventory/ws/${user.id}`;
+
+        console.log(`Msg: Connecting WS to ${wsUrl}`);
         const socket = new WebSocket(wsUrl);
 
         socket.onopen = () => {
@@ -65,11 +69,15 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     };
 
     useEffect(() => {
-        connect();
+        const user = session?.user as any;
+        if (user?.id) {
+            connect();
+        }
         return () => {
+            if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
             ws.current?.close();
         };
-    }, []);
+    }, [session]);
 
     const sendMessage = (msg: any) => {
         if (ws.current?.readyState === WebSocket.OPEN) {

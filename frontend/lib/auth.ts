@@ -11,11 +11,35 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" }
             },
             async authorize(credentials, req) {
-                // Mock Auth for Demo (Phase 8 logic requires backend verification)
-                if (credentials?.username === "admin" && credentials?.password === "admin") {
-                    return { id: "1", name: "Admin User", email: "admin@example.com", role: "ADMIN" }
+                if (!credentials?.username || !credentials?.password) return null;
+
+                try {
+                    // Use internal docker network alias if on server side, or public if client? 
+                    // Authorize runs on server side.
+                    const backendUrl = process.env.INTERNAL_BACKEND_URL || "http://backend:8000";
+                    console.log(`Connecting to backend auth: ${backendUrl}`); // Debug log
+
+                    const res = await fetch(`${backendUrl}/api/v1/auth/login`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            email: credentials.username, // NextAuth default field is username
+                            password: credentials.password
+                        }),
+                        headers: { "Content-Type": "application/json" }
+                    });
+
+                    const user = await res.json();
+
+                    // If no error and we have user data, return it
+                    if (res.ok && user) {
+                        return user;
+                    }
+                    console.warn("Backend auth failed:", user);
+                    return null;
+                } catch (e) {
+                    console.error("Auth error:", e);
+                    return null;
                 }
-                return null
             }
         }),
         GoogleProvider({

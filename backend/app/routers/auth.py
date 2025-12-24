@@ -42,3 +42,40 @@ async def validate_registration(
 
     # If all good
     return {"valid": True, "message": "Invitation valid"}
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@router.post("/login")
+async def login(
+    data: LoginRequest,
+    session: Session = Depends(get_session)
+):
+    print(f"Login attempt for email: {data.email}")
+    # Find user
+    user = session.exec(select(User).where(User.email == data.email)).first()
+    if not user:
+        print("User not found in DB")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    # Verify password
+    from app.services.security import verify_password
+    if not user.password_hash:
+        print("User has no password hash")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+    is_valid = verify_password(data.password, user.password_hash)
+    if not is_valid:
+        print("Password verification failed (hash mismatch)")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    print(f"Login successful for user: {user.id}")
+    # Return user info for NextAuth
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "name": user.name,
+        "role": user.role,
+        "image": user.image
+    }

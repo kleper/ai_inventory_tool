@@ -7,3 +7,7 @@ psycopg2-binary
 openai
 python-dotenv
 python-magic
+passlib[bcrypt]
+bcrypt==3.2.2
+python-jose[cryptography]
+websockets
