@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from app.database import get_session
-from app.models import User, InventoryGroup, SharedAccess
+from app.models import User, InventoryGroup, SharedAccess, InventoryGroupBase
 from app.dependencies.auth import get_current_user
 from typing import List, Optional
 from pydantic import BaseModel
@@ -27,7 +27,12 @@ async def create_group(
     session.refresh(new_group)
     return new_group
 
-class GroupWithCount(InventoryGroup):
+from app.models import User, InventoryGroup, SharedAccess, InventoryGroupBase
+
+# ...
+
+class GroupWithCount(InventoryGroupBase):
+    id: int
     item_count: int = 0
     is_shared: bool = False
 

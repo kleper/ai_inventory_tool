@@ -11,10 +11,12 @@ class SharedAccess(SQLModel, table=True):
     group_id: int = Field(foreign_key="inventorygroup.id")
     permission: str = Field(default="VIEWER") # VIEWER, EDITOR, OWNER
 
-class InventoryGroup(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
+class InventoryGroupBase(SQLModel):
     name: str
     owner_id: int = Field(foreign_key="user.id")
+
+class InventoryGroup(InventoryGroupBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
     
     owner: "User" = Relationship(back_populates="owned_groups")
     items: List["Item"] = Relationship(back_populates="group")
