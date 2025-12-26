@@ -23,20 +23,7 @@ export default function ItemDetailPage() {
     const router = useRouter();
 
     const { data: item, error, isLoading, mutate } = useSWR(
-        itemId ? `${API_BASE_URL}/api/v1/inventory/items?item_id=${itemId}` : null, // Assuming backend supports filtering or getting single item. Wait, verify endpoint?
-        // Actually, backend might not have /items/id directly exposed or listed. 
-        // Let's assume /api/v1/inventory/items returns a list. If so, I need to filter or requesting specific ID.
-        // Checking backend routers... I'll assume for now I can GET /items/{id} or filtered list.
-        // If not, I'll update backend or filter client side (bad for direct link).
-        // Let's rely on standard REST. If /items?item_id=XX works? 
-        // Re-reading backend inventory.py... `get_items` has `group_id` filter. Doesn't seem to have `item_id`.
-        // I should verify backend endpoint first? 
-        // Time is tight. I'll bet on standard GET /items/{id} existence or I will fix it.
-        // Wait, I checked `get_items` in inventory.py earlier. It takes `group_id`.
-        // I will add a `get_item` endpoint to backend if it's missing.
-        // For now, let's write the frontend assuming the endpoint exists or I'll fix it in next step.
-        // Let's write the fetcher to use `${API_BASE_URL}/api/v1/inventory/items/${itemId}`
-        `${API_BASE_URL}/api/v1/inventory/items/${itemId}`,
+        itemId ? `${API_BASE_URL}/api/v1/inventory/items/${itemId}` : null,
         fetcher
     );
 
