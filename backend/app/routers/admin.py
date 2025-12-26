@@ -15,13 +15,19 @@ async def list_users(session: Session = Depends(get_session)):
     users = session.exec(select(User)).all()
     return users
 
+from pydantic import BaseModel, EmailStr
+
+class InvitationRequest(BaseModel):
+    email: EmailStr
+
 @router.post("/invitations", response_model=Invitation)
 async def create_invitation(
-    email: str, 
-    created_by_id: int, 
+    request: InvitationRequest,
     background_tasks: BackgroundTasks,
+    current_user: User = Depends(require_admin),
     session: Session = Depends(get_session)
 ):
+    email = request.email
     # Check if user already exists
     existing_user = session.exec(select(User).where(User.email == email)).first()
     if existing_user:
@@ -45,7 +51,7 @@ async def create_invitation(
     invite = Invitation(
         email=email,
         token=token,
-        created_by=created_by_id,
+        created_by=current_user.id,
         expires_at=expires,
         status="PENDING"
     )

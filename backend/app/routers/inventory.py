@@ -107,6 +107,76 @@ async def get_items(
     results = session.exec(statement).all()
     return results
 
+@router.get("/items/{item_id}", response_model=Item)
+async def get_item(
+    item_id: int,
+    session: Session = Depends(get_session),
+    allowed_groups: List[int] = Depends(get_inventory_scope),
+    current_user: User = Depends(get_current_user)
+):
+    item = session.get(Item, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    
+    # Access Control
+    if item.user_id != current_user.id:
+        if item.group_id and item.group_id not in allowed_groups:
+             raise HTTPException(status_code=403, detail="Access denied")
+             
+    return item
+
+@router.put("/items/{item_id}", response_model=Item)
+async def update_item(
+    item_id: int,
+    item_update: Item,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+    allowed_groups: List[int] = Depends(get_inventory_scope)
+):
+    path_item = session.get(Item, item_id)
+    if not path_item:
+        raise HTTPException(status_code=404, detail="Item not found")
+        
+    # Check permission
+    if path_item.user_id != current_user.id:
+        # If group item, check if user has access (Editor? For now just scope check)
+        if path_item.group_id and path_item.group_id not in allowed_groups:
+             raise HTTPException(status_code=403, detail="Access denied")
+             
+    # Update fields
+    item_data = item_update.model_dump(exclude_unset=True)
+    # Prevent ID/User injection if checked strictly, but model_dump covers it if careful. 
+    # Better to iterate:
+    for key, value in item_data.items():
+        if key not in ["id", "user_id", "created_at"]: # Protect core fields
+            setattr(path_item, key, value)
+            
+    session.add(path_item)
+    session.commit()
+    session.refresh(path_item)
+    return path_item
+
+@router.delete("/items/{item_id}")
+async def delete_item(
+    item_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+    allowed_groups: List[int] = Depends(get_inventory_scope)
+):
+    item = session.get(Item, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+        
+    # Check permission (Restrict delete to owner or explicit admin/editor logic later)
+    # For now: Owner OR Group Member (if simplistic)
+    if item.user_id != current_user.id:
+         if item.group_id and item.group_id not in allowed_groups:
+             raise HTTPException(status_code=403, detail="Access denied")
+             
+    session.delete(item)
+    session.commit()
+    return {"message": "Item deleted"}
+
 @router.websocket("/ws/{user_id}")
 async def websocket_endpoint_standard(websocket: WebSocket, user_id: int):
     await manager.connect(websocket, user_id)

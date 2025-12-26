@@ -39,8 +39,13 @@ export default function FolderDetailPage() {
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [isScanOpen, setIsScanOpen] = useState(false);
 
     const handleCapture = async (imageSrc: string) => {
+        // Optimistic UI: Close immediately
+        setIsScanOpen(false);
+        toast.info("Procesando imagen en segundo plano...");
+
         setIsProcessing(true);
         try {
             const res = await fetch(imageSrc);
@@ -113,7 +118,7 @@ export default function FolderDetailPage() {
                         <h1 className="text-2xl font-bold tracking-tight">Folder Items</h1>
 
                         <div className="flex items-center gap-2">
-                            <Dialog>
+                            <Dialog open={isScanOpen} onOpenChange={setIsScanOpen}>
                                 <DialogTrigger asChild>
                                     <Button className="gap-2 bg-black text-white dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 shadow-sm">
                                         <Camera className="w-4 h-4" /> Scan Item

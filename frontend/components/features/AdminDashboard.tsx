@@ -56,7 +56,7 @@ export default function AdminDashboard() {
             const res = await fetch(API_BASE_URL + "/api/v1/admin/invitations", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: inviteEmail, created_by_id: 1 }) // Hardcoded creator for demo
+                body: JSON.stringify({ email: inviteEmail })
             });
 
             if (!res.ok) throw new Error("Failed to invite");

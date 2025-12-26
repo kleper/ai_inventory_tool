@@ -27,7 +27,11 @@ async def create_group(
     session.refresh(new_group)
     return new_group
 
-@router.get("", response_model=List[InventoryGroup])
+class GroupWithCount(InventoryGroup):
+    item_count: int = 0
+    is_shared: bool = False
+
+@router.get("", response_model=List[GroupWithCount])
 async def list_groups(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
@@ -39,11 +43,43 @@ async def list_groups(
     shared_access = session.exec(select(SharedAccess).where(SharedAccess.user_id == current_user.id)).all()
     shared_group_ids = [sa.group_id for sa in shared_access]
     
+    shared_groups = []
     if shared_group_ids:
         shared_groups = session.exec(select(InventoryGroup).where(InventoryGroup.id.in_(shared_group_ids))).all()
-        return list(owned) + list(shared_groups)
     
-    return owned
+    all_groups = list(owned) + list(shared_groups)
+    
+    # Calculate item counts
+    from sqlalchemy import func
+    from app.models import Item
+    
+    group_ids = [g.id for g in all_groups]
+    count_map = {}
+    
+    if group_ids:
+        counts = session.exec(
+            select(Item.group_id, func.count(Item.id))
+            .where(Item.group_id.in_(group_ids))
+            .group_by(Item.group_id)
+        ).all()
+        count_map = {g_id: count for g_id, count in counts}
+
+    # Transform to response model
+    results = []
+    for g in owned:
+        results.append(GroupWithCount(
+            **g.model_dump(), 
+            item_count=count_map.get(g.id, 0),
+            is_shared=False
+        ))
+    for g in shared_groups:
+        results.append(GroupWithCount(
+            **g.model_dump(), 
+            item_count=count_map.get(g.id, 0),
+            is_shared=True
+        ))
+        
+    return results
 
 @router.post("/{group_id}/share")
 async def share_group(
