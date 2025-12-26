@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+// import  from "@/components/ui/alert"; // Removed unused Alert import
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
