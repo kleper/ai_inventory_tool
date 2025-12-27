@@ -1,5 +1,6 @@
 "use client";
 import { AlertCircle, CheckCircle2, Clock, Tag, Box } from "lucide-react";
+import { SecureImage } from "@/components/ui/SecureImage";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { API_BASE_URL } from "@/lib/config";
@@ -16,7 +17,7 @@ interface Item {
 }
 
 export function InventoryCard({ item }: { item: Item }) {
-    const [imageError, setImageError] = useState(false);
+    // const [imageError, setImageError] = useState(false); // Managed by SecureImage now
 
     // Construct valid URL
     let imageUrl = item.imageUrl;
@@ -39,18 +40,12 @@ export function InventoryCard({ item }: { item: Item }) {
             >
                 {/* Image Area - Aspect Square */}
                 <div className="aspect-square bg-gray-100 dark:bg-neutral-800 relative overflow-hidden">
-                    {!imageError && imageUrl ? (
-                        <img
-                            src={imageUrl}
-                            alt={item.name}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                            onError={() => setImageError(true)}
-                        />
-                    ) : (
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-400 bg-gray-50 dark:bg-gray-800">
-                            <Box className="w-12 h-12 opacity-20" />
-                        </div>
-                    )}
+                    <SecureImage
+                        itemId={item.id}
+                        fallbackSrc={item.imageUrl} // Fallback for legacy/external images
+                        alt={item.name}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
 
                     {/* Status Badge Overlay */}
                     <div className="absolute top-2 right-2">

@@ -27,10 +27,20 @@ type ItemFormValues = z.infer<typeof itemSchema>;
 interface ManualItemDialogProps {
     groupId: string;
     onSuccess?: () => void;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    showTrigger?: boolean;
 }
 
-export function ManualItemDialog({ groupId, onSuccess }: ManualItemDialogProps) {
-    const [open, setOpen] = useState(false);
+export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onOpenChange, showTrigger = true }: ManualItemDialogProps) {
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+    const setOpen = (val: boolean) => {
+        setInternalOpen(val);
+        onOpenChange?.(val);
+    };
+
     const [isLoading, setIsLoading] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -108,12 +118,14 @@ export function ManualItemDialog({ groupId, onSuccess }: ManualItemDialogProps) 
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                    <Plus className="w-4 h-4" /> Add Manually
-                </Button>
-            </DialogTrigger>
+        <Dialog open={isOpen} onOpenChange={setOpen}>
+            {showTrigger && (
+                <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                        <Plus className="w-4 h-4" /> Add Manually
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[425px] overflow-y-auto max-h-[90vh]">
                 <DialogHeader>
                     <DialogTitle>Add Item Manually</DialogTitle>

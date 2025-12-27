@@ -25,46 +25,71 @@ app.add_middleware(
 def on_startup():
     database.init_db()
     
-    # Seed Initial Admin
+    # Run Migrations Directly First
+    from sqlalchemy import text
+    with Session(database.engine) as session:
+        print("Running Auto-Migrations...")
+        # User Table Migrations
+        try:
+            session.exec(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS auth_provider VARCHAR DEFAULT 'EMAIL'"))
+            session.exec(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS force_password_change BOOLEAN DEFAULT FALSE"))
+            print("Migrated User table")
+        except Exception as e:
+            print(f"User migration skipped/failed: {e}")
+
+        # SharedAccess Migrations
+        try:
+             # Rename if permission exists and role doesn't? Or naive rename
+             session.exec(text("ALTER TABLE sharedaccess RENAME COLUMN permission TO role"))
+        except Exception:
+             pass # Column might already be role
+
+        try:
+             session.exec(text("ALTER TABLE sharedaccess ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now()"))
+        except Exception: pass
+
+        try:
+             session.exec(text("ALTER TABLE sharedaccess ADD CONSTRAINT unique_group_member UNIQUE (user_id, group_id)"))
+        except Exception: pass
+        
+        session.commit()
+
+    # Ensure Media Dir
+    import os
+    media_path = "/app/media"
+    if not os.path.exists(media_path):
+        os.makedirs(media_path)
+
+    # Seed Initial Admin (Now safe to query)
     admin_email = os.getenv("INITIAL_ADMIN_EMAIL")
     admin_password = os.getenv("INITIAL_ADMIN_PASSWORD")
     
     if admin_email and admin_password:
         with Session(database.engine) as session:
-            existing_user = session.exec(select(User).where(User.email == admin_email)).first()
-            if not existing_user:
-                print(f"Seeding initial admin: {admin_email}")
-                hashed_pw = get_password_hash(admin_password)
-                admin_user = User(
-                    email=admin_email,
-                    password_hash=hashed_pw,
-                    role="ADMIN",
-                    status="ACTIVE",
-                    name="System Admin"
-                )
-                session.add(admin_user)
-                session.commit()
-            else:
-                # Force update password to match .env (Fix for login issues if DB persisted old password)
-                print(f"Admin {admin_email} exists. Updating password to match .env")
-                hashed_pw = get_password_hash(admin_password)
-                existing_user.password_hash = hashed_pw
-                session.add(existing_user)
-                session.commit()
+            try:
+                existing_user = session.exec(select(User).where(User.email == admin_email)).first()
+                if not existing_user:
+                    print(f"Seeding initial admin: {admin_email}")
+                    hashed_pw = get_password_hash(admin_password)
+                    admin_user = User(
+                        email=admin_email,
+                        password_hash=hashed_pw,
+                        role="ADMIN",
+                        status="ACTIVE",
+                        name="System Admin"
+                    )
+                    session.add(admin_user)
+                    session.commit()
+                else:
+                    print(f"Admin {admin_email} exists. Updating password.")
+                    hashed_pw = get_password_hash(admin_password)
+                    existing_user.password_hash = hashed_pw
+                    session.add(existing_user)
+                    session.commit()
+            except Exception as e:
+                print(f"Error seeding admin: {e}") 
+                # Don't crash if seed fails, but migration should have fixed the schema.
 
-# Mock Auth Middleware (Disabled for now as we want real auth, or keep if needed for dev? Keeping it commented out or non-blocking)
-@app.middleware("http")
-async def mock_auth_middleware(request: Request, call_next):
-    # response = await call_next(request)
-    return await call_next(request)
-
-
-app.include_router(inventory.router)
-app.include_router(admin.router)
-app.include_router(groups.router)
-app.include_router(auth.router)
-from app.routers import admin_stats
-app.include_router(admin_stats.router)
 
 @app.get("/")
 def read_root():

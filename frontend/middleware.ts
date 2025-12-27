@@ -6,15 +6,37 @@ export default withAuth(
         const isAuth = !!req.nextauth.token
         const isLoginPage = req.nextUrl.pathname === "/login"
         const isRootPage = req.nextUrl.pathname === "/"
+        const isRegisterPage = req.nextUrl.pathname.startsWith("/register")
+        const isForceChangePage = req.nextUrl.pathname === "/auth/force-change-password"
 
         // Case 1: Logged in user visiting Login page -> Redirect to Inventory
-        if (isAuth && isLoginPage) {
+        if (isAuth && (isLoginPage || isRegisterPage)) {
+            // But if force change is required, send them there
+            if ((req.nextauth.token as any)?.require_password_reset) {
+                if (!isForceChangePage) {
+                    return NextResponse.redirect(new URL("/auth/force-change-password", req.url))
+                }
+                return NextResponse.next()
+            }
             return NextResponse.redirect(new URL("/inventory", req.url))
         }
 
         // Case 2: Logged in user visiting Root -> Redirect to Inventory
-        // (This is redundant if page.tsx redirects, but good for safety)
         if (isAuth && isRootPage) {
+            if ((req.nextauth.token as any)?.require_password_reset) {
+                return NextResponse.redirect(new URL("/auth/force-change-password", req.url))
+            }
+            return NextResponse.redirect(new URL("/inventory", req.url))
+        }
+
+        // Case 3: Enforce Password Reset
+        if (isAuth && (req.nextauth.token as any)?.require_password_reset) {
+            if (!isForceChangePage) {
+                return NextResponse.redirect(new URL("/auth/force-change-password", req.url))
+            }
+        }
+        // If on Force Change page but NOT required, redirect to inventory
+        if (isAuth && isForceChangePage && !(req.nextauth.token as any)?.require_password_reset) {
             return NextResponse.redirect(new URL("/inventory", req.url))
         }
 

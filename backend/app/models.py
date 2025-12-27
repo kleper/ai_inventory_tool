@@ -1,15 +1,20 @@
 from typing import Optional, List
-from sqlmodel import Field, SQLModel, Relationship
 from datetime import datetime
-
-# Forward declarations to avoid circular reference issues in types
-# (SQLModel handles string references mostly fine)
+from sqlmodel import SQLModel, Field, Relationship
+from sqlalchemy import UniqueConstraint
 
 class SharedAccess(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("user_id", "group_id", name="unique_group_member"),)
+    
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
     group_id: int = Field(foreign_key="inventorygroup.id")
-    permission: str = Field(default="VIEWER") # VIEWER, EDITOR, OWNER
+    role: str = Field(default="VIEWER") # VIEWER, EDITOR
+    created_at: datetime = Field(default_factory=datetime.utcnow) # New field
+
+    # Relationships slightly helpful
+    user: "User" = Relationship()
+    group: "InventoryGroup" = Relationship()
 
 class InventoryGroupBase(SQLModel):
     name: str
@@ -33,6 +38,8 @@ class User(SQLModel, table=True):
     # Auth & SaaS
     password_hash: Optional[str] = None
     google_id: Optional[str] = None
+    auth_provider: str = Field(default="EMAIL") # GOOGLE, EMAIL
+    force_password_change: bool = Field(default=False)
     role: str = Field(default="USER") # ADMIN, USER
     status: str = Field(default="ACTIVE") # INVITED, ACTIVE, BANNED
     monthly_token_limit: int = Field(default=100000)

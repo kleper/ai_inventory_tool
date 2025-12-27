@@ -7,7 +7,7 @@ import { LayoutDashboard, Scan, FolderOpen, User } from "lucide-react";
 const MOBILE_NAV_ITEMS = [
     { label: "Home", href: "/inventory", icon: LayoutDashboard },
     { label: "Scan", href: "/scan", icon: Scan },
-    { label: "Folders", href: "/inventory/folders", icon: FolderOpen }, // Placeholder
+    { label: "Folders", href: "/inventory", icon: FolderOpen },
     { label: "Profile", href: "/profile", icon: User },
 ];
 
@@ -24,8 +24,8 @@ export function BottomNav() {
                             key={item.href}
                             href={item.href}
                             className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-colors ${isActive
-                                    ? "text-blue-600 dark:text-blue-400"
-                                    : "text-gray-500 dark:text-gray-400"
+                                ? "text-blue-600 dark:text-blue-400"
+                                : "text-gray-500 dark:text-gray-400"
                                 }`}
                         >
                             <item.icon className="w-6 h-6" />

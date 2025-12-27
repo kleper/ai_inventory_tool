@@ -1,33 +1,38 @@
 from fastapi import Depends, HTTPException, status, Header
+from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session, select
 from app.database import get_session
 from app.models import User, InventoryGroup, SharedAccess
+from app.services.security import decode_access_token
 from typing import List, Optional
 
-# Mock or Real User Dependency
-# In a real app with NextAuth, we would verify the JWT here.
-# For Phase 8 Demo, we can simulate "get_current_user" via a header or simplified logic.
-# The user prompt mentions "Obtener el current_user desde el JWT".
-# I'll implement a stub that assumes we trust the specific user ID for now or 
-# parses a mock token, until we do full JWT verify.
-# Let's try to do it slightly better: If "x-user-id" header is present, use that, else default to 1.
-# CAUTION: This is insecure for prod but fine for dev/demo if documented.
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login", auto_error=False)
 
 async def get_current_user(
+    token: Optional[str] = Depends(oauth2_scheme),
     x_user_id: Optional[str] = Header(default=None), 
     session: Session = Depends(get_session)
 ) -> User:
-    user_id = 1
-    if x_user_id:
+    user_id = None
+    
+    # 1. Try JWT
+    if token:
+        payload = decode_access_token(token)
+        if payload:
+            user_id = payload.get("sub")
+    
+    # 2. Fallback to Header (Legacy/Dev) if no valid token
+    if not user_id and x_user_id:
         try:
             user_id = int(x_user_id)
         except ValueError:
             pass
             
+    if not user_id:
+         raise HTTPException(status_code=401, detail="Not authenticated")
+            
     user = session.get(User, user_id)
     if not user:
-         # Fallback: create default admin user if DB is empty?
-         # Or just raise error.
          raise HTTPException(status_code=401, detail="User not found")
     return user
 

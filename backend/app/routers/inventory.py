@@ -5,12 +5,37 @@ from sqlmodel import Session, select
 
 from app.services.llm_service import get_llm_service, LLMService, ItemExtracted
 from app.dependencies.auth import get_current_user, get_inventory_scope
-from app.models import User, Item, Invoice
+from app.models import User, Item, Invoice, InventoryGroup, SharedAccess
 from app.services.matching_service import run_matching_background_task
 from app.services.websocket_manager import manager
 from app.database import get_session
 
 router = APIRouter(prefix="/api/v1/inventory", tags=["inventory"])
+
+# --- Helper ---
+def validate_group_write_access(session: Session, user: User, group_id: int):
+    # 1. Check if group exists
+    group = session.get(InventoryGroup, group_id)
+    if not group:
+        # If group doesn't exist, we can't write to it.
+        raise HTTPException(status_code=404, detail="Group not found")
+        
+    # 2. Owner?
+    if group.owner_id == user.id:
+        return True
+        
+    # 3. Editor?
+    access = session.exec(select(SharedAccess).where(
+        SharedAccess.group_id == group_id, 
+        SharedAccess.user_id == user.id
+    )).first()
+    
+    if access and access.role == "EDITOR":
+        return True
+        
+    raise HTTPException(status_code=403, detail="You do not have permission to edit this group (Read-only view)")
+
+# --- Endpoints ---
 
 @router.post("/process-object", response_model=Item)
 async def process_object(
@@ -20,11 +45,28 @@ async def process_object(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
+    # Permission Check
+    if group_id:
+        validate_group_write_access(session, current_user, group_id)
+
     try:
         contents = await file.read()
+        
+        # Save file to disk securely
+        import uuid
+        import os
+        ext = ".jpg"
+        if file.filename:
+            _, ext_part = os.path.splitext(file.filename)
+            if ext_part:
+                ext = ext_part.lower()
+        filename = f"{uuid.uuid4()}{ext}"
+        save_path = f"/app/media/{filename}"
+        with open(save_path, "wb") as f:
+            f.write(contents)
+            
         item_data = await llm_service.analyze_object(contents, user_id=current_user.id)
         
-        # Create Item
         new_item = Item(
             name=item_data.name,
             description=item_data.description,
@@ -32,13 +74,15 @@ async def process_object(
             price=item_data.estimated_price,
             user_id=current_user.id,
             group_id=group_id,
+            image_url=filename,
             status="pending_price" if not item_data.estimated_price else "completed"
         )
         session.add(new_item)
         session.commit()
         session.refresh(new_item)
-        
         return new_item
+    except HTTPException as he:
+        raise he
     except ValueError as e:
         print(f"ValueError processing object: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -63,21 +107,20 @@ async def process_invoice(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing invoice: {str(e)}")
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing invoice: {str(e)}")
-
-
 
 @router.post("/items", response_model=Item)
 async def create_item(
-    item_data: Item, # Using Item model directly effectively implies we take its fields. optional id ignored.
+    item_data: Item, 
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    # Override/Setup server-side fields
-    item_data.id = None # Ensure new
+    # Validate Group Access
+    if item_data.group_id:
+        validate_group_write_access(session, current_user, item_data.group_id)
+
+    item_data.id = None
     item_data.user_id = current_user.id
-    item_data.created_at = datetime.utcnow() # Reset time or use default
+    item_data.created_at = datetime.utcnow()
     if item_data.status == "pending_price" and item_data.price is not None:
          item_data.status = "completed"
     
@@ -90,19 +133,29 @@ async def create_item(
 async def get_items(
     group_id: Optional[int] = None,
     session: Session = Depends(get_session),
-    allowed_groups: List[int] = Depends(get_inventory_scope)
+    allowed_groups: List[int] = Depends(get_inventory_scope),
+    current_user: User = Depends(get_current_user)
 ):
-    # Filter items that belong to allowed groups
-    if not allowed_groups:
-        return []
-    
-    # If specific group requested, verify access
+    # If explicit group, verify access (Read access via scope is fine)
     if group_id:
         if group_id not in allowed_groups:
              raise HTTPException(status_code=403, detail="Access to this group denied")
         statement = select(Item).where(Item.group_id == group_id)
     else:
-        statement = select(Item).where(Item.group_id.in_(allowed_groups))
+        # List all accessible items
+        # 1. Direct ownership
+        # 2. In allowed groups
+        # Combine? 
+        # Actually `get_inventory_scope` covers groups. 
+        # But we also want un-grouped items owned by user.
+        # select(Item).where( or(Item.user_id == me, Item.group_id.in(allowed)) )
+        from sqlmodel import or_
+        statement = select(Item).where(
+            or_(
+                Item.user_id == current_user.id,
+                Item.group_id.in_(allowed_groups)
+            )
+        )
         
     results = session.exec(statement).all()
     return results
@@ -138,17 +191,28 @@ async def update_item(
         raise HTTPException(status_code=404, detail="Item not found")
         
     # Check permission
-    if path_item.user_id != current_user.id:
-        # If group item, check if user has access (Editor? For now just scope check)
-        if path_item.group_id and path_item.group_id not in allowed_groups:
-             raise HTTPException(status_code=403, detail="Access denied")
+    # If I am owner of item, I can edit (unless legacy/weird case).
+    # If item is in group, I must have WRITE access to that group.
+    
+    can_edit = False
+    
+    if path_item.user_id == current_user.id:
+        can_edit = True
+    elif path_item.group_id:
+        # Check group perms
+        try:
+            validate_group_write_access(session, current_user, path_item.group_id)
+            can_edit = True
+        except HTTPException:
+            can_edit = False
+            
+    if not can_edit:
+        raise HTTPException(status_code=403, detail="Access denied to edit this item")
              
     # Update fields
     item_data = item_update.model_dump(exclude_unset=True)
-    # Prevent ID/User injection if checked strictly, but model_dump covers it if careful. 
-    # Better to iterate:
     for key, value in item_data.items():
-        if key not in ["id", "user_id", "created_at"]: # Protect core fields
+        if key not in ["id", "user_id", "created_at"]:
             setattr(path_item, key, value)
             
     session.add(path_item)
@@ -167,12 +231,20 @@ async def delete_item(
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
         
-    # Check permission (Restrict delete to owner or explicit admin/editor logic later)
-    # For now: Owner OR Group Member (if simplistic)
-    if item.user_id != current_user.id:
-         if item.group_id and item.group_id not in allowed_groups:
-             raise HTTPException(status_code=403, detail="Access denied")
+    can_delete = False
+    
+    if item.user_id == current_user.id:
+        can_delete = True
+    elif item.group_id:
+        try:
+             validate_group_write_access(session, current_user, item.group_id)
+             can_delete = True
+        except HTTPException:
+             can_delete = False
              
+    if not can_delete:
+         raise HTTPException(status_code=403, detail="Access denied to delete this item")
+              
     session.delete(item)
     session.commit()
     return {"message": "Item deleted"}

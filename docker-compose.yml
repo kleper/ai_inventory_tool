@@ -6,6 +6,7 @@ services:
     container_name: smartinventory_backend
     volumes:
       - ./backend:/app
+      - app_media:/app/media
     env_file:
       - .env
     depends_on:
@@ -52,3 +53,4 @@ services:
 
 volumes:
   postgres_data:
+  app_media:

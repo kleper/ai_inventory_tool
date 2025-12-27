@@ -13,6 +13,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SecureImage } from "@/components/ui/SecureImage";
 // import  from "@/components/ui/alert"; // Removed unused Alert import
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -27,6 +28,12 @@ export default function ItemDetailPage() {
         fetcher
     );
 
+    // Fetch Group Permission if item exists and has group_id
+    const { data: group } = useSWR(
+        item?.group_id ? `${API_BASE_URL}/api/v1/groups/${item.group_id}` : null,
+        fetcher
+    );
+
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         name: "",
@@ -35,6 +42,16 @@ export default function ItemDetailPage() {
         description: "",
         status: ""
     });
+
+    // Permission Logic
+    // If no group_id, I assume I own it (personal item). 
+    // Wait, backend protects personal items too (user_id check).
+    // If I see it, I have read access.
+    // If personal item: I am owner (unless shared? personal items aren't shared unless in group).
+    // So if !group_id => I am owner.
+    // If group_id => Check group role.
+
+    const canWrite = !item?.group_id || (group?.my_role === "OWNER" || group?.my_role === "EDITOR");
 
     useEffect(() => {
         if (item) {
@@ -45,67 +62,18 @@ export default function ItemDetailPage() {
                 description: item.description || "",
                 status: item.status
             });
-            // Auto-edit if pending/review
-            if (item.status === 'pending_price' || item.status === 'needs_review') {
+            // Auto-edit if pending/review AND I have write access
+            if (canWrite && (item.status === 'pending_price' || item.status === 'needs_review')) {
                 setIsEditing(true);
             }
         }
-    }, [item]);
+    }, [item, canWrite]);
 
-    const handleUpdate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const res = await fetch(`${API_BASE_URL}/api/v1/inventory/items/${itemId}`, {
-                method: "PUT", // or PATCH
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...formData,
-                    price: formData.price ? parseFloat(formData.price) : null,
-                    status: 'completed' // Mark as completed on save
-                })
-            });
+    // ... (handlers)
 
-            if (!res.ok) throw new Error("Update failed");
+    // ... (inside Update/Delete confirm: Check canWrite again just in case)
 
-            toast.success("Item updated successfully");
-            mutate();
-            setIsEditing(false);
-        } catch (err) {
-            toast.error("Failed to update item");
-        }
-    };
-
-    const handleDelete = async () => {
-        if (!confirm("Are you sure you want to delete this item? This action cannot be undone.")) return;
-
-        try {
-            const res = await fetch(`${API_BASE_URL}/api/v1/inventory/items/${itemId}`, {
-                method: "DELETE"
-            });
-
-            if (!res.ok) throw new Error("Delete failed");
-
-            toast.success("Item deleted");
-            // Redirect to folder if possible, else inventory root
-            // We need group_id to go back to folder. item.group_id
-            if (item?.group_id) {
-                router.push(`/inventory/${item.group_id}`);
-            } else {
-                router.push("/inventory");
-            }
-        } catch (err) {
-            toast.error("Failed to delete item");
-        }
-    };
-
-    if (isLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin w-8 h-8" /></div>;
-    if (error || !item) return <div className="p-10 text-center">Item not found</div>;
-
-    // Image handling
-    let imageUrl = item.imageUrl;
-    if (imageUrl && !imageUrl.startsWith("http")) {
-        imageUrl = imageUrl.startsWith("/") ? `${API_BASE_URL}${imageUrl}` : `${API_BASE_URL}/${imageUrl}`;
-    }
+    // ...
 
     return (
         <div className="container max-w-4xl mx-auto p-6 space-y-8">
@@ -116,24 +84,30 @@ export default function ItemDetailPage() {
                         <ArrowLeft className="w-4 h-4" /> Back
                     </Button>
                 </div>
-                {item.status !== 'completed' && !isEditing && (
-                    <div className="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                        Needs Review
-                    </div>
-                )}
+                <div className="flex gap-2">
+                    {!canWrite && (
+                        <div className="bg-gray-100 text-gray-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 dark:bg-gray-800 dark:text-gray-300">
+                            Read-only
+                        </div>
+                    )}
+                    {item.status !== 'completed' && !isEditing && (
+                        <div className="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
+                            Needs Review
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">
                 {/* Left: Image */}
                 <div className="space-y-4">
                     <div className="aspect-square bg-gray-100 dark:bg-neutral-900 rounded-2xl overflow-hidden border border-border/50 relative group">
-                        {imageUrl ? (
-                            <img src={imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-muted-foreground">
-                                <ImageIcon className="w-12 h-12 opacity-20" />
-                            </div>
-                        )}
+                        <SecureImage
+                            itemId={parseInt(itemId as string)} // Ensure ID is number
+                            fallbackSrc={item.imageUrl}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                        />
                     </div>
                 </div>
 
@@ -141,7 +115,7 @@ export default function ItemDetailPage() {
                 <div className="space-y-6">
                     <div className="flex items-center justify-between">
                         <h1 className="text-3xl font-bold tracking-tight">{isEditing ? "Edit Item" : item.name}</h1>
-                        {!isEditing && (
+                        {!isEditing && canWrite && (
                             <div className="flex gap-2">
                                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                                     <Edit2 className="w-4 h-4 mr-2" /> Edit

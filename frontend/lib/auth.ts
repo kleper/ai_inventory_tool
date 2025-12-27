@@ -86,6 +86,8 @@ export const authOptions: NextAuthOptions = {
             if (user) {
                 token.id = user.id;
                 token.role = (user as any).role;
+                token.require_password_reset = (user as any).require_password_reset;
+                token.accessToken = (user as any).access_token;
             }
             return token
         },
@@ -93,6 +95,8 @@ export const authOptions: NextAuthOptions = {
             if (session.user) {
                 (session.user as any).id = token.id;
                 (session.user as any).role = token.role;
+                (session.user as any).require_password_reset = token.require_password_reset;
+                (session.user as any).accessToken = token.accessToken;
             }
             return session
         }
