@@ -123,7 +123,7 @@ export function InventoryDashboard() {
                         <InventoryCardSkeleton key={i} />
                     ))}
                 </div>
-            ) : (!items || items.length === 0) ? (
+            ) : (!items || !Array.isArray(items) || items.length === 0) ? (
                 <div className="text-center py-20 text-gray-400">
                     <p>No items found in this group.</p>
                 </div>

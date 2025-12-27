@@ -97,7 +97,7 @@ export function GroupManager({ activeGroupId, onGroupSelect }: GroupManagerProps
                     <span className="font-medium text-sm">All Items</span>
                 </button>
 
-                {groups?.map(group => (
+                {Array.isArray(groups) && groups.map(group => (
                     <div
                         key={group.id}
                         className={`flex items-center gap-2 px-3 py-2 border rounded-lg whitespace-nowrap shadow-sm min-w-[150px] justify-between transition-colors ${activeGroupId === group.id ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'bg-white dark:bg-neutral-900'}`}
