@@ -45,25 +45,39 @@ def on_startup():
             session.rollback()
             print(f"User migration skipped/failed: {e}")
 
-        # SharedAccess Migrations
+        # SharedAccess Migrations - Introspection to avoid DB Errors
         try:
-             # Rename if permission exists and role doesn't? Or naive rename
-             session.exec(text("ALTER TABLE sharedaccess RENAME COLUMN permission TO role"))
-             session.commit()
-        except Exception:
-             session.rollback() # Column might already be role
+             # Check if 'permission' column exists
+             check_perm = session.exec(text("SELECT column_name FROM information_schema.columns WHERE table_name='sharedaccess' AND column_name='permission'")).first()
+             if check_perm:
+                 session.exec(text("ALTER TABLE sharedaccess RENAME COLUMN permission TO role"))
+                 session.commit()
+                 print("Renamed permission column to role")
+        except Exception as e:
+             session.rollback()
+             print(f"Column rename skipped: {e}")
 
         try:
-             session.exec(text("ALTER TABLE sharedaccess ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now()"))
-             session.commit()
-        except Exception:
+             # Check if 'created_at' exists
+             check_created = session.exec(text("SELECT column_name FROM information_schema.columns WHERE table_name='sharedaccess' AND column_name='created_at'")).first()
+             if not check_created:
+                 session.exec(text("ALTER TABLE sharedaccess ADD COLUMN created_at TIMESTAMP DEFAULT now()"))
+                 session.commit()
+                 print("Added created_at column")
+        except Exception as e:
              session.rollback()
+             print(f"Add column skipped: {e}")
 
         try:
-             session.exec(text("ALTER TABLE sharedaccess ADD CONSTRAINT unique_group_member UNIQUE (user_id, group_id)"))
-             session.commit()
-        except Exception:
+             # Check if constraint exists
+             check_const = session.exec(text("SELECT constraint_name FROM information_schema.table_constraints WHERE table_name='sharedaccess' AND constraint_name='unique_group_member'")).first()
+             if not check_const:
+                 session.exec(text("ALTER TABLE sharedaccess ADD CONSTRAINT unique_group_member UNIQUE (user_id, group_id)"))
+                 session.commit()
+                 print("Added unique constraint")
+        except Exception as e:
              session.rollback()
+             print(f"Constraint addition skipped: {e}")
 
     # Ensure Media Dir
     import os

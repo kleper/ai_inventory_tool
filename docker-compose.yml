@@ -28,6 +28,8 @@ services:
     #   - /app/.next
     env_file:
       - .env
+    depends_on:
+      - backend
     environment:
       - INTERNAL_BACKEND_URL=http://backend:8000
     stdin_open: true
