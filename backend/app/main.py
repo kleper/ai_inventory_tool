@@ -39,26 +39,31 @@ def on_startup():
         try:
             session.exec(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS auth_provider VARCHAR DEFAULT 'EMAIL'"))
             session.exec(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS force_password_change BOOLEAN DEFAULT FALSE"))
+            session.commit()
             print("Migrated User table")
         except Exception as e:
+            session.rollback()
             print(f"User migration skipped/failed: {e}")
 
         # SharedAccess Migrations
         try:
              # Rename if permission exists and role doesn't? Or naive rename
              session.exec(text("ALTER TABLE sharedaccess RENAME COLUMN permission TO role"))
+             session.commit()
         except Exception:
-             pass # Column might already be role
+             session.rollback() # Column might already be role
 
         try:
              session.exec(text("ALTER TABLE sharedaccess ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now()"))
-        except Exception: pass
+             session.commit()
+        except Exception:
+             session.rollback()
 
         try:
              session.exec(text("ALTER TABLE sharedaccess ADD CONSTRAINT unique_group_member UNIQUE (user_id, group_id)"))
-        except Exception: pass
-        
-        session.commit()
+             session.commit()
+        except Exception:
+             session.rollback()
 
     # Ensure Media Dir
     import os
