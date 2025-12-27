@@ -178,6 +178,73 @@ async def get_item(
              
     return item
 
+@router.put("/items/{item_id}/image", response_model=Item)
+async def update_item_image(
+    item_id: int,
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    item = session.get(Item, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # Permission Check
+    can_edit = False
+    if item.user_id == current_user.id:
+        can_edit = True
+    elif item.group_id:
+        try:
+            validate_group_write_access(session, current_user, item.group_id)
+            can_edit = True
+        except HTTPException:
+            can_edit = False
+    
+    if not can_edit:
+         raise HTTPException(status_code=403, detail="Access denied")
+
+    # Process File
+    try:
+        import uuid
+        import os
+        contents = await file.read()
+        
+        # Determine extension
+        ext = ".jpg"
+        if file.filename:
+            _, ext_part = os.path.splitext(file.filename)
+            if ext_part:
+                ext = ext_part.lower()
+        
+        # New filename
+        new_filename = f"{uuid.uuid4()}{ext}"
+        save_path = f"/app/media/{new_filename}"
+        
+        # Save new file
+        with open(save_path, "wb") as f:
+            f.write(contents)
+            
+        # Optional: Delete old file if it exists and looks like a UUID (security precaution)
+        # For simplicity, we skip deletion or assume cron job cleans up, 
+        # or we check if it is a local file.
+        if item.image_url and not item.image_url.startswith("http"):
+             old_path = f"/app/media/{item.image_url}"
+             if os.path.exists(old_path) and item.image_url != new_filename:
+                  try:
+                       os.remove(old_path)
+                  except Exception as e:
+                       print(f"Failed to remove old image: {e}")
+
+        # Update Item
+        item.image_url = new_filename
+        session.add(item)
+        session.commit()
+        session.refresh(item)
+        return item
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating image: {str(e)}")
+
 @router.put("/items/{item_id}", response_model=Item)
 async def update_item(
     item_id: int,

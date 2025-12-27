@@ -14,6 +14,7 @@ import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon } from "luc
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SecureImage } from "@/components/ui/SecureImage";
+import { ItemPhotoUpdater } from "@/components/features/ItemPhotoUpdater";
 // import  from "@/components/ui/alert"; // Removed unused Alert import
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -134,6 +135,12 @@ export default function ItemDetailPage() {
                             fallbackSrc={item.imageUrl}
                             alt={item.name}
                             className="w-full h-full object-cover"
+                            key={item.image_url} // Force remount on image update
+                        />
+                        <ItemPhotoUpdater
+                            itemId={parseInt(itemId as string)}
+                            onUpdate={() => mutate()}
+                            canWrite={canWrite}
                         />
                     </div>
                 </div>

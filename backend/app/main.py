@@ -21,6 +21,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
+app.include_router(inventory.router)
+app.include_router(groups.router)
+app.include_router(admin.router)
+app.include_router(admin_stats.router)
+
 @app.on_event("startup")
 def on_startup():
     database.init_db()
