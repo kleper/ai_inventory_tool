@@ -5,7 +5,7 @@ from app.models import User, Invitation
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
-from app.services.security import verify_password, get_password_hash
+from app.services.security import verify_password, get_password_hash, create_access_token
 from app.dependencies.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])

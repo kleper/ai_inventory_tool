@@ -7,7 +7,10 @@ import { Plus, Users, Loader2, Folder } from "lucide-react";
 import { toast } from "sonner";
 import { ShareModal } from "./ShareModal";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { useAuthFetcher } from "@/hooks/useAuthFetcher";
+import { useSession } from "next-auth/react";
+
+// const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface Group {
     id: number;
@@ -21,6 +24,8 @@ interface GroupManagerProps {
 }
 
 export function GroupManager({ activeGroupId, onGroupSelect }: GroupManagerProps) {
+    const { data: session } = useSession();
+    const fetcher = useAuthFetcher();
     const { data: groups, mutate } = useSWR<Group[]>(`${API_BASE_URL}/api/v1/groups`, fetcher);
     const [isCreating, setIsCreating] = useState(false);
     const [newGroupName, setNewGroupName] = useState("");
@@ -31,9 +36,13 @@ export function GroupManager({ activeGroupId, onGroupSelect }: GroupManagerProps
         if (!newGroupName) return;
 
         try {
+            const token = (session as any)?.accessToken;
+            const headers: HeadersInit = { "Content-Type": "application/json" };
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+
             const res = await fetch(`${API_BASE_URL}/api/v1/groups`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({ name: newGroupName })
             });
 

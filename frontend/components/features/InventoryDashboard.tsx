@@ -5,8 +5,9 @@ import { InventoryCard, InventoryCardSkeleton } from "./InventoryCard";
 import { useNotifications } from "@/hooks/useNotifications";
 import { AlertCircle } from "lucide-react";
 
-// Fetcher function for SWR
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { useAuthFetcher } from "@/hooks/useAuthFetcher";
+
+// Default fetcher removed, using hook instead
 
 import { CameraCapture } from "./CameraCapture";
 import { InvoiceUpload } from "./InvoiceUpload";
@@ -28,6 +29,8 @@ export function InventoryDashboard() {
     const [isProcessing, setIsProcessing] = useState(false);
 
     // 2. Data Fetching with SWR
+    const fetcher = useAuthFetcher();
+
     const url = activeGroupId
         ? `${API_BASE_URL}/api/v1/inventory/items?group_id=${activeGroupId}`
         : `${API_BASE_URL}/api/v1/inventory/items`;
