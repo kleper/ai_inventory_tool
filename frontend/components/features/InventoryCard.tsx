@@ -16,7 +16,7 @@ interface Item {
     price?: number;
 }
 
-export function InventoryCard({ item }: { item: Item }) {
+export function InventoryCard({ item, canEdit }: { item: Item, canEdit?: boolean }) {
     // const [imageError, setImageError] = useState(false); // Managed by SecureImage now
 
     // Construct valid URL

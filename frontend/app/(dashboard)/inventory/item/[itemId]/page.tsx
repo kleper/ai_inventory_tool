@@ -69,9 +69,36 @@ export default function ItemDetailPage() {
         }
     }, [item, canWrite]);
 
-    // ... (handlers)
+    const handleUpdate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/v1/inventory/items/${itemId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+            if (!res.ok) throw new Error("Failed to update");
+            toast.success("Item updated");
+            setIsEditing(false);
+            mutate();
+        } catch (err) {
+            toast.error("Update failed");
+        }
+    };
 
-    // ... (inside Update/Delete confirm: Check canWrite again just in case)
+    const handleDelete = async () => {
+        if (!confirm("Are you sure? This cannot be undone.")) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/v1/inventory/items/${itemId}`, {
+                method: "DELETE"
+            });
+            if (!res.ok) throw new Error("Failed to delete");
+            toast.success("Item deleted");
+            router.back();
+        } catch (err) {
+            toast.error("Delete failed");
+        }
+    };
 
     // ...
 

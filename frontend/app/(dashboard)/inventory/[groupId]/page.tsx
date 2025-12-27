@@ -9,7 +9,8 @@ import { InvoiceUpload } from "@/components/features/InvoiceUpload";
 import { ManualItemDialog } from "@/components/features/ManualItemDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ShareModal } from "@/components/features/ShareModal";
+import { ShareManagerModal } from "@/components/features/ShareManagerModal";
+import { useSession } from "next-auth/react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -28,6 +29,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export default function FolderDetailPage() {
     const params = useParams();
     const groupId = params.groupId as string;
+    const { data: session } = useSession();
     useNotifications(); // Ensure WS is connected
 
     // Fetch Group Details for Header

@@ -11,7 +11,9 @@ import { Loader2, AlertCircle } from "lucide-react";
 import { API_BASE_URL } from "@/lib/config";
 import { toast } from "sonner";
 
-export default function RegisterPage() {
+import { Suspense } from "react";
+
+function RegisterForm() {
     const searchParams = useSearchParams();
     const token = searchParams.get("token");
     const router = useRouter();
@@ -24,28 +26,19 @@ export default function RegisterPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
+        // Only run on client
+        if (typeof window === "undefined") return;
+
         if (!token) {
             setStatus("invalid");
             return;
         }
 
-        // We assume token contains encoded email or we just validate token?
-        // Backend `validate-registration` takes email.
-        // But `complete-registration` takes token.
-        // The invite link usually is /register?token=...&email=...
-        // If query only has token, we can't easily validate on load without an endpoint strictly for token.
-        // However, standard invite links usually include email for UI verification.
-        // Let's assume URL is /register?token=XYZ&email=abc@example.com
-
         const emailParam = searchParams.get("email");
         if (emailParam) {
             setEmail(emailParam);
-            // Optional: validate with backend
             setStatus("valid");
         } else {
-            // If no email param, we hope token validation handles it during submit or we ask user for email.
-            // But for safer UX, we should ask credentials match.
-            // Let's assume valid for now if token present.
             setStatus("valid");
         }
     }, [token, searchParams]);
@@ -84,13 +77,7 @@ export default function RegisterPage() {
 
             // 2. Auto Login
             const loginRes = await signIn("credentials", {
-                email, // We supply email if we have it, OR the backend should infer from token? 
-                // Wait, complete-registration invalidated the token.
-                // We need the email to login.
-                // If email was not in URL, we don't know it!
-                // Update: Backend complete-registration should probably return the email?
-                // Or we require email in frontend.
-                // Ideally, Invite Link includes email.
+                email,
                 password,
                 redirect: false
             });
@@ -191,5 +178,13 @@ export default function RegisterPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function RegisterPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+            <RegisterForm />
+        </Suspense>
     );
 }

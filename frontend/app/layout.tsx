@@ -1,12 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Archivo_Black, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { WebSocketProvider } from "@/components/providers/WebSocketProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Toaster } from "sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const archivo = Archivo_Black({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-archivo"
+});
+
+const space = Space_Mono({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-space"
+});
 
 export const metadata: Metadata = {
   title: "SmartInventory",
@@ -33,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${archivo.variable} ${space.variable} font-mono antialiased bg-white text-black`}>
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <WebSocketProvider>
