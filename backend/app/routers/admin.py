@@ -63,3 +63,50 @@ async def create_invitation(
     background_tasks.add_task(EmailService.send_invitation_email, email, token)
     
     return invite
+
+@router.get("/invitations", response_model=List[Invitation])
+async def list_pending_invitations(session: Session = Depends(get_session)):
+    invitations = session.exec(select(Invitation).where(Invitation.status == "PENDING")).all()
+    return invitations
+
+@router.delete("/invitations/{invitation_id}")
+async def revoke_invitation(
+    invitation_id: int,
+    session: Session = Depends(get_session)
+):
+    invite = session.get(Invitation, invitation_id)
+    if not invite:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+        
+    session.delete(invite)
+    session.commit()
+    return {"message": "Invitation revoked"}
+
+@router.post("/invitations/{invitation_id}/resend")
+async def resend_invitation(
+    invitation_id: int,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session)
+):
+    invite = session.get(Invitation, invitation_id)
+    if not invite:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+        
+    if invite.status != "PENDING":
+        raise HTTPException(status_code=400, detail="Only pending invitations can be resent")
+        
+    # Optional: Rotate token for security or keep same? 
+    # Keeping same is easier for user if they find old email, 
+    # but rotating is more secure if lost. 
+    # Let's keep same for simplicity unless expired.
+    
+    if invite.expires_at < datetime.utcnow():
+        # If expired, un-expire and extend
+        invite.expires_at = datetime.utcnow() + timedelta(days=7)
+        invite.status = "PENDING"
+        session.add(invite)
+        session.commit()
+        session.refresh(invite)
+
+    background_tasks.add_task(EmailService.send_invitation_email, invite.email, invite.token)
+    return {"message": "Invitation resent"}

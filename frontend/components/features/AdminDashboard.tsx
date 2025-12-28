@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { Loader2, UserPlus, Shield, Mail } from "lucide-react";
+import { Loader2, UserPlus, Shield, Mail, LayoutDashboard, Users, FileText } from "lucide-react";
 
 import { useAuthFetcher } from "@/hooks/useAuthFetcher";
-
-// Fetcher function removed in favor of hook
+import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
+import { AuditLog } from "@/components/admin/AuditLog";
+import { API_BASE_URL } from "@/lib/config";
+import { PendingInvitationsTable } from "@/components/admin/PendingInvitationsTable";
 
 interface User {
     id: number;
@@ -18,14 +20,7 @@ interface User {
     status: string;
 }
 
-import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
-import { AuditLog } from "@/components/admin/AuditLog";
-import { Button } from "@/components/ui/button";
-import { API_BASE_URL } from "@/lib/config";
-import { LayoutDashboard, Users, FileText } from "lucide-react";
-
 export default function AdminDashboard() {
-    // Safely call useSession, handling potential undefined return during build/test
     const sessionData = useSession();
     const session = sessionData?.data;
     const status = sessionData?.status;
@@ -33,12 +28,10 @@ export default function AdminDashboard() {
     const router = useRouter();
     const [inviteEmail, setInviteEmail] = useState("");
     const [isInviting, setIsInviting] = useState(false);
-    const [activeTab, setActiveTab] = useState<"overview" | "users" | "audit">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "users" | "audit" | "pending">("overview");
 
-    // Redirect if not admin
     useEffect(() => {
         if (status === "authenticated" && (session?.user as any)?.role !== "ADMIN") {
-            // Uncomment in production: router.push("/");
             toast.warning("Access restricted to Admins.");
         }
     }, [status, session, router]);
@@ -102,6 +95,7 @@ export default function AdminDashboard() {
                 >
                     <LayoutDashboard className="w-4 h-4" /> Analytics
                 </button>
+
                 <button
                     onClick={() => setActiveTab("users")}
                     className={`flex items-center gap-2 px-6 py-3 text-sm font-bold uppercase tracking-wide transition-all border-r-2 border-transparent ${activeTab === "users"
@@ -109,7 +103,16 @@ export default function AdminDashboard() {
                         : "text-white hover:bg-neutral-900 border-r-white"
                         }`}
                 >
-                    <Users className="w-4 h-4" /> Users
+                    <Users className="w-4 h-4" /> Active Users
+                </button>
+                <button
+                    onClick={() => setActiveTab("pending")}
+                    className={`flex items-center gap-2 px-6 py-3 text-sm font-bold uppercase tracking-wide transition-all border-r-2 border-transparent ${activeTab === "pending"
+                        ? "bg-white text-black border-r-black"
+                        : "text-white hover:bg-neutral-900 border-r-white"
+                        }`}
+                >
+                    <Mail className="w-4 h-4" /> Pending Invites
                 </button>
                 <button
                     onClick={() => setActiveTab("audit")}
@@ -125,9 +128,8 @@ export default function AdminDashboard() {
             {/* Content Area */}
             <div className="space-y-6">
                 {activeTab === "overview" && <AnalyticsDashboard />}
-
                 {activeTab === "audit" && <AuditLog />}
-
+                {activeTab === "pending" && <PendingInvitationsTable />}
                 {activeTab === "users" && (
                     <>
                         <div className="grid gap-6 md:grid-cols-2">
