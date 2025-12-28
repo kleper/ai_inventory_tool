@@ -59,7 +59,7 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
     };
 
     return (
-        <div className="w-full flex flex-col items-center gap-4">
+        <div className="w-full flex flex-col items-center gap-4 font-mono">
             {/* Hidden Input */}
             <input
                 type="file"
@@ -71,26 +71,26 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
             />
 
             {!previewUrl ? (
-                // Idle State
+                // Idle State - Cyber Brutal
                 <div
                     onClick={handleButtonClick}
-                    className="w-full h-64 border-2 border-dashed border-gray-300 dark:border-neutral-700 rounded-xl flex flex-col items-center justify-center gap-4 hover:bg-gray-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer group"
+                    className="w-full h-64 border-[3px] border-dashed border-white bg-black hover:bg-neutral-900 transition-colors cursor-pointer group flex flex-col items-center justify-center gap-6"
                 >
-                    <div className="p-4 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
-                        {isLoading ? <Loader2 className="animate-spin" size={32} /> : <Camera size={32} />}
+                    <div className="p-4 bg-primary text-black border-2 border-white shadow-brutal-sm group-hover:scale-110 transition-transform rounded-none">
+                        {isLoading ? <Loader2 className="animate-spin text-black" size={32} /> : <Camera size={32} className="text-black" />}
                     </div>
-                    <div className="text-center">
-                        <span className="font-medium text-gray-700 dark:text-gray-200 block text-lg">Tap to Capture Object</span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Takes a photo with device camera</span>
+                    <div className="text-center space-y-2">
+                        <span className="font-black text-white text-lg uppercase tracking-widest block">Tap to Capture</span>
+                        <span className="text-xs text-neutral-400 font-mono uppercase">Device Camera API</span>
                     </div>
-                    <Button variant="outline" className="mt-2">
+                    <Button variant="outline" className="mt-2 border-white text-white hover:bg-white hover:text-black uppercase font-bold tracking-wider rounded-none">
                         Open Camera
                     </Button>
                 </div>
             ) : (
-                // Preview State
-                <div className="w-full space-y-4">
-                    <div className="relative w-full rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center">
+                // Preview State - Cyber Brutal
+                <div className="w-full space-y-6">
+                    <div className="relative w-full border-[3px] border-white bg-black aspect-video flex items-center justify-center p-1 shadow-brutal">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src={previewUrl}
@@ -98,8 +98,9 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
                             className="w-full h-full object-contain"
                         />
                         {isLoading && (
-                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                                <Loader2 className="text-white animate-spin" size={48} />
+                            <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4">
+                                <Loader2 className="text-primary animate-spin" size={48} />
+                                <span className="text-white font-mono uppercase tracking-widest animate-pulse">Processing...</span>
                             </div>
                         )}
                     </div>
@@ -109,7 +110,7 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
                             variant="destructive"
                             size="lg"
                             onClick={handleRetake}
-                            className="flex-1 max-w-[150px]"
+                            className="flex-1 max-w-[200px] border-white rounded-none font-bold uppercase tracking-wider"
                             disabled={isLoading}
                         >
                             <X className="mr-2 h-5 w-5" />
@@ -119,7 +120,7 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
                             variant="default"
                             size="lg"
                             onClick={handleConfirm}
-                            className="flex-1 max-w-[150px] bg-green-600 hover:bg-green-700"
+                            className="flex-1 max-w-[200px] bg-primary text-black border-white hover:bg-yellow-400 rounded-none font-black uppercase tracking-wider shadow-brutal hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
                             disabled={isLoading}
                         >
                             <Check className="mr-2 h-5 w-5" />

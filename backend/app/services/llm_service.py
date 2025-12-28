@@ -60,6 +60,12 @@ class LLMService:
         if not self.api_key:
             self.api_key = os.getenv("OPENAI_API_KEY")
 
+        if self.api_key and self.api_key.startswith("sk-or-"):
+            logger.info("OpenRouter key detected. Switching base_url to https://openrouter.ai/api/v1")
+            self.base_url = "https://openrouter.ai/api/v1"
+            # OpenRouter often requires a referrer/site-name header, handled by kwargs usually or ignored, 
+            # but usually just changing base_url is enough for basic openai client compatibility.
+
         if not self.api_key:
             logger.warning("LLM API Key is missing. Service will return mock data or fail.")
     
