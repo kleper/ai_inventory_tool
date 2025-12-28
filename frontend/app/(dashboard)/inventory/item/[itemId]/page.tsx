@@ -78,9 +78,12 @@ export default function ItemDetailPage() {
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const headers: HeadersInit = { "Content-Type": "application/json" };
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+
             const res = await fetch(`${API_BASE_URL}/api/v1/inventory/items/${itemId}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify(formData)
             });
             if (!res.ok) throw new Error("Failed to update");
@@ -95,8 +98,12 @@ export default function ItemDetailPage() {
     const handleDelete = async () => {
         if (!confirm("Are you sure? This cannot be undone.")) return;
         try {
+            const headers: HeadersInit = {};
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+
             const res = await fetch(`${API_BASE_URL}/api/v1/inventory/items/${itemId}`, {
-                method: "DELETE"
+                method: "DELETE",
+                headers
             });
             if (!res.ok) throw new Error("Failed to delete");
             toast.success("Item deleted");
