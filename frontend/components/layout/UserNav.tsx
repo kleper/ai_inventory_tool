@@ -30,20 +30,20 @@ export function UserNav() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-12 w-full justify-start gap-3 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800">
-                    <Avatar className="h-8 w-8">
+                <div role="button" className="flex items-center gap-3 w-full cursor-pointer hover:bg-neutral-100 p-1 transition-colors">
+                    <Avatar className="h-8 w-8 border-2 border-black rounded-none">
                         <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
-                        <AvatarFallback>{initials}</AvatarFallback>
+                        <AvatarFallback className="bg-black text-white rounded-none font-bold mobile:text-[10px]">{initials}</AvatarFallback>
                     </Avatar>
-                    <div className="flex flex-col space-y-0.5 text-left">
-                        <p className="text-sm font-medium leading-none max-w-[120px] truncate">
+                    <div className="flex flex-col space-y-0 text-left overflow-hidden">
+                        <p className="text-sm font-black uppercase tracking-tight text-black truncate max-w-[140px]">
                             {session?.user?.name || "User"}
                         </p>
-                        <p className="text-xs text-muted-foreground max-w-[120px] truncate">
+                        <p className="text-[10px] font-mono text-neutral-500 truncate max-w-[140px]">
                             {session?.user?.email || ""}
                         </p>
                     </div>
-                </Button>
+                </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="start" forceMount>
                 <DropdownMenuLabel className="font-normal">

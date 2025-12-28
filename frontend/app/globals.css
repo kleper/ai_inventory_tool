@@ -6,48 +6,80 @@
 }
 
 :root {
-  --background: #000000;
-  --foreground: #FFFFFF;
-  --card: #000000;
-  --card-foreground: #FFFFFF;
-  --popover: #000000;
-  --popover-foreground: #FFFFFF;
-  --primary: #FFE600;
-  --primary-foreground: #000000;
-  --secondary: #262626;
-  --secondary-foreground: #FFFFFF;
-  --muted: #333333;
-  --muted-foreground: #A3A3A3;
-  --accent: #FFFFFF;
-  --accent-foreground: #000000;
-  --destructive: #FF0000;
-  --destructive-foreground: #FFFFFF;
-  --border: #FFFFFF;
-  --input: #000000;
-  --ring: #FFE600;
-  --radius: 0rem;
+  /* DARK NEO-BRUTALISM DEFAULT */
+  --background: 0 0% 0%;
+  /* #000000 */
+  --foreground: 0 0% 100%;
+  /* #FFFFFF */
+
+  --card: 0 0% 0%;
+  --card-foreground: 0 0% 100%;
+
+  --popover: 0 0% 0%;
+  --popover-foreground: 0 0% 100%;
+
+  --primary: 54 100% 50%;
+  /* #FFE600 (Neon Yellow) */
+  --primary-foreground: 0 0% 0%;
+
+  --secondary: 0 0% 100%;
+  /* #FFFFFF */
+  --secondary-foreground: 0 0% 0%;
+
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 80%;
+
+  --accent: 0 0% 100%;
+  --accent-foreground: 0 0% 0%;
+
+  --destructive: 0 100% 50%;
+  /* #FF0000 */
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 0 0% 100%;
+  /* ALWAYS WHITE BORDERS */
+  --input: 0 0% 0%;
+  --ring: 54 100% 50%;
+  /* #FFE600 */
+
+  --radius: 0px;
+  /* NO RADIUS */
 }
 
+/* Brutalist Utilities */
+.brutal-border {
+  @apply border-2 border-white;
+}
+
+.brutal-shadow {
+  box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 1);
+}
+
+.brutal-shadow-primary {
+  box-shadow: 4px 4px 0px 0px #FFE600;
+}
+
+/* Dark mode variables are now the default in :root */
 .dark {
-  --background: #000000;
-  --foreground: #FFFFFF;
-  --card: #000000;
-  --card-foreground: #FFFFFF;
-  --popover: #000000;
-  --popover-foreground: #FFFFFF;
-  --primary: #FFE600;
-  --primary-foreground: #000000;
-  --secondary: #262626;
-  --secondary-foreground: #FFFFFF;
-  --muted: #333333;
-  --muted-foreground: #A3A3A3;
-  --accent: #FFFFFF;
-  --accent-foreground: #000000;
-  --destructive: #FF0000;
-  --destructive-foreground: #FFFFFF;
-  --border: #FFFFFF;
-  --input: #000000;
-  --ring: #FFE600;
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 0%;
+  --card-foreground: 0 0% 100%;
+  --popover: 0 0% 0%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 54 100% 50%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 100%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 20%;
+  --muted-foreground: 0 0% 80%;
+  --accent: 0 0% 100%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 100% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 100%;
+  --input: 0 0% 0%;
+  --ring: 54 100% 50%;
 }
 
 @layer utilities {

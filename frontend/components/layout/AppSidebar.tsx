@@ -43,8 +43,10 @@ export function AppSidebar() {
                 })}
             </nav>
 
-            <div className="p-4 border-t-[3px] border-white">
-                <UserNav />
+            <div className="p-4 border-t-[3px] border-white bg-black">
+                <div className="border-[3px] border-white p-2 bg-white text-black shadow-brutal-primary">
+                    <UserNav />
+                </div>
             </div>
         </aside>
     );

@@ -57,9 +57,12 @@ export default function AdminDashboard() {
         setIsInviting(true);
 
         try {
+            const headers: HeadersInit = { "Content-Type": "application/json" };
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+
             const res = await fetch(API_BASE_URL + "/api/v1/admin/invitations", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify({ email: inviteEmail })
             });
 
@@ -77,42 +80,42 @@ export default function AdminDashboard() {
     if (status === "loading") return <div className="p-8 flex justify-center"><Loader2 className="animate-spin" /></div>;
 
     return (
-        <div className="container mx-auto p-6 max-w-6xl">
-            <div className="flex items-center justify-between mb-8">
+        <div className="container mx-auto p-6 max-w-6xl min-h-screen">
+            <div className="flex items-center justify-between mb-8 border-b-[3px] border-white pb-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-                    <p className="text-muted-foreground">Manage users and access control.</p>
+                    <h1 className="text-4xl font-black tracking-tighter uppercase text-white">Admin Dashboard</h1>
+                    <p className="text-primary font-mono text-xs uppercase tracking-[0.2em]">Manage users and access control.</p>
                 </div>
-                <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium border border-blue-200">
+                <div className="bg-primary text-black px-4 py-1 text-xs font-bold border-2 border-white shadow-brutal-sm uppercase tracking-wider">
                     Phase 9: AI Telemetry
                 </div>
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex space-x-1 bg-gray-100 dark:bg-neutral-800 p-1 rounded-lg mb-8 w-fit">
+            <div className="flex space-x-0 mb-8 w-fit bg-black border-2 border-white">
                 <button
                     onClick={() => setActiveTab("overview")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "overview"
-                        ? "bg-white dark:bg-neutral-700 shadow-sm text-gray-900 dark:text-white"
-                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    className={`flex items-center gap-2 px-6 py-3 text-sm font-bold uppercase tracking-wide transition-all border-r-2 border-transparent ${activeTab === "overview"
+                        ? "bg-white text-black border-r-black"
+                        : "text-white hover:bg-neutral-900 border-r-white"
                         }`}
                 >
                     <LayoutDashboard className="w-4 h-4" /> Analytics
                 </button>
                 <button
                     onClick={() => setActiveTab("users")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "users"
-                        ? "bg-white dark:bg-neutral-700 shadow-sm text-gray-900 dark:text-white"
-                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    className={`flex items-center gap-2 px-6 py-3 text-sm font-bold uppercase tracking-wide transition-all border-r-2 border-transparent ${activeTab === "users"
+                        ? "bg-white text-black border-r-black"
+                        : "text-white hover:bg-neutral-900 border-r-white"
                         }`}
                 >
                     <Users className="w-4 h-4" /> Users
                 </button>
                 <button
                     onClick={() => setActiveTab("audit")}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === "audit"
-                        ? "bg-white dark:bg-neutral-700 shadow-sm text-gray-900 dark:text-white"
-                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    className={`flex items-center gap-2 px-6 py-3 text-sm font-bold uppercase tracking-wide transition-all ${activeTab === "audit"
+                        ? "bg-white text-black"
+                        : "text-white hover:bg-neutral-900"
                         }`}
                 >
                     <FileText className="w-4 h-4" /> Audit Log
@@ -129,26 +132,26 @@ export default function AdminDashboard() {
                     <>
                         <div className="grid gap-6 md:grid-cols-2">
                             {/* Invite Section */}
-                            <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <UserPlus className="w-5 h-5 text-indigo-600" />
-                                    <h2 className="text-xl font-semibold">Invite User</h2>
+                            <div className="bg-black border-[3px] border-white p-6 shadow-brutal">
+                                <div className="flex items-center gap-2 mb-4 border-b-2 border-white pb-2">
+                                    <UserPlus className="w-5 h-5 text-primary" />
+                                    <h2 className="text-xl font-bold uppercase">Invite User</h2>
                                 </div>
                                 <form onSubmit={handleInvite} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium mb-1">Email Address</label>
+                                        <label className="block text-sm font-bold mb-1 uppercase text-primary">Email Address</label>
                                         <input
                                             type="email"
                                             value={inviteEmail}
                                             onChange={(e) => setInviteEmail(e.target.value)}
-                                            className="w-full px-3 py-2 border rounded-lg dark:bg-neutral-800 dark:border-neutral-700"
+                                            className="w-full px-3 py-3 border-2 border-white bg-black text-white font-mono placeholder:text-neutral-600 focus:outline-none focus:border-primary focus:shadow-brutal-primary transition-all"
                                             placeholder="colleague@company.com"
                                             required
                                         />
                                     </div>
                                     <button
                                         disabled={isInviting}
-                                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
+                                        className="w-full bg-primary hover:bg-primary/90 text-black border-2 border-white font-black uppercase py-3 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 shadow-brutal-sm hover:shadow-brutal hover:translate-x-[2px] hover:translate-y-[2px]"
                                     >
                                         {isInviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
                                         Send Invitation
@@ -157,66 +160,66 @@ export default function AdminDashboard() {
                             </div>
 
                             {/* Statistics / Overview placeholder */}
-                            <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl p-6 shadow-sm">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Shield className="w-5 h-5 text-green-600" />
-                                    <h2 className="text-xl font-semibold">System Status</h2>
+                            <div className="bg-black border-[3px] border-white p-6 shadow-brutal">
+                                <div className="flex items-center gap-2 mb-4 border-b-2 border-white pb-2">
+                                    <Shield className="w-5 h-5 text-primary" />
+                                    <h2 className="text-xl font-bold uppercase">System Status</h2>
                                 </div>
                                 <div className="space-y-4">
-                                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-neutral-800 rounded-lg">
-                                        <span className="text-sm font-medium">Total Users</span>
-                                        <span className="text-2xl font-bold">{users?.length || 0}</span>
+                                    <div className="flex justify-between items-center p-3 border-2 border-white bg-black text-white">
+                                        <span className="text-sm font-bold uppercase">Total Users</span>
+                                        <span className="text-2xl font-black font-mono">{users?.length || 0}</span>
                                     </div>
-                                    <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-neutral-800 rounded-lg">
-                                        <span className="text-sm font-medium">Active Sessions</span>
-                                        <span className="text-green-600 font-bold">--</span>
+                                    <div className="flex justify-between items-center p-3 border-2 border-white bg-black text-white">
+                                        <span className="text-sm font-bold uppercase">Active Sessions</span>
+                                        <span className="text-primary font-black font-mono">--</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Users Table */}
-                        <div className="mt-8 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl overflow-hidden shadow-sm">
-                            <div className="px-6 py-4 border-b border-gray-200 dark:border-neutral-800">
-                                <h3 className="font-semibold text-lg">Registered Users</h3>
+                        <div className="mt-8 bg-black border-[3px] border-white shadow-brutal overflow-hidden">
+                            <div className="px-6 py-4 border-b-[3px] border-white bg-neutral-900">
+                                <h3 className="font-bold text-lg uppercase text-white">Registered Users</h3>
                             </div>
                             {(!users && !error) ? (
-                                <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-gray-400" /></div>
+                                <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-white" /></div>
                             ) : (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm text-left">
-                                        <thead className="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-neutral-800">
+                                        <thead className="text-xs uppercase bg-black text-primary border-b-2 border-white">
                                             <tr>
-                                                <th className="px-6 py-3">ID</th>
-                                                <th className="px-6 py-3">Email</th>
-                                                <th className="px-6 py-3">Role</th>
-                                                <th className="px-6 py-3">Status</th>
-                                                <th className="px-6 py-3">Actions</th>
+                                                <th className="px-6 py-3 border-r-2 border-white font-black">ID</th>
+                                                <th className="px-6 py-3 border-r-2 border-white font-black">Email</th>
+                                                <th className="px-6 py-3 border-r-2 border-white font-black">Role</th>
+                                                <th className="px-6 py-3 border-r-2 border-white font-black">Status</th>
+                                                <th className="px-6 py-3 font-black">Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody className="divide-y-2 divide-white">
                                             {Array.isArray(users) && users.map((user) => (
-                                                <tr key={user.id} className="border-b dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-800/50">
-                                                    <td className="px-6 py-4 font-medium">{user.id}</td>
-                                                    <td className="px-6 py-4">{user.email}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                                                <tr key={user.id} className="hover:bg-neutral-900 text-white font-mono">
+                                                    <td className="px-6 py-4 font-bold border-r-2 border-white">{user.id}</td>
+                                                    <td className="px-6 py-4 border-r-2 border-white">{user.email}</td>
+                                                    <td className="px-6 py-4 border-r-2 border-white">
+                                                        <span className={`px-2 py-1 text-xs font-bold uppercase border border-white ${user.role === 'ADMIN' ? 'bg-primary text-black' : 'bg-black text-white'}`}>
                                                             {user.role}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${user.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                                    <td className="px-6 py-4 border-r-2 border-white">
+                                                        <span className={`px-2 py-1 text-xs font-bold uppercase border border-white ${user.status === 'ACTIVE' ? 'bg-white text-black' : 'bg-neutral-800 text-white'}`}>
                                                             {user.status}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <button className="text-red-600 hover:text-red-800 font-medium">Ban</button>
+                                                        <button className="text-red-500 hover:text-white hover:bg-red-600 border border-red-500 px-2 py-1 text-xs font-bold uppercase transition-colors">Ban</button>
                                                     </td>
                                                 </tr>
                                             ))}
                                             {users?.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                                    <td colSpan={5} className="px-6 py-8 text-center text-white border-dashed">
                                                         No users found.
                                                     </td>
                                                 </tr>
