@@ -66,13 +66,13 @@ export function GroupManager({ activeGroupId, onGroupSelect }: GroupManagerProps
     return (
         <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Folder className="w-5 h-5 text-gray-500" />
+                <h3 className="text-lg font-bold uppercase tracking-tight flex items-center gap-2 text-black">
+                    <Folder className="w-5 h-5 text-black" />
                     Inventory Groups
                 </h3>
                 <button
                     onClick={() => setIsCreating(true)}
-                    className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1 rounded-full font-medium transition-colors flex items-center gap-1"
+                    className="text-xs bg-white hover:bg-neutral-100 text-black border border-black px-3 py-1 font-bold uppercase tracking-wide transition-colors flex items-center gap-1 rounded-none"
                 >
                     <Plus className="w-4 h-4" />
                     New Group
@@ -86,11 +86,11 @@ export function GroupManager({ activeGroupId, onGroupSelect }: GroupManagerProps
                         value={newGroupName}
                         onChange={(e) => setNewGroupName(e.target.value)}
                         placeholder="Group Name..."
-                        className="flex-1 px-3 py-2 border rounded-lg text-sm dark:bg-neutral-800 dark:border-neutral-700"
+                        className="flex-1 px-3 py-2 border border-black rounded-none text-sm bg-white text-black font-sans focus:outline-none focus:bg-neutral-50"
                         autoFocus
                     />
-                    <button type="submit" className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium">Save</button>
-                    <button type="button" onClick={() => setIsCreating(false)} className="px-3 py-2 text-gray-500 text-sm">Cancel</button>
+                    <button type="submit" className="bg-black text-white px-4 py-2 rounded-none text-sm font-bold uppercase tracking-wide border border-black">Save</button>
+                    <button type="button" onClick={() => setIsCreating(false)} className="px-3 py-2 text-black text-sm font-bold uppercase tracking-wide hover:underline">Cancel</button>
                 </form>
             )}
 
@@ -98,25 +98,25 @@ export function GroupManager({ activeGroupId, onGroupSelect }: GroupManagerProps
                 {/* All Items / Default View Chip */}
                 <button
                     onClick={() => onGroupSelect(null)}
-                    className={`flex items-center gap-2 px-3 py-2 border rounded-lg whitespace-nowrap shadow-sm min-w-[80px] justify-center transition-colors ${activeGroupId === null ? 'bg-black text-white dark:bg-white dark:text-black border-transparent' : 'bg-white dark:bg-neutral-900 hover:bg-gray-50 dark:hover:bg-neutral-800'}`}
+                    className={`flex items-center gap-2 px-3 py-2 border rounded-none whitespace-nowrap min-w-[80px] justify-center transition-colors ${activeGroupId === null ? 'bg-black text-white border-black' : 'bg-white text-black border-black hover:bg-neutral-100'}`}
                 >
-                    <span className="font-medium text-sm">All Items</span>
+                    <span className="font-bold text-sm uppercase tracking-wide">All Items</span>
                 </button>
 
                 {Array.isArray(groups) && groups.map(group => (
                     <div
                         key={group.id}
-                        className={`flex items-center gap-2 px-3 py-2 border rounded-lg whitespace-nowrap shadow-sm min-w-[150px] justify-between transition-colors ${activeGroupId === group.id ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'bg-white dark:bg-neutral-900'}`}
+                        className={`flex items-center gap-2 px-3 py-2 border rounded-none whitespace-nowrap min-w-[150px] justify-between transition-colors ${activeGroupId === group.id ? 'border-black bg-neutral-100 ring-1 ring-black' : 'bg-white border-black'}`}
                     >
                         <button
                             onClick={() => onGroupSelect(group.id)}
-                            className="text-left flex-1 font-medium text-sm truncate max-w-[120px]"
+                            className="text-left flex-1 font-bold text-sm truncate max-w-[120px] uppercase tracking-wide text-black"
                         >
                             {group.name}
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); setGroupToShare(group); }}
-                            className="p-1 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded-full text-gray-500 hover:text-indigo-600 transition-colors"
+                            className="p-1 hover:bg-neutral-200 rounded-none text-black transition-colors border border-transparent hover:border-black/20"
                             title="Share Group"
                         >
                             <Users className="w-4 h-4" />

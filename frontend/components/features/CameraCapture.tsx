@@ -71,26 +71,26 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
             />
 
             {!previewUrl ? (
-                // Idle State - Cyber Brutal
+                // Idle State - Wireframe
                 <div
                     onClick={handleButtonClick}
-                    className="w-full h-64 border-[3px] border-dashed border-white bg-black hover:bg-neutral-900 transition-colors cursor-pointer group flex flex-col items-center justify-center gap-6"
+                    className="w-full h-64 border border-dashed border-black bg-neutral-50 hover:bg-neutral-100 transition-colors cursor-pointer group flex flex-col items-center justify-center gap-6"
                 >
-                    <div className="p-4 bg-primary text-black border-2 border-white shadow-brutal-sm group-hover:scale-110 transition-transform rounded-none">
+                    <div className="p-4 bg-white text-black border border-black group-hover:scale-105 transition-transform rounded-none">
                         {isLoading ? <Loader2 className="animate-spin text-black" size={32} /> : <Camera size={32} className="text-black" />}
                     </div>
                     <div className="text-center space-y-2">
-                        <span className="font-black text-white text-lg uppercase tracking-widest block">Tap to Capture</span>
-                        <span className="text-xs text-neutral-400 font-mono uppercase">Device Camera API</span>
+                        <span className="font-bold text-black text-lg uppercase tracking-wide block">Tap to Capture</span>
+                        <span className="text-xs text-neutral-500 font-mono uppercase">Device Camera API</span>
                     </div>
-                    <Button variant="outline" className="mt-2 border-white text-white hover:bg-white hover:text-black uppercase font-bold tracking-wider rounded-none">
+                    <Button variant="outline" className="mt-2 border-black text-black hover:bg-black hover:text-white uppercase font-bold tracking-wide rounded-none">
                         Open Camera
                     </Button>
                 </div>
             ) : (
-                // Preview State - Cyber Brutal
+                // Preview State - Wireframe
                 <div className="w-full space-y-6">
-                    <div className="relative w-full border-[3px] border-white bg-black aspect-video flex items-center justify-center p-1 shadow-brutal">
+                    <div className="relative w-full border border-black bg-neutral-100 aspect-video flex items-center justify-center p-1 shadow-none">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src={previewUrl}
@@ -98,9 +98,9 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
                             className="w-full h-full object-contain"
                         />
                         {isLoading && (
-                            <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4">
-                                <Loader2 className="text-primary animate-spin" size={48} />
-                                <span className="text-white font-mono uppercase tracking-widest animate-pulse">Processing...</span>
+                            <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center gap-4">
+                                <Loader2 className="text-black animate-spin" size={48} />
+                                <span className="text-black font-mono uppercase tracking-widest animate-pulse">Processing...</span>
                             </div>
                         )}
                     </div>
@@ -110,7 +110,7 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
                             variant="destructive"
                             size="lg"
                             onClick={handleRetake}
-                            className="flex-1 max-w-[200px] border-white rounded-none font-bold uppercase tracking-wider"
+                            className="flex-1 max-w-[200px] border-destructive rounded-none font-bold uppercase tracking-wide"
                             disabled={isLoading}
                         >
                             <X className="mr-2 h-5 w-5" />
@@ -120,7 +120,7 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
                             variant="default"
                             size="lg"
                             onClick={handleConfirm}
-                            className="flex-1 max-w-[200px] bg-primary text-black border-white hover:bg-yellow-400 rounded-none font-black uppercase tracking-wider shadow-brutal hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px]"
+                            className="flex-1 max-w-[200px] bg-black text-white border-black hover:bg-neutral-800 rounded-none font-bold uppercase tracking-wide shadow-none"
                             disabled={isLoading}
                         >
                             <Check className="mr-2 h-5 w-5" />

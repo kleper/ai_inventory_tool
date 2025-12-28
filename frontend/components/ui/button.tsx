@@ -5,26 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-black uppercase tracking-widest transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-0 focus-visible:shadow-brutal border-[2px] border-white shadow-brutal hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[4px] active:translate-y-[4px]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-medium uppercase tracking-wide transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 border border-black hover:bg-neutral-100",
   {
     variants: {
       variant: {
-        default: "bg-primary text-black hover:bg-primary/90 border-white", // Yellow Button, White Border
+        default: "bg-black text-white hover:bg-neutral-800 hover:text-white border-black",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90 border-white",
+          "bg-white text-destructive border-destructive hover:bg-destructive hover:text-white",
         outline:
-          "bg-black text-white border-white hover:bg-white hover:text-black",
+          "bg-white text-black border-black hover:bg-black hover:text-white", // Inverted hover for wireframe feel
         secondary:
-          "bg-secondary text-white hover:bg-secondary/80 border-white",
+          "bg-neutral-100 text-black hover:bg-neutral-200 border-transparent",
         ghost:
-          "border-transparent shadow-none hover:bg-white hover:text-black hover:shadow-brutal hover:border-white",
-        link: "text-primary underline-offset-4 hover:underline shadow-none border-0 p-0 h-auto",
+          "border-transparent hover:bg-neutral-100 hover:text-black",
+        link: "text-black underline-offset-4 hover:underline border-0 p-0 h-auto",
       },
       size: {
-        default: "h-14 px-8 py-4", // Larger touch targets
-        sm: "h-10 rounded-none px-4",
-        lg: "h-16 rounded-none px-10 text-lg",
-        icon: "size-14",
+        default: "h-10 px-6 py-2",
+        sm: "h-8 rounded-none px-3 text-xs",
+        lg: "h-12 rounded-none px-8 text-base",
+        icon: "size-10",
       },
     },
     defaultVariants: {

@@ -1,21 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo_Black, Space_Mono } from "next/font/google";
+import { Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { WebSocketProvider } from "@/components/providers/WebSocketProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Toaster } from "sonner";
 
-const archivo = Archivo_Black({
-  weight: "400",
+const spaceGrotesk = Space_Grotesk({
+  weight: ["300", "400", "500", "700"],
   subsets: ["latin"],
-  variable: "--font-archivo"
+  variable: "--font-space-grotesk"
 });
 
 const space = Space_Mono({
   weight: ["400", "700"],
   subsets: ["latin"],
-  variable: "--font-space"
+  variable: "--font-space-mono"
 });
 
 export const metadata: Metadata = {
@@ -43,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${archivo.variable} ${space.variable} font-mono antialiased bg-white text-black`}>
+      <body className={`${spaceGrotesk.variable} ${space.variable} font-sans antialiased bg-white text-black`}>
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <WebSocketProvider>

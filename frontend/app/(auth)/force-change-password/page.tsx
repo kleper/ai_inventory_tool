@@ -116,30 +116,31 @@ export default function ForceChangePasswordPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-black">
-            <Card className="max-w-md w-full border-yellow-200 bg-yellow-50/50 dark:bg-yellow-900/10">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+        <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+            <Card className="max-w-md w-full border border-black shadow-none rounded-none">
+                <CardHeader className="border-b border-black">
+                    <CardTitle className="flex items-center gap-2 uppercase tracking-tight font-bold text-xl text-black">
                         <Lock className="w-5 h-5" /> Change Password Required
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-neutral-500 font-mono text-xs">
                         For your security, you must change your password before proceeding.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="old">Current Password</Label>
+                            <Label htmlFor="old" className="text-black uppercase tracking-wide font-bold text-xs">Current Password</Label>
                             <Input
                                 id="old"
                                 type="password"
                                 value={oldPassword}
                                 onChange={(e) => setOldPassword(e.target.value)}
                                 required
+                                className="border-black rounded-none shadow-none focus:ring-0 focus:border-black"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="new">New Password</Label>
+                            <Label htmlFor="new" className="text-black uppercase tracking-wide font-bold text-xs">New Password</Label>
                             <Input
                                 id="new"
                                 type="password"
@@ -147,24 +148,26 @@ export default function ForceChangePasswordPage() {
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 required
                                 minLength={8}
+                                className="border-black rounded-none shadow-none focus:ring-0 focus:border-black"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="confirm">Confirm New Password</Label>
+                            <Label htmlFor="confirm" className="text-black uppercase tracking-wide font-bold text-xs">Confirm New Password</Label>
                             <Input
                                 id="confirm"
                                 type="password"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 required
+                                className="border-black rounded-none shadow-none focus:ring-0 focus:border-black"
                             />
                         </div>
-                        <Button type="submit" className="w-full" disabled={isLoading}>
+                        <Button type="submit" className="w-full bg-black text-white rounded-none uppercase font-bold tracking-wide border border-black hover:bg-neutral-800" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Update Password
                         </Button>
                         <div className="text-center">
-                            <Button type="button" variant="link" size="sm" onClick={() => signOut()}>
+                            <Button type="button" variant="link" size="sm" onClick={() => signOut()} className="text-black uppercase font-bold text-xs tracking-wide">
                                 Sign Out
                             </Button>
                         </div>

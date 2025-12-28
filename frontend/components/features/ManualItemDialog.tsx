@@ -154,7 +154,7 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
                         <select
                             id="category"
                             {...register("category")}
-                            className="flex h-12 w-full rounded-none border-[3px] border-white bg-black px-4 py-3 text-base text-white ring-offset-black focus:outline-none focus:ring-0 focus:border-primary focus:shadow-brutal disabled:cursor-not-allowed disabled:opacity-50 shadow-brutal font-mono focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all"
+                            className="flex h-10 w-full rounded-none border border-black bg-white px-3 py-2 text-sm text-black ring-offset-white focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-sans transition-all"
                         >
                             {categories.map(cat => (
                                 <option key={cat} value={cat}>{cat}</option>

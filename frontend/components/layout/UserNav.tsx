@@ -31,12 +31,12 @@ export function UserNav() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <div role="button" className="flex items-center gap-3 w-full cursor-pointer hover:bg-neutral-100 p-1 transition-colors">
-                    <Avatar className="h-8 w-8 border-2 border-black rounded-none">
+                    <Avatar className="h-8 w-8 border border-black rounded-none">
                         <AvatarImage src={session?.user?.image || ""} alt={session?.user?.name || ""} />
-                        <AvatarFallback className="bg-black text-white rounded-none font-bold mobile:text-[10px]">{initials}</AvatarFallback>
+                        <AvatarFallback className="bg-white text-black rounded-none font-medium mobile:text-[10px]">{initials}</AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col space-y-0 text-left overflow-hidden">
-                        <p className="text-sm font-black uppercase tracking-tight text-black truncate max-w-[140px]">
+                        <p className="text-sm font-bold uppercase tracking-tight text-black truncate max-w-[140px]">
                             {session?.user?.name || "User"}
                         </p>
                         <p className="text-[10px] font-mono text-neutral-500 truncate max-w-[140px]">

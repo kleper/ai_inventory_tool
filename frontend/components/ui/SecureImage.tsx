@@ -78,7 +78,7 @@ export function SecureImage({ itemId, fallbackSrc, alt, className, ...props }: S
 
     if (isLoading) {
         return (
-            <div className={cn("flex items-center justify-center bg-black border-[3px] border-white h-full w-full", className)}>
+            <div className={cn("flex items-center justify-center bg-neutral-100 border border-black h-full w-full", className)}>
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
         );
@@ -89,7 +89,7 @@ export function SecureImage({ itemId, fallbackSrc, alt, className, ...props }: S
             return <img src={fallbackSrc} alt={alt} className={cn("rounded-none", className)} {...props} />;
         }
         return (
-            <div className={cn("flex items-center justify-center bg-black border-[3px] border-white h-full w-full", className)}>
+            <div className={cn("flex items-center justify-center bg-neutral-100 border border-black h-full w-full", className)}>
                 <Box className="w-10 h-10 text-white opacity-20" />
             </div>
         );

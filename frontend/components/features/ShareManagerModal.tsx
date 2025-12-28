@@ -8,15 +8,8 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Trash, UserPlus, Shield, Eye } from "lucide-react";
+import { Trash, UserPlus, Shield, Eye, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/config";
 import { useSession } from "next-auth/react";
@@ -123,16 +116,16 @@ export function ShareManagerModal({ open, onOpenChange, groupId, groupName, isOw
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Share "{groupName}"</DialogTitle>
-                    <DialogDescription>
-                        Invite others to collaborate on this inventory.
+            <DialogContent className="sm:max-w-md border border-black shadow-none rounded-none bg-white">
+                <DialogHeader className="border-b border-black pb-4">
+                    <DialogTitle className="uppercase tracking-tight font-bold text-xl">Share "{groupName}"</DialogTitle>
+                    <DialogDescription className="font-mono text-xs uppercase tracking-wide text-neutral-500">
+                        Invite others to collaborate.
                     </DialogDescription>
                 </DialogHeader>
 
                 {isOwner && (
-                    <form onSubmit={handleInvite} className="space-y-4 py-4 border-b">
+                    <form onSubmit={handleInvite} className="space-y-4 py-4 border-b border-black">
                         <div className="flex gap-2">
                             <Input
                                 placeholder="Email address"
@@ -140,42 +133,44 @@ export function ShareManagerModal({ open, onOpenChange, groupId, groupName, isOw
                                 onChange={e => setEmail(e.target.value)}
                                 required
                                 type="email"
+                                className="border-black rounded-none shadow-none focus:ring-0"
                             />
-                            <Select value={role} onValueChange={setRole}>
-                                <SelectTrigger className="w-[110px]">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="VIEWER">Viewer</SelectItem>
-                                    <SelectItem value="EDITOR">Editor</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <select
+                                value={role}
+                                onChange={e => setRole(e.target.value)}
+                                className="w-[110px] border border-black rounded-none bg-white px-3 py-2 text-sm focus:outline-none uppercase font-bold"
+                            >
+                                <option value="VIEWER">Viewer</option>
+                                <option value="EDITOR">Editor</option>
+                            </select>
                         </div>
-                        <Button type="submit" className="w-full" disabled={isInviting}>
-                            {isInviting ? "Inviting..." : "Invite"} <UserPlus className="ml-2 w-4 h-4" />
+                        <Button type="submit" className="w-full bg-black text-white hover:bg-neutral-800 rounded-none uppercase font-bold tracking-wide border border-black" disabled={isInviting}>
+                            {isInviting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="mr-2 w-4 h-4" />}
+                            {isInviting ? "INVITING..." : "INVITE"}
                         </Button>
                     </form>
                 )}
 
                 <div className="space-y-4 pt-2">
-                    <h4 className="text-sm font-medium text-muted-foreground">People with access</h4>
-                    <div className="space-y-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wide text-black mb-2">People with access</h4>
+                    <div className="space-y-0 divide-y divide-black/10 border border-black/10">
                         {isLoading ? (
-                            <p className="text-sm text-center">Loading...</p>
+                            <div className="p-4 text-center">
+                                <Loader2 className="w-6 h-6 animate-spin mx-auto opacity-50" />
+                            </div>
                         ) : members.length === 0 ? (
-                            <p className="text-sm text-center text-muted-foreground">No shared members yet.</p>
+                            <p className="p-4 text-xs font-mono text-center text-neutral-500 uppercase">No shared members yet.</p>
                         ) : (
                             members.map(member => (
-                                <div key={member.user_id} className="flex items-center justify-between">
+                                <div key={member.user_id} className="flex items-center justify-between p-3 hover:bg-neutral-50 transition-colors">
                                     <div className="flex items-center gap-3">
-                                        <Avatar className="w-8 h-8">
-                                            {/* <AvatarImage src={member.image} /> */}
-                                            <AvatarFallback>{member.email[0].toUpperCase()}</AvatarFallback>
+                                        <Avatar className="w-8 h-8 rounded-none border border-black">
+                                            <AvatarFallback className="rounded-none bg-black text-white font-bold">{member.email[0].toUpperCase()}</AvatarFallback>
                                         </Avatar>
-                                        <div className="text-sm">
-                                            <div className="font-medium text-gray-900 dark:text-gray-100">{member.email}</div>
-                                            <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                                {member.role === "EDITOR" ? <Shield className="w-3 h-3 text-blue-500" /> : <Eye className="w-3 h-3 text-gray-400" />}
+                                        <div>
+                                            <div className="font-bold text-sm text-black">{member.email}</div>
+                                            <div className="text-[10px] font-mono uppercase tracking-wide text-neutral-500 flex items-center gap-1">
+                                                {member.role === "EDITOR" ? <Shield className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                                                 {member.role}
                                             </div>
                                         </div>
@@ -185,7 +180,7 @@ export function ShareManagerModal({ open, onOpenChange, groupId, groupName, isOw
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                            className="text-black hover:bg-red-50 hover:text-red-600 rounded-none h-8 w-8"
                                             onClick={() => handleRemove(member.user_id)}
                                         >
                                             <Trash className="w-4 h-4" />

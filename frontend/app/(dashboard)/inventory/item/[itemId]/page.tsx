@@ -118,10 +118,10 @@ export default function ItemDetailPage() {
     // Loading / Error States
     if (isLoading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-black text-white">
+            <div className="flex h-screen items-center justify-center bg-white text-black">
                 <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    <p className="font-mono uppercase tracking-widest animate-pulse">Loading Item...</p>
+                    <Loader2 className="h-10 w-10 animate-spin text-black" />
+                    <p className="font-mono uppercase tracking-widest text-black animate-pulse">Loading Item...</p>
                 </div>
             </div>
         );
@@ -129,11 +129,11 @@ export default function ItemDetailPage() {
 
     if (error || !item) {
         return (
-            <div className="flex h-screen items-center justify-center bg-black text-white">
-                <div className="border-[3px] border-destructive p-8 shadow-brutal text-center max-w-md">
-                    <h2 className="text-xl font-black uppercase mb-4 text-destructive">Item Not Found</h2>
+            <div className="flex h-screen items-center justify-center bg-white text-black">
+                <div className="border border-destructive p-8 shadow-none text-center max-w-md">
+                    <h2 className="text-xl font-bold uppercase mb-4 text-destructive">Item Not Found</h2>
                     <p className="mb-6 font-mono text-sm">The item you are looking for does not exist or you do not have permission to view it.</p>
-                    <Button onClick={() => router.back()} variant="outline" className="w-full">
+                    <Button onClick={() => router.back()} variant="outline" className="w-full border-black text-black hover:bg-black hover:text-white">
                         <ArrowLeft className="w-4 h-4 mr-2" /> Go Back
                     </Button>
                 </div>
@@ -142,23 +142,23 @@ export default function ItemDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-black text-white p-6 md:p-12 font-mono">
+        <div className="min-h-screen bg-white text-black p-6 md:p-12 font-sans">
             <div className="max-w-5xl mx-auto space-y-12">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b-[3px] border-white">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-black">
                     <div className="flex items-center gap-4">
-                        <Button variant="outline" size="sm" onClick={() => router.back()} className="h-12 w-12 p-0 border-white hover:bg-white hover:text-black">
+                        <Button variant="outline" size="sm" onClick={() => router.back()} className="h-12 w-12 p-0 border-black hover:bg-black hover:text-white rounded-none">
                             <ArrowLeft className="w-6 h-6" />
                         </Button>
                         <div>
-                            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-white leading-none">
+                            <h1 className="text-3xl md:text-5xl font-medium uppercase tracking-tight text-black leading-none">
                                 {isEditing ? "Edit Item" : item.name}
                             </h1>
                             <div className="flex items-center gap-3 mt-2">
-                                <span className="bg-primary text-black text-xs font-bold px-2 py-1 uppercase tracking-widest border border-primary">
+                                <span className="bg-black text-white text-xs font-bold px-2 py-1 uppercase tracking-widest border border-black">
                                     {item.category || "Uncategorized"}
                                 </span>
-                                <span className="text-neutral-400 text-xs uppercase tracking-wide">
+                                <span className="text-neutral-500 text-xs uppercase tracking-wide font-mono">
                                     ID: {item.id}
                                 </span>
                             </div>
@@ -167,12 +167,12 @@ export default function ItemDetailPage() {
 
                     <div className="flex gap-3">
                         {!canWrite && (
-                            <div className="border border-white text-white text-xs font-bold px-4 py-2 uppercase tracking-widest flex items-center gap-2">
+                            <div className="border border-neutral-300 text-neutral-500 text-xs font-bold px-4 py-2 uppercase tracking-widest flex items-center gap-2">
                                 Read-only
                             </div>
                         )}
                         {item.status !== 'completed' && !isEditing && (
-                            <div className="bg-yellow-100 text-black border border-yellow-400 text-xs font-bold px-4 py-2 uppercase tracking-widest flex items-center gap-2">
+                            <div className="bg-neutral-100 text-black border border-black text-xs font-bold px-4 py-2 uppercase tracking-widest flex items-center gap-2">
                                 Needs Review
                             </div>
                         )}
@@ -182,7 +182,7 @@ export default function ItemDetailPage() {
                 <div className="grid md:grid-cols-2 gap-12">
                     {/* Left: Image */}
                     <div className="space-y-6">
-                        <div className="aspect-square bg-neutral-900 rounded-none border-[3px] border-white relative group shadow-brutal overflow-hidden">
+                        <div className="aspect-square bg-neutral-50 rounded-none border border-black relative group shadow-none overflow-hidden">
                             <SecureImage
                                 itemId={parseInt(itemId as string)} // Ensure ID is number
                                 fallbackSrc={item.imageUrl}
@@ -190,7 +190,7 @@ export default function ItemDetailPage() {
                                 className="w-full h-full object-cover"
                                 key={item.image_url} // Force remount on image update
                             />
-                            <div className="absolute inset-0 border-[3px] border-transparent group-hover:border-primary transition-colors pointer-events-none z-10" />
+                            <div className="absolute inset-0 border border-transparent group-hover:border-black/20 transition-colors pointer-events-none z-10" />
                             <ItemPhotoUpdater
                                 itemId={parseInt(itemId as string)}
                                 onUpdate={() => mutate()}
@@ -203,98 +203,98 @@ export default function ItemDetailPage() {
                     <div className="space-y-8">
                         {!isEditing && canWrite && (
                             <div className="flex gap-4">
-                                <Button variant="outline" className="flex-1 border-white hover:bg-white hover:text-black" onClick={() => setIsEditing(true)}>
+                                <Button variant="outline" className="flex-1 border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide" onClick={() => setIsEditing(true)}>
                                     <Edit2 className="w-4 h-4 mr-2" /> Edit Details
                                 </Button>
-                                <Button variant="destructive" className="px-6 border-white" onClick={handleDelete}>
+                                <Button variant="destructive" className="px-6 rounded-none bg-white text-destructive border-destructive hover:bg-destructive hover:text-white uppercase font-bold tracking-wide" onClick={handleDelete}>
                                     <Trash2 className="w-5 h-5" />
                                 </Button>
                             </div>
                         )}
 
                         {isEditing ? (
-                            <form onSubmit={handleUpdate} className="space-y-6 bg-neutral-900/50 p-6 border-[3px] border-white shadow-brutal">
+                            <form onSubmit={handleUpdate} className="space-y-6 bg-white p-6 border border-black shadow-none">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="name" className="text-white">Name</Label>
+                                        <Label htmlFor="name" className="text-black uppercase tracking-wide font-bold">Name</Label>
                                         <Input
                                             id="name"
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                             required
-                                            className="bg-black text-white border-white"
+                                            className="bg-white text-black border-black h-10"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <Label htmlFor="category" className="text-white">Category</Label>
+                                            <Label htmlFor="category" className="text-black uppercase tracking-wide font-bold">Category</Label>
                                             <Input
                                                 id="category"
                                                 value={formData.category}
                                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                                className="bg-black text-white border-white"
+                                                className="bg-white text-black border-black h-10"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="price" className="text-white">Price ($)</Label>
+                                            <Label htmlFor="price" className="text-black uppercase tracking-wide font-bold">Price ($)</Label>
                                             <Input
                                                 id="price"
                                                 type="number"
                                                 step="0.01"
                                                 value={formData.price}
                                                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                                                className="bg-black text-white border-white"
+                                                className="bg-white text-black border-black h-10"
                                             />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="description" className="text-white">Description</Label>
+                                        <Label htmlFor="description" className="text-black uppercase tracking-wide font-bold">Description</Label>
                                         <Textarea
                                             id="description"
                                             value={formData.description}
                                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                             rows={6}
-                                            className="bg-black text-white border-white rounded-none focus:ring-0 focus:border-primary resize-none font-mono"
+                                            className="bg-white text-black border-black rounded-none focus:ring-0 focus:border-black resize-none font-sans"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="flex gap-4 pt-4 border-t border-dashed border-neutral-700 justify-end">
-                                    <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="text-white hover:bg-white hover:text-black">Cancel</Button>
-                                    <Button type="submit" className="gap-2 bg-primary text-black font-black border-white hover:bg-yellow-400">
+                                <div className="flex gap-4 pt-4 border-t border-dashed border-neutral-300 justify-end">
+                                    <Button type="button" variant="ghost" onClick={() => setIsEditing(false)} className="text-black hover:bg-neutral-100 uppercase tracking-wide font-medium">Cancel</Button>
+                                    <Button type="submit" className="gap-2 bg-black text-white font-bold border border-black hover:bg-neutral-800 uppercase tracking-wide rounded-none">
                                         <Save className="w-4 h-4" /> Save Changes
                                     </Button>
                                 </div>
                             </form>
                         ) : (
                             <div className="space-y-8">
-                                <div className="bg-black border-[3px] border-white p-6 shadow-brutal">
+                                <div className="bg-white border border-black p-6 shadow-none">
                                     <div className="grid grid-cols-2 gap-8 mb-6">
                                         <div>
-                                            <span className="text-neutral-400 text-xs uppercase tracking-widest block mb-2">Price Estimate</span>
-                                            <span className="text-4xl font-black text-primary block">
+                                            <span className="text-neutral-500 text-xs uppercase tracking-widest block mb-2">Price Estimate</span>
+                                            <span className="text-4xl font-black text-black block">
                                                 {item.price ? `$${parseFloat(item.price.toString()).toFixed(2)}` : "--"}
                                             </span>
                                         </div>
                                         <div>
-                                            <span className="text-neutral-400 text-xs uppercase tracking-widest block mb-2">Quantity</span>
-                                            <span className="text-4xl font-black text-white block">
+                                            <span className="text-neutral-500 text-xs uppercase tracking-widest block mb-2">Quantity</span>
+                                            <span className="text-4xl font-black text-black block">
                                                 {item.quantity || 1}
                                             </span>
                                         </div>
                                     </div>
 
-                                    <div className="prose prose-invert max-w-none">
-                                        <h3 className="text-white font-bold uppercase tracking-wide border-b border-neutral-800 pb-2 mb-4">Description</h3>
-                                        <p className="text-neutral-300 leading-relaxed">
+                                    <div className="prose prose-neutral max-w-none">
+                                        <h3 className="text-black font-bold uppercase tracking-wide border-b border-neutral-200 pb-2 mb-4">Description</h3>
+                                        <p className="text-neutral-700 leading-relaxed font-sans">
                                             {item.description || "No description provided."}
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="pt-6 border-t-[3px] border-white flex justify-between items-center text-xs font-mono text-neutral-400 uppercase tracking-widest">
+                                <div className="pt-6 border-t border-black flex justify-between items-center text-xs font-mono text-neutral-500 uppercase tracking-widest">
                                     <span>Added: {new Date(item.created_at).toLocaleDateString()}</span>
-                                    <span className={`px-2 py-1 ${item.status === 'completed' ? 'text-green-500' : 'text-yellow-500'}`}>
+                                    <span className={`px-2 py-1 border ${item.status === 'completed' ? 'text-green-700 bg-green-50 border-green-200' : 'text-yellow-700 bg-yellow-50 border-yellow-200'}`}>
                                         Status: {item.status}
                                     </span>
                                 </div>

@@ -46,30 +46,30 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-black p-4">
-            <div className="w-full max-w-md bg-black border-[4px] border-white shadow-brutal-primary p-8 space-y-8">
+        <div className="min-h-screen flex items-center justify-center bg-white p-4">
+            <div className="w-full max-w-md bg-white border border-black p-8 space-y-8 shadow-none">
                 {/* Header */}
-                <div className="space-y-2 text-center border-b-[3px] border-white pb-6">
-                    <h1 className="text-4xl font-black tracking-tighter uppercase text-white">Access Control</h1>
-                    <p className="text-primary font-mono text-xs uppercase tracking-[0.2em] animate-pulse">System Secured // Login Required</p>
+                <div className="space-y-2 text-center border-b border-black pb-6">
+                    <h1 className="text-3xl font-medium tracking-tight uppercase text-black">Access Control</h1>
+                    <p className="text-neutral-500 font-mono text-xs uppercase tracking-widest">System Secured // Login Required</p>
                 </div>
 
                 {/* Tabs */}
                 <div className="grid grid-cols-2 gap-4">
                     <button
                         onClick={() => setActiveTab("google")}
-                        className={`py-3 text-sm font-bold uppercase tracking-widest border-[3px] transition-all ${activeTab === "google"
-                            ? "bg-primary text-black border-primary"
-                            : "bg-black text-white border-white hover:bg-neutral-900"
+                        className={`py-3 text-sm font-medium uppercase tracking-wide border transition-all ${activeTab === "google"
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-black border-black hover:bg-neutral-50"
                             }`}
                     >
                         Google
                     </button>
                     <button
                         onClick={() => setActiveTab("credentials")}
-                        className={`py-3 text-sm font-bold uppercase tracking-widest border-[3px] transition-all ${activeTab === "credentials"
-                            ? "bg-primary text-black border-primary"
-                            : "bg-black text-white border-white hover:bg-neutral-900"
+                        className={`py-3 text-sm font-bold uppercase tracking-wide border transition-all ${activeTab === "credentials"
+                            ? "bg-black text-white border-black"
+                            : "bg-white text-black border-black hover:bg-neutral-50"
                             }`}
                     >
                         Password
@@ -79,14 +79,14 @@ export default function LoginPage() {
                 <div className="min-h-[200px]">
                     {activeTab === "google" && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
-                            <div className="bg-neutral-900 border border-neutral-800 p-4 text-xs font-mono text-neutral-400 mb-6">
-                                <span className="text-primary mr-2">root@system:~$</span>
+                            <div className="bg-neutral-50 border border-black/10 p-4 text-xs font-mono text-neutral-500 mb-6">
+                                <span className="text-black mr-2">root@system:~$</span>
                                 Authenticate via OAuth provider to proceed with session initialization...
                             </div>
                             <button
                                 onClick={handleGoogleLogin}
                                 disabled={isLoading}
-                                className="w-full flex items-center justify-center gap-3 bg-white text-black border-[3px] border-white h-14 font-bold uppercase tracking-wide hover:bg-primary hover:border-primary transition-all disabled:opacity-50 shadow-brutal"
+                                className="w-full flex items-center justify-center gap-3 bg-white text-black border border-black h-12 font-bold uppercase tracking-wide hover:bg-neutral-100 transition-all disabled:opacity-50"
                             >
                                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                                     <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -117,25 +117,25 @@ export default function LoginPage() {
                         <form onSubmit={handleCredentialsLogin} className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-primary uppercase tracking-widest">User ID / Email</label>
+                                    <label className="text-xs font-bold text-black uppercase tracking-widest">User ID / Email</label>
                                     <input
                                         type="email"
                                         placeholder="OPERATOR_EMAIL"
                                         value={email}
                                         onChange={e => setEmail(e.target.value)}
-                                        className="w-full h-12 bg-black text-white border-[3px] border-white px-4 font-mono focus:outline-none focus:border-primary focus:shadow-brutal"
+                                        className="w-full h-10 bg-white text-black border border-black px-4 font-mono focus:outline-none focus:bg-neutral-50"
                                         required
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold text-primary uppercase tracking-widest">Access Key</label>
+                                    <label className="text-xs font-bold text-black uppercase tracking-widest">Access Key</label>
                                     <input
                                         type="password"
                                         placeholder="••••••••"
                                         value={password}
                                         onChange={e => setPassword(e.target.value)}
-                                        className="w-full h-12 bg-black text-white border-[3px] border-white px-4 font-mono focus:outline-none focus:border-primary focus:shadow-brutal"
+                                        className="w-full h-10 bg-white text-black border border-black px-4 font-mono focus:outline-none focus:bg-neutral-50"
                                         required
                                     />
                                 </div>
@@ -143,7 +143,7 @@ export default function LoginPage() {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full bg-white text-black h-14 border-[3px] border-white font-black uppercase tracking-wide hover:bg-primary hover:border-primary transition-all flex items-center justify-center gap-2 shadow-brutal disabled:opacity-50"
+                                className="w-full bg-black text-white h-12 border border-black font-bold uppercase tracking-wide hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
                                 Authenticate

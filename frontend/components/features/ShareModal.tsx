@@ -46,41 +46,41 @@ export function ShareModal({ group, isOpen, onClose }: ShareModalProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-white dark:bg-neutral-900 w-full max-w-md p-6 rounded-xl shadow-2xl border border-gray-200 dark:border-neutral-800 relative animate-in fade-in zoom-in-95 duration-200">
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+            <div className="bg-white w-full max-w-md p-6 rounded-none shadow-none border border-black relative animate-in fade-in zoom-in-95 duration-200">
+                <button onClick={onClose} className="absolute top-4 right-4 text-black hover:bg-neutral-100 p-1">
                     <X className="w-5 h-5" />
                 </button>
 
                 <div className="flex items-center gap-2 mb-6">
-                    <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg dark:bg-indigo-900/30">
+                    <div className="p-2 bg-neutral-100 text-black border border-black rounded-none">
                         <UserPlus className="w-6 h-6" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold">Share Group</h2>
-                        <p className="text-sm text-gray-500">Invite others to "{group.name}"</p>
+                        <h2 className="text-xl font-bold uppercase tracking-tight text-black">Share Group</h2>
+                        <p className="text-sm text-neutral-500 font-mono">Invite others to "{group.name}"</p>
                     </div>
                 </div>
 
                 <form onSubmit={handleShare} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium mb-1">Email Address</label>
+                        <label className="block text-sm font-bold uppercase tracking-wide mb-1 text-black">Email Address</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-neutral-800 dark:border-neutral-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-3 py-2 border border-black rounded-none bg-white focus:outline-none focus:bg-neutral-50"
                             placeholder="collaborator@example.com"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1">Permission</label>
+                        <label className="block text-sm font-bold uppercase tracking-wide mb-1 text-black">Permission</label>
                         <select
                             value={permission}
                             onChange={(e) => setPermission(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg dark:bg-neutral-800 dark:border-neutral-700 focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full px-3 py-2 border border-black rounded-none bg-white focus:outline-none focus:bg-neutral-50"
                         >
                             <option value="VIEWER">Viewer (Read Only)</option>
                             <option value="EDITOR">Editor (Can Upload/Edit)</option>
@@ -91,14 +91,14 @@ export function ShareModal({ group, isOpen, onClose }: ShareModalProps) {
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg dark:text-gray-300 dark:hover:bg-neutral-800"
+                            className="px-4 py-2 text-sm font-bold uppercase tracking-wide text-black hover:bg-neutral-100 border border-transparent rounded-none"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg flex items-center gap-2 disabled:opacity-50 transition-colors"
+                            className="px-4 py-2 text-sm font-bold uppercase tracking-wide text-white bg-black border border-black hover:bg-neutral-800 rounded-none flex items-center gap-2 disabled:opacity-50 transition-colors"
                         >
                             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                             Send Invite

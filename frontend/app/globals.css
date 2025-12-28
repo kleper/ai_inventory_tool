@@ -1,122 +1,103 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-archivo);
-  --font-mono: var(--font-space);
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-space-mono);
 }
 
 :root {
-  /* DARK NEO-BRUTALISM DEFAULT */
-  --background: 0 0% 0%;
+  /* MINIMALIST WIREFRAME BRUTALISM */
+  --background: 0 0% 100%;
+  /* #FFFFFF */
+  --foreground: 0 0% 0%;
   /* #000000 */
-  --foreground: 0 0% 100%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+
+  --primary: 0 0% 0%;
+  /* #000000 */
+  --primary-foreground: 0 0% 100%;
   /* #FFFFFF */
 
-  --card: 0 0% 0%;
-  --card-foreground: 0 0% 100%;
-
-  --popover: 0 0% 0%;
-  --popover-foreground: 0 0% 100%;
-
-  --primary: 54 100% 50%;
-  /* #FFE600 (Neon Yellow) */
-  --primary-foreground: 0 0% 0%;
-
-  --secondary: 0 0% 100%;
-  /* #FFFFFF */
+  --secondary: 0 0% 96%;
+  /* #F4F4F5 (Zinc 100) */
   --secondary-foreground: 0 0% 0%;
 
-  --muted: 0 0% 20%;
-  --muted-foreground: 0 0% 80%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 40%;
 
-  --accent: 0 0% 100%;
+  --accent: 0 0% 96%;
   --accent-foreground: 0 0% 0%;
 
   --destructive: 0 100% 50%;
-  /* #FF0000 */
+  /* Classic Red for warnings, or keep minimal? User said minimal. Let's stick to red for critical error but maybe darker. Or standard red is fine for functional error. */
   --destructive-foreground: 0 0% 100%;
 
-  --border: 0 0% 100%;
-  /* ALWAYS WHITE BORDERS */
+  --border: 0 0% 0%;
+  /* #000000 */
   --input: 0 0% 0%;
-  --ring: 54 100% 50%;
-  /* #FFE600 */
+  --ring: 0 0% 0%;
+  /* #000000 */
 
   --radius: 0px;
-  /* NO RADIUS */
+  /* STRICTLY NO RADIUS */
 }
 
-/* Brutalist Utilities */
-.brutal-border {
-  @apply border-2 border-white;
+/* Wireframe Utilities */
+.wireframe-border {
+  @apply border border-black;
 }
 
-.brutal-shadow {
-  box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 1);
-}
 
-.brutal-shadow-primary {
-  box-shadow: 4px 4px 0px 0px #FFE600;
-}
 
-/* Dark mode variables are now the default in :root */
+/* Force Dark Mode to match Light Mode (Monochromatic identity) or just disable it conceptually. 
+   User said "Background General: White Absolute". So we override dark mode to be white too, or just map it same. */
 .dark {
-  --background: 0 0% 0%;
-  --foreground: 0 0% 100%;
-  --card: 0 0% 0%;
-  --card-foreground: 0 0% 100%;
-  --popover: 0 0% 0%;
-  --popover-foreground: 0 0% 100%;
-  --primary: 54 100% 50%;
-  --primary-foreground: 0 0% 0%;
-  --secondary: 0 0% 100%;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 0%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 0 0% 0%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 96%;
   --secondary-foreground: 0 0% 0%;
-  --muted: 0 0% 20%;
-  --muted-foreground: 0 0% 80%;
-  --accent: 0 0% 100%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 0 0% 96%;
   --accent-foreground: 0 0% 0%;
   --destructive: 0 100% 50%;
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 100%;
+  --border: 0 0% 0%;
   --input: 0 0% 0%;
-  --ring: 54 100% 50%;
+  --ring: 0 0% 0%;
 }
 
 @layer utilities {
   .bg-primary {
-    background-color: #FFE600;
+    background-color: #000000;
   }
 
   .text-primary-foreground {
-    color: #000000;
+    color: #FFFFFF;
   }
 
-  .shadow-brutal {
-    box-shadow: 4px 4px 0px 0px #FFFFFF;
-  }
 
-  .shadow-brutal-primary {
-    box-shadow: 4px 4px 0px 0px #FFE600;
-  }
-
-  .shadow-brutal-sm {
-    box-shadow: 2px 2px 0px 0px #FFFFFF;
-  }
-
-  .box-brutal {
-    border: 3px solid #FFFFFF;
-    box-shadow: 4px 4px 0px 0px #FFFFFF;
-  }
 }
 
 @layer base {
   * {
-    border-color: #FFFFFF;
+    border-color: #000000;
   }
 
   body {
-    background-color: #000000;
-    color: #FFFFFF;
+    background-color: #FFFFFF;
+    color: #000000;
   }
 
   h1,
@@ -125,6 +106,8 @@
   h4,
   h5,
   h6 {
-    color: #FFFFFF;
+    color: #000000;
+    letter-spacing: -0.02em;
+    /* Tight tracking for headers */
   }
 }

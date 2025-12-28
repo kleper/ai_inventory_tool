@@ -65,13 +65,13 @@ export function ItemPhotoUpdater({ itemId, onUpdate, canWrite }: ItemPhotoUpdate
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button
-                    className="absolute bottom-4 right-4 z-10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] border-2 border-black rounded-none font-bold uppercase tracking-wider bg-white text-black hover:bg-gray-100 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+                    className="absolute bottom-4 right-4 z-10 border border-black rounded-none font-bold uppercase tracking-wider bg-white text-black hover:bg-black hover:text-white transition-all shadow-none"
                 >
                     <Camera className="w-4 h-4 mr-2" />
                     CHANGE PHOTO
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] rounded-none bg-white p-6 max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-md border border-black shadow-none rounded-none bg-white p-6 max-h-[90vh] overflow-y-auto">
                 <div className="flex flex-col gap-4">
                     <DialogTitle className="text-xl font-bold uppercase tracking-tighter border-b-2 border-black pb-2">
                         Replace Item Photo

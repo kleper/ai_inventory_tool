@@ -16,10 +16,10 @@ export function AppSidebar() {
     const pathname = usePathname();
 
     return (
-        <aside className="hidden md:flex flex-col w-64 border-r-[3px] border-white h-screen sticky top-0 bg-black">
-            <div className="p-6 border-b-[3px] border-white">
-                <div className="flex items-center gap-2 font-bold text-lg text-white uppercase tracking-tighter">
-                    <div className="w-8 h-8 bg-primary rounded-none border-2 border-white flex items-center justify-center text-black shadow-brutal-sm font-black">AI</div>
+        <aside className="hidden md:flex flex-col w-64 border-r border-black h-screen sticky top-0 bg-white">
+            <div className="p-6 border-b border-black">
+                <div className="flex items-center gap-2 font-medium text-lg text-black uppercase tracking-tight">
+                    <div className="w-8 h-8 bg-black rounded-none border border-black flex items-center justify-center text-white font-bold">AI</div>
                     SmartInventory
                 </div>
             </div>
@@ -31,9 +31,9 @@ export function AppSidebar() {
                         <Link
                             key={item.href}
                             href={item.href}
-                            className={`flex items-center gap-3 px-3 py-2 rounded-none text-sm font-bold uppercase tracking-wide transition-all border-2 border-transparent ${isActive
-                                ? "bg-primary text-black border-white shadow-brutal-sm translate-x-[2px] translate-y-[2px]"
-                                : "text-white hover:bg-white hover:text-black hover:border-white hover:shadow-brutal-sm hover:-translate-y-0.5"
+                            className={`flex items-center gap-3 px-3 py-2 rounded-none text-sm font-medium uppercase tracking-wide transition-all border border-transparent ${isActive
+                                ? "bg-black text-white border-black"
+                                : "text-black hover:bg-neutral-100 hover:border-black/10"
                                 }`}
                         >
                             <item.icon className="w-5 h-5" />
@@ -43,8 +43,8 @@ export function AppSidebar() {
                 })}
             </nav>
 
-            <div className="p-4 border-t-[3px] border-white bg-black">
-                <div className="border-[3px] border-white p-2 bg-white text-black shadow-brutal-primary">
+            <div className="p-4 border-t border-black bg-white">
+                <div className="border border-black p-2 bg-white text-black">
                     <UserNav />
                 </div>
             </div>
