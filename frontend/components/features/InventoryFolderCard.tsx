@@ -16,7 +16,7 @@ interface InventoryFolderCardProps {
 export function InventoryFolderCard({ group }: InventoryFolderCardProps) {
     return (
         <Link href={`/inventory/${group.id}`}>
-            <Card className="h-full hover:border-black/20 dark:hover:border-white/20 transition-all cursor-pointer group shadow-sm border-border/40">
+            <Card className="h-full hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none transition-all cursor-pointer group">
                 <CardHeader className="space-y-1 p-6">
                     <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center mb-2 group-hover:bg-blue-500/20 transition-colors">
                         <Folder className="w-5 h-5 text-blue-500" />

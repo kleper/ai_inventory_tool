@@ -7,12 +7,17 @@ import { Loader2, DollarSign, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { API_BASE_URL } from "@/lib/config";
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+import { useAuthFetcher } from "@/hooks/useAuthFetcher";
+import { useSession } from "next-auth/react";
+// fetcher removed
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export function AnalyticsDashboard() {
-    const { data, error, isLoading } = useSWR(`${API_BASE_URL}/api/v1/admin/stats/usage`, fetcher);
+    const { data: session } = useSession();
+    const fetcher = useAuthFetcher();
+    const token = (session as any)?.accessToken;
+    const { data, error, isLoading } = useSWR(token ? `${API_BASE_URL}/api/v1/admin/stats/usage` : null, fetcher);
 
     // Calculate totals
     const totals = useMemo(() => {
@@ -24,6 +29,7 @@ export function AnalyticsDashboard() {
 
     if (error) return <div className="p-4 text-red-500">Failed to load analytics</div>;
     if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin" /></div>;
+    if (!data) return null;
 
     return (
         <div className="space-y-6">

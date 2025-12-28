@@ -99,6 +99,8 @@ export const authOptions: NextAuthOptions = {
                 (session.user as any).require_password_reset = token.require_password_reset;
                 (session.user as any).accessToken = token.accessToken;
             }
+            // Expose access token on session root as well for compatibility
+            (session as any).accessToken = token.accessToken;
             return session
         }
     }

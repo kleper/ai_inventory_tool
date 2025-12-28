@@ -6,6 +6,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { AlertCircle } from "lucide-react";
 
 import { useAuthFetcher } from "@/hooks/useAuthFetcher";
+import { useSession } from "next-auth/react";
 
 // Default fetcher removed, using hook instead
 
@@ -29,14 +30,16 @@ export function InventoryDashboard() {
     const [isProcessing, setIsProcessing] = useState(false);
 
     // 2. Data Fetching with SWR
+    const { data: session } = useSession();
     const fetcher = useAuthFetcher();
+    const token = (session as any)?.accessToken;
 
     const url = activeGroupId
         ? `${API_BASE_URL}/api/v1/inventory/items?group_id=${activeGroupId}`
         : `${API_BASE_URL}/api/v1/inventory/items`;
 
     // Use mutate to refresh after upload
-    const { data: items, error, isLoading, mutate } = useSWR(url, fetcher);
+    const { data: items, error, isLoading, mutate } = useSWR(token ? url : null, fetcher);
 
     const handleCapture = async (imageSrc: string) => {
         setIsProcessing(true);
@@ -104,13 +107,13 @@ export function InventoryDashboard() {
             <GroupManager activeGroupId={activeGroupId} onGroupSelect={setActiveGroupId} />
 
             {/* Input Section */}
-            <div className="grid md:grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl border shadow-sm">
-                    <h4 className="font-semibold mb-3">Add Item (Camera)</h4>
+            <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-black p-6 rounded-none border-[3px] border-white shadow-brutal">
+                    <h4 className="font-black text-xl uppercase tracking-widest mb-4 text-white">Add Item (Camera)</h4>
                     <CameraCapture onCapture={handleCapture} />
                 </div>
-                <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl border shadow-sm">
-                    <h4 className="font-semibold mb-3">Upload Invoice</h4>
+                <div className="bg-black p-6 rounded-none border-[3px] border-white shadow-brutal">
+                    <h4 className="font-black text-xl uppercase tracking-widest mb-4 text-white">Upload Invoice</h4>
                     <InvoiceUpload onFileSelect={handleInvoiceUpload} />
                 </div>
             </div>

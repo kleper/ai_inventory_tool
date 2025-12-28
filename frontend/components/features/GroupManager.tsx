@@ -26,7 +26,13 @@ interface GroupManagerProps {
 export function GroupManager({ activeGroupId, onGroupSelect }: GroupManagerProps) {
     const { data: session } = useSession();
     const fetcher = useAuthFetcher();
-    const { data: groups, mutate } = useSWR<Group[]>(`${API_BASE_URL}/api/v1/groups`, fetcher);
+    const token = (session as any)?.accessToken;
+
+    // Only fetch if authenticated
+    const { data: groups, mutate } = useSWR<Group[]>(
+        token ? `${API_BASE_URL}/api/v1/groups` : null,
+        fetcher
+    );
     const [isCreating, setIsCreating] = useState(false);
     const [newGroupName, setNewGroupName] = useState("");
     const [groupToShare, setGroupToShare] = useState<Group | null>(null);

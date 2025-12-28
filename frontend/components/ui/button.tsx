@@ -5,26 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-bold uppercase tracking-wider transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 box-brutal box-brutal-hover",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-black uppercase tracking-widest transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-0 focus-visible:shadow-brutal border-[2px] border-white shadow-brutal hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none active:translate-x-[4px] active:translate-y-[4px]",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-secondary hover:text-secondary-foreground",
+        default: "bg-primary text-black hover:bg-primary/90 border-white", // Yellow Button, White Border
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-destructive text-white hover:bg-destructive/90 border-white",
         outline:
-          "bg-background text-foreground hover:bg-accent hover:text-accent-foreground",
+          "bg-black text-white border-white hover:bg-white hover:text-black",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-white hover:bg-secondary/80 border-white",
         ghost:
-          "border-transparent shadow-none hover:bg-accent hover:text-accent-foreground box-brutal-hover", // Ghost override? Or keep borders? Let's make ghost behave like a minimal button but still brutal
-        link: "text-primary underline-offset-4 hover:underline shadow-none border-0 p-0 h-auto box-border-0",
+          "border-transparent shadow-none hover:bg-white hover:text-black hover:shadow-brutal hover:border-white",
+        link: "text-primary underline-offset-4 hover:underline shadow-none border-0 p-0 h-auto",
       },
       size: {
-        default: "h-11 px-6 py-2",
-        sm: "h-9 rounded-none px-4",
-        lg: "h-12 rounded-none px-8 text-base",
-        icon: "size-11",
+        default: "h-14 px-8 py-4", // Larger touch targets
+        sm: "h-10 rounded-none px-4",
+        lg: "h-16 rounded-none px-10 text-lg",
+        icon: "size-14",
       },
     },
     defaultVariants: {

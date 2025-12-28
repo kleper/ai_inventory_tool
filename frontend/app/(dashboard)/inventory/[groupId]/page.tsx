@@ -24,27 +24,26 @@ import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, Dialog
 import { toast } from "sonner";
 import { useNotifications } from "@/hooks/useNotifications";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { useAuthFetcher } from "@/hooks/useAuthFetcher";
+// fetcher removed
 
 export default function FolderDetailPage() {
     const params = useParams();
     const groupId = params.groupId as string;
     const { data: session } = useSession();
+    const fetcher = useAuthFetcher();
+    const token = (session as any)?.accessToken;
     useNotifications(); // Ensure WS is connected
-
-    // Fetch Group Details for Header
-    // TODO: Ideally we should have a single endpoint for group details, but we can reuse the list for now or assume name is static if not fetched yet?
-    // Let's assume we need a name. For now, we'll fetch items and generic info.
 
     // Fetch Items
     const { data: items, error, isLoading, mutate } = useSWR(
-        groupId ? `${API_BASE_URL}/api/v1/inventory/items?group_id=${groupId}` : null,
+        (groupId && token) ? `${API_BASE_URL}/api/v1/inventory/items?group_id=${groupId}` : null,
         fetcher
     );
 
     // Fetch Group Info
     const { data: group } = useSWR(
-        groupId ? `${API_BASE_URL}/api/v1/groups/${groupId}` : null,
+        (groupId && token) ? `${API_BASE_URL}/api/v1/groups/${groupId}` : null,
         fetcher
     );
 
@@ -93,8 +92,13 @@ export default function FolderDetailPage() {
         try {
             const formData = new FormData();
             formData.append("file", file);
+            const headers: HeadersInit = {};
+            const token = (session as any)?.accessToken;
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+
             const apiRes = await fetch(`${API_BASE_URL}/api/v1/inventory/match-invoice?user_id=1&group_id=${groupId}`, {
                 method: "POST",
+                headers,
                 body: formData
             });
             if (!apiRes.ok) throw new Error("Upload failed");
@@ -106,7 +110,7 @@ export default function FolderDetailPage() {
         }
     };
 
-    const filteredItems = items?.filter((item: any) =>
+    const filteredItems = (Array.isArray(items) ? items : [])?.filter((item: any) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description?.toLowerCase().includes(searchQuery.toLowerCase())
     );

@@ -17,21 +17,26 @@ import { SecureImage } from "@/components/ui/SecureImage";
 import { ItemPhotoUpdater } from "@/components/features/ItemPhotoUpdater";
 // import  from "@/components/ui/alert"; // Removed unused Alert import
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { useAuthFetcher } from "@/hooks/useAuthFetcher";
+import { useSession } from "next-auth/react";
+// fetcher removed
 
 export default function ItemDetailPage() {
     const params = useParams();
     const itemId = params.itemId as string;
     const router = useRouter();
+    const { data: session } = useSession();
+    const fetcher = useAuthFetcher();
+    const token = (session as any)?.accessToken;
 
     const { data: item, error, isLoading, mutate } = useSWR(
-        itemId ? `${API_BASE_URL}/api/v1/inventory/items/${itemId}` : null,
+        (itemId && token) ? `${API_BASE_URL}/api/v1/inventory/items/${itemId}` : null,
         fetcher
     );
 
     // Fetch Group Permission if item exists and has group_id
     const { data: group } = useSWR(
-        item?.group_id ? `${API_BASE_URL}/api/v1/groups/${item.group_id}` : null,
+        (item?.group_id && token) ? `${API_BASE_URL}/api/v1/groups/${item.group_id}` : null,
         fetcher
     );
 

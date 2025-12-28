@@ -12,6 +12,7 @@ import { PenTool, Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/config";
 import { NativeCameraInput } from "./NativeCameraInput";
+import { useSession } from "next-auth/react";
 
 // Validation Schema
 const itemSchema = z.object({
@@ -44,6 +45,7 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
     const [isLoading, setIsLoading] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const { data: session } = useSession();
 
     const { register, handleSubmit, formState: { errors }, reset } = useForm({
         resolver: zodResolver(itemSchema),
@@ -94,9 +96,13 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
                 // image_url: ... // ignored for now
             };
 
+            const token = (session as any)?.accessToken;
+            const headers: HeadersInit = { "Content-Type": "application/json" };
+            if (token) headers["Authorization"] = `Bearer ${token}`;
+
             const res = await fetch(`${API_BASE_URL}/api/v1/inventory/items`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 body: JSON.stringify(payload)
             });
 
@@ -148,7 +154,7 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
                         <select
                             id="category"
                             {...register("category")}
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-12 w-full rounded-none border-[3px] border-white bg-black px-4 py-3 text-base text-white ring-offset-black focus:outline-none focus:ring-0 focus:border-primary focus:shadow-brutal disabled:cursor-not-allowed disabled:opacity-50 shadow-brutal font-mono focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all"
                         >
                             {categories.map(cat => (
                                 <option key={cat} value={cat}>{cat}</option>

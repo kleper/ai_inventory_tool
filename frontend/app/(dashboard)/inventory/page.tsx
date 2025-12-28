@@ -11,10 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { useAuthFetcher } from "@/hooks/useAuthFetcher";
+import { useSession } from "next-auth/react";
+
+// fetcher removed
 
 export default function InventoryFoldersPage() {
-  const { data: groups, error, isLoading, mutate } = useSWR(`${API_BASE_URL}/api/v1/groups`, fetcher);
+  const { data: session } = useSession();
+  const fetcher = useAuthFetcher();
+  const token = (session as any)?.accessToken;
+
+  const { data: groups, error, isLoading, mutate } = useSWR(token ? `${API_BASE_URL}/api/v1/groups` : null, fetcher);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -23,9 +30,12 @@ export default function InventoryFoldersPage() {
     e.preventDefault();
     setIsCreating(true);
     try {
+      const headers: HeadersInit = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
       const res = await fetch(`${API_BASE_URL}/api/v1/groups`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ name: newGroupName })
       });
       if (!res.ok) throw new Error("Failed to create group");
@@ -104,7 +114,7 @@ export default function InventoryFoldersPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {groups.map((group: any) => (
+          {Array.isArray(groups) && groups.map((group: any) => (
             <InventoryFolderCard key={group.id} group={group} />
           ))}
         </div>

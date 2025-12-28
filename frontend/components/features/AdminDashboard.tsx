@@ -7,8 +7,9 @@ import useSWR from "swr";
 import { toast } from "sonner";
 import { Loader2, UserPlus, Shield, Mail } from "lucide-react";
 
-// Fetcher function
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+import { useAuthFetcher } from "@/hooks/useAuthFetcher";
+
+// Fetcher function removed in favor of hook
 
 interface User {
     id: number;
@@ -42,8 +43,11 @@ export default function AdminDashboard() {
         }
     }, [status, session, router]);
 
+    const fetcher = useAuthFetcher();
+    const token = (session as any)?.accessToken;
+
     const { data: users, error, mutate } = useSWR<User[]>(
-        API_BASE_URL + "/api/v1/admin/users",
+        token ? API_BASE_URL + "/api/v1/admin/users" : null,
         fetcher
     );
 
@@ -191,7 +195,7 @@ export default function AdminDashboard() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {users?.map((user) => (
+                                            {Array.isArray(users) && users.map((user) => (
                                                 <tr key={user.id} className="border-b dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-800/50">
                                                     <td className="px-6 py-4 font-medium">{user.id}</td>
                                                     <td className="px-6 py-4">{user.email}</td>

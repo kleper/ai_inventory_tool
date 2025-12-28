@@ -6,10 +6,15 @@ import { API_BASE_URL } from "@/lib/config";
 import { useState } from 'react';
 import { Loader2, Terminal, Image as ImageIcon, CheckCircle, XCircle } from 'lucide-react';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+import { useAuthFetcher } from "@/hooks/useAuthFetcher";
+import { useSession } from "next-auth/react";
+// fetcher removed
 
 export function AuditLog() {
-    const { data: logs, error, isLoading } = useSWR(`${API_BASE_URL}/api/v1/admin/audit`, fetcher);
+    const { data: session } = useSession();
+    const fetcher = useAuthFetcher();
+    const token = (session as any)?.accessToken;
+    const { data: logs, error, isLoading } = useSWR(token ? `${API_BASE_URL}/api/v1/admin/audit` : null, fetcher);
     const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
 
     if (error) return <div className="p-4 text-red-500">Failed to load audit logs</div>;
@@ -35,7 +40,7 @@ export function AuditLog() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-neutral-700">
-                        {logs?.map((log: any) => (
+                        {Array.isArray(logs) && logs.map((log: any) => (
                             <>
                                 <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-neutral-750 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-gray-500">

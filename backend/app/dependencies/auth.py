@@ -17,22 +17,30 @@ async def get_current_user(
     
     # 1. Try JWT
     if token:
+        # print(f"Auth Token received: {token[:10]}...") # Verify token arrives
         payload = decode_access_token(token)
         if payload:
             user_id = payload.get("sub")
+        else:
+            print("Auth: Token present but decode failed (see security logs)")
+    else:
+        print("Auth: No token provided in header")
     
     # 2. Fallback to Header (Legacy/Dev) if no valid token
     if not user_id and x_user_id:
         try:
+            print(f"Auth: Using X-User-ID header: {x_user_id}")
             user_id = int(x_user_id)
         except ValueError:
             pass
             
     if not user_id:
+         print("Auth: Failed to resolve user_id -> 401")
          raise HTTPException(status_code=401, detail="Not authenticated")
             
     user = session.get(User, user_id)
     if not user:
+         print(f"Auth: User {user_id} not found in DB -> 401")
          raise HTTPException(status_code=401, detail="User not found")
     return user
 
