@@ -9,7 +9,8 @@ export async function middleware(req: NextRequest) {
     if (
         pathname.startsWith('/_next') ||
         pathname.startsWith('/static') ||
-        pathname.startsWith('/api/auth') || // IMPORTANT: Do not block auth endpoints
+        pathname.startsWith('/api/auth') || // NextAuth routes
+        pathname.startsWith('/api/proxy/api/v1/auth') || // Backend Auth routes (public)
         pathname === '/login' ||
         pathname === '/register' ||
         pathname === '/favicon.ico'
