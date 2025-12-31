@@ -51,23 +51,8 @@ export const authOptions: NextAuthOptions = {
             }
         }),
         GoogleProvider({
-            clientId: (() => {
-                if (!process.env.GOOGLE_CLIENT_ID) {
-                    console.error("❌ Critical: GOOGLE_CLIENT_ID is missing from environment variables.");
-                    // Return empty string to prevent crash at build time, but it will fail at runtime if used
-                    if (process.env.NODE_ENV === 'development') return "mock-id-dev-only";
-                    throw new Error("GOOGLE_CLIENT_ID is missing");
-                }
-                return process.env.GOOGLE_CLIENT_ID;
-            })(),
-            clientSecret: (() => {
-                if (!process.env.GOOGLE_CLIENT_SECRET) {
-                    console.error("❌ Critical: GOOGLE_CLIENT_SECRET is missing from environment variables.");
-                    if (process.env.NODE_ENV === 'development') return "mock-secret-dev-only";
-                    throw new Error("GOOGLE_CLIENT_SECRET is missing");
-                }
-                return process.env.GOOGLE_CLIENT_SECRET;
-            })(),
+            clientId: process.env.GOOGLE_CLIENT_ID || "mock-client-id-for-build",
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET || "mock-client-secret-for-build",
             allowDangerousEmailAccountLinking: true,
         })
     ],
