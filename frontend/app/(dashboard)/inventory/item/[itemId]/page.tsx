@@ -52,6 +52,7 @@ export default function ItemDetailPage() {
         name: "",
         category: "",
         price: "",
+        quantity: "",
         description: "",
         status: ""
     });
@@ -72,6 +73,7 @@ export default function ItemDetailPage() {
                 name: item.name || "",
                 category: item.category || "",
                 price: item.price?.toString() || "",
+                quantity: item.quantity?.toString() || "1",
                 description: item.description || "",
                 status: item.status
             });
@@ -280,6 +282,16 @@ export default function ItemDetailPage() {
                                                 step="0.01"
                                                 value={formData.price}
                                                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                                className="bg-white text-black border-black h-10"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="quantity" className="text-black uppercase tracking-wide font-bold">Quantity</Label>
+                                            <Input
+                                                id="quantity"
+                                                type="number"
+                                                value={formData.quantity}
+                                                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                                                 className="bg-white text-black border-black h-10"
                                             />
                                         </div>

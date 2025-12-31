@@ -54,36 +54,41 @@ export default function InventoryFoldersPage() {
 
   return (
     <div className="space-y-8 p-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center border-b pb-6 border-border/40">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 border-b border-black pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">My Inventories</h1>
-          <p className="text-muted-foreground mt-1">Manage your item collections and folders.</p>
+          <h1 className="text-4xl font-bold uppercase tracking-tight text-black">My Inventories</h1>
+          <p className="mt-2 text-black font-mono text-sm">Manage your item collections and folders.</p>
         </div>
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2 shadow-sm font-medium">
+            <Button className="w-full md:w-auto px-6 py-3 bg-black text-white border border-black rounded-none uppercase font-medium tracking-widest hover:bg-white hover:text-black transition-colors gap-2 shadow-none h-auto">
               <Plus className="w-4 h-4" /> Create Folder
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="border-black rounded-none">
+            {/* Brutalist Dialog Content optionally, but sticking to Header request first. 
+                 The prompt asked for the Header component fixes. 
+                 The Button style is inline here as requested. 
+             */}
             <DialogHeader>
-              <DialogTitle>Create New Inventory Folder</DialogTitle>
+              <DialogTitle className="uppercase font-bold tracking-wider">Create New Inventory Folder</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreateGroup} className="space-y-4 pt-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Folder Name</Label>
+                <Label htmlFor="name" className="uppercase font-mono text-xs">Folder Name</Label>
                 <Input
                   id="name"
-                  placeholder="e.g. Office Supplies, Warehouse A"
+                  placeholder="E.G. OFFICE SUPPLIES"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
                   required
+                  className="rounded-none border-black focus-visible:ring-0 focus-visible:border-black"
                 />
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={isCreating}>
-                  {isCreating ? "Creating..." : "Create Folder"}
+                <Button type="submit" disabled={isCreating} className="w-full bg-black text-white rounded-none uppercase tracking-widest hover:bg-neutral-800">
+                  {isCreating ? "CREATING..." : "CREATE FOLDER"}
                 </Button>
               </DialogFooter>
             </form>
