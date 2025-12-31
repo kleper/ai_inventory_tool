@@ -13,6 +13,7 @@ router = APIRouter(prefix="/api/v1/groups", tags=["groups"])
 
 class GroupCreate(BaseModel):
     name: str
+    description: Optional[str] = None
 
 class ShareRequest(BaseModel):
     email: str
@@ -38,7 +39,7 @@ async def create_group(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    new_group = InventoryGroup(name=group.name, owner_id=current_user.id)
+    new_group = InventoryGroup(name=group.name, description=group.description, owner_id=current_user.id)
     session.add(new_group)
     session.commit()
     session.refresh(new_group)

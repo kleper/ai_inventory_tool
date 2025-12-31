@@ -61,10 +61,16 @@ async def process_object(
         
         from app.services.image_service import save_image
         
+        group_context = None
+        if group_id:
+            group = session.get(InventoryGroup, group_id)
+            if group:
+                 group_context = {"name": group.name, "description": group.description}
+        
         # Save file (original + thumb)
         filename = save_image(contents, "/app/media")
         
-        item_data = await llm_service.analyze_object(contents, user_id=current_user.id)
+        item_data = await llm_service.analyze_object(contents, user_id=current_user.id, group_context=group_context)
         
         # If LLM didn't find a price, try web search
         if not item_data.estimated_price or item_data.estimated_price == 0:

@@ -76,7 +76,7 @@ class LLMService:
         mime = magic.Magic(mime=True)
         return mime.from_buffer(image_bytes)
 
-    async def analyze_object(self, image_bytes: bytes, user_id: Optional[int] = None) -> ItemExtracted:
+    async def analyze_object(self, image_bytes: bytes, user_id: Optional[int] = None, group_context: Optional[dict] = None) -> ItemExtracted:
         if user_id:
             monitoring_service.check_quota(user_id)
 
@@ -90,6 +90,15 @@ class LLMService:
         base64_image = self._encode_image(image_bytes)
         mime_type = self._get_mime_type(image_bytes)
         
+        # Context Injection
+        context_str = ""
+        if group_context:
+            context_str = f"""
+CONTEXT: The user is adding an item to a specific collection.
+- Collection Name: "{group_context.get('name', 'General')}"
+- Collection Goal: "{group_context.get('description', '')}"
+"""
+
         try:
             client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
             response = await client.chat.completions.create(
@@ -97,11 +106,12 @@ class LLMService:
                 messages=[
                     {
                         "role": "system",
-                        "content": """Eres un asistente experto en inventarios y registro. Tu tarea es analizar imágenes y extraer datos estructurados. Identifica el sujeto principal de la foto, que puede ser un Objeto, un Animal o una Persona.
-
+                        "content": f"""Eres un asistente experto en inventarios y registro. Tu tarea es analizar imágenes y extraer datos estructurados. Identifica el sujeto principal de la foto, que puede ser un Objeto, un Animal o una Persona.
+{context_str}
 Reglas Generales:
 - PRIVACIDAD: No extraigas nombres reales ni información biométrica (PII). Limítate a descripciones visuales.
 - Salida estricta en JSON con las claves: 'name', 'description', 'category', 'estimated_price'.
+- CONSTRAINT: Use the collection context to infer the specific use case of the item (e.g., if Collection is "Camping", a "Knife" is a "Survival Tool", not "Kitchenware").
 
 Reglas para Personas:
 - Name: Usa términos genéricos como "Persona", "Trabajador", "Staff", o el rol si es evidente por el uniforme (ej: "Médico", "Ingeniero").
@@ -114,6 +124,10 @@ Reglas para Objetos:
 - Description: Breve descripción técnica o visual.
 - Category: Categoría corta (1-2 palabras).
 - estimated_price: Valor numérico estimado o null."""
+                    },
+                    {
+                        "role": "user",
+                        "content": [
                     },
                     {
                         "role": "user",

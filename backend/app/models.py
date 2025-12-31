@@ -18,6 +18,7 @@ class SharedAccess(SQLModel, table=True):
 
 class InventoryGroupBase(SQLModel):
     name: str
+    description: Optional[str] = Field(default=None, max_length=250)
     owner_id: int = Field(foreign_key="user.id")
 
 class InventoryGroup(InventoryGroupBase, table=True):

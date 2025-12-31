@@ -8,6 +8,7 @@ import useSWR from "swr";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
@@ -24,6 +25,7 @@ export default function InventoryFoldersPage() {
   const { data: groups, error, isLoading, mutate } = useSWR(token ? `${API_BASE_URL}/api/v1/groups` : null, fetcher);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupDescription, setNewGroupDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
   const handleCreateGroup = async (e: React.FormEvent) => {
@@ -36,11 +38,12 @@ export default function InventoryFoldersPage() {
       const res = await fetch(`${API_BASE_URL}/api/v1/groups`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ name: newGroupName })
+        body: JSON.stringify({ name: newGroupName, description: newGroupDescription })
       });
       if (!res.ok) throw new Error("Failed to create group");
       toast.success("Folder created");
       setNewGroupName("");
+      setNewGroupDescription("");
       setIsCreateOpen(false);
       mutate();
     } catch (error) {
@@ -84,6 +87,19 @@ export default function InventoryFoldersPage() {
                   onChange={(e) => setNewGroupName(e.target.value)}
                   required
                   className="rounded-none border-black focus-visible:ring-0 focus-visible:border-black"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="description" className="uppercase font-mono text-xs">Description</Label>
+                  <span className="font-mono text-[10px] text-neutral-500">[{newGroupDescription.length} / 250 CHARS]</span>
+                </div>
+                <Textarea
+                  id="description"
+                  placeholder="E.G. PERSONAL ELECTRONICS AND GADGETS"
+                  value={newGroupDescription}
+                  onChange={(e) => setNewGroupDescription(e.target.value.slice(0, 250))}
+                  className="w-full border-black p-2 font-mono text-sm bg-white rounded-none resize-none h-24 focus-visible:ring-0 focus-visible:border-black"
                 />
               </div>
               <DialogFooter>
