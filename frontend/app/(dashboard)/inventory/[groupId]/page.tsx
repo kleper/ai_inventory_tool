@@ -236,14 +236,58 @@ export default function FolderDetailPage() {
                             <p className="text-muted-foreground">No items found.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            {filteredItems.map((item: any) => (
-                                <InventoryCard
-                                    key={item.id}
-                                    item={item}
-                                    canEdit={canWrite} // Pass new prop to disable edit buttons
-                                />
-                            ))}
+                        <div className="space-y-0">
+                            {/* Mobile View: Brutalist List */}
+                            <div className="md:hidden border-t border-black">
+                                {filteredItems.map((item: any) => (
+                                    <Link
+                                        key={item.id}
+                                        href={`/inventory/item/${item.id}`}
+                                        className="w-full bg-white border-x border-b border-black p-3 flex flex-row gap-4 items-center rounded-none active:bg-neutral-100 transition-colors"
+                                    >
+                                        <div className="w-16 h-16 shrink-0 bg-neutral-100 border border-black rounded-none overflow-hidden relative">
+                                            {item.image_url ? (
+                                                <img
+                                                    src={item.image_url}
+                                                    alt={item.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                                                    <Camera className="w-6 h-6" />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex-1 min-w-0 overflow-hidden">
+                                            <h3 className="text-black font-medium text-base truncate uppercase tracking-tight">
+                                                {item.name}
+                                            </h3>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-xs text-black uppercase tracking-wider font-mono">
+                                                    ID: {item.id}
+                                                </span>
+                                                {item.price && (
+                                                    <span className="text-xs text-black font-bold border border-black px-1">
+                                                        ${item.price}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+
+                            {/* Desktop View: Grid */}
+                            <div className="hidden md:grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                {filteredItems.map((item: any) => (
+                                    <InventoryCard
+                                        key={item.id}
+                                        item={item}
+                                        canEdit={canWrite}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>

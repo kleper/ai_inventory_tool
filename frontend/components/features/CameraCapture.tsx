@@ -88,44 +88,55 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
                     </Button>
                 </div>
             ) : (
-                // Preview State - Wireframe
-                <div className="w-full space-y-6">
-                    <div className="relative w-full border border-black bg-neutral-100 aspect-video flex items-center justify-center p-1 shadow-none">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                            src={previewUrl}
-                            alt="Preview"
-                            className="w-full h-full object-contain"
-                        />
-                        {isLoading && (
-                            <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center gap-4">
-                                <Loader2 className="text-black animate-spin" size={48} />
-                                <span className="text-black font-mono uppercase tracking-widest animate-pulse">Processing...</span>
-                            </div>
-                        )}
-                    </div>
+                // Preview State - Brutalist Wireframe
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/90 backdrop-blur-sm animate-in fade-in">
+                    <div className="w-full max-w-sm bg-white border border-black shadow-none rounded-none overflow-hidden">
+                        {/* Header */}
+                        <div className="py-3 border-b border-black bg-white text-center">
+                            <h3 className="font-bold text-black uppercase tracking-widest text-sm">Confirm Photo</h3>
+                        </div>
 
-                    <div className="flex gap-4 justify-center">
-                        <Button
-                            variant="destructive"
-                            size="lg"
-                            onClick={handleRetake}
-                            className="flex-1 max-w-[200px] border-destructive rounded-none font-bold uppercase tracking-wide"
-                            disabled={isLoading}
-                        >
-                            <X className="mr-2 h-5 w-5" />
-                            Retake
-                        </Button>
-                        <Button
-                            variant="default"
-                            size="lg"
-                            onClick={handleConfirm}
-                            className="flex-1 max-w-[200px] bg-black text-white border-black hover:bg-neutral-800 rounded-none font-bold uppercase tracking-wide shadow-none"
-                            disabled={isLoading}
-                        >
-                            <Check className="mr-2 h-5 w-5" />
-                            Use Photo
-                        </Button>
+                        {/* Image */}
+                        <div className="relative w-full aspect-[4/3] bg-zinc-50 border-b border-black">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={previewUrl}
+                                alt="Preview"
+                                className="w-full h-full object-contain mix-blend-multiply"
+                            />
+                            {isLoading && (
+                                <div className="absolute inset-0 bg-white/90 flex flex-col items-center justify-center gap-4 z-10">
+                                    <Loader2 className="text-black animate-spin" size={32} />
+                                    <span className="text-black font-mono uppercase tracking-widest text-xs animate-pulse">Processing...</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer Actions */}
+                        <div className="grid grid-cols-2 gap-px bg-black border-t-0">
+                            {/* gap-px with bg-black simulates shared border if items are white, 
+                               but here we want strict 1px. Simple grid with -ml-px might work or just normal grid.
+                               Prompt says: gap-[-1px]
+                            */}
+                            <div className="flex">
+                                <button
+                                    onClick={handleRetake}
+                                    disabled={isLoading}
+                                    className="w-full bg-white text-black font-medium uppercase tracking-widest py-4 hover:bg-zinc-100 disabled:opacity-50 transition-colors rounded-none flex items-center justify-center gap-2 border-none"
+                                >
+                                    <X className="w-4 h-4" /> Retake
+                                </button>
+                            </div>
+                            <div className="flex border-l border-black">
+                                <button
+                                    onClick={handleConfirm}
+                                    disabled={isLoading}
+                                    className="w-full bg-black text-white font-medium uppercase tracking-widest py-4 hover:bg-zinc-900 disabled:opacity-50 transition-colors rounded-none flex items-center justify-center gap-2 border-none"
+                                >
+                                    <Check className="w-4 h-4" /> Use Photo
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

@@ -31,84 +31,93 @@ export function InventoryCard({ item, canEdit }: { item: Item, canEdit?: boolean
     }
 
     return (
-        <Link href={`/inventory/item/${item.id}`} className="block h-full">
-            <motion.div
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="group relative bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 h-full flex flex-col"
+        <Link href={`/inventory/item/${item.id}`} className="block h-full w-full">
+            {/* 
+              Responsive Layout: 
+              - Mobile (< md): Horizontal Card (flex-row)
+              - Desktop (>= md): Vertical Card (flex-col) 
+            */}
+            <div
+                className="group relative bg-white border border-black rounded-none shadow-none hover:bg-zinc-50 transition-colors duration-200 h-full w-full flex flex-row md:flex-col items-center md:items-start p-2 md:p-0 gap-3 md:gap-0"
             >
-                {/* Image Area - Aspect Square */}
-                <div className="aspect-square bg-gray-100 dark:bg-neutral-800 relative overflow-hidden">
+                {/* Image Area */}
+                {/* Mobile: Fixed w-20 h-20. Desktop: w-full aspect-square */}
+                <div className="w-20 h-20 shrink-0 md:w-full md:h-auto md:aspect-square bg-zinc-50 border border-black md:border-x-0 md:border-t-0 md:border-b relative overflow-hidden rounded-none">
                     <SecureImage
                         itemId={item.id}
-                        fallbackSrc={item.imageUrl} // Fallback for legacy/external images
+                        fallbackSrc={item.imageUrl}
                         alt={item.name}
                         className="w-full h-full object-cover transition-transform group-hover:scale-105"
                         variant="thumbnail"
                     />
 
-                    {/* Status Badge Overlay */}
-                    <div className="absolute top-2 right-2">
-                        {item.status === 'pending_price' ? (
-                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full shadow-sm">
-                                <Clock className="w-3 h-3" /> Pending
+                    {/* Badge Overlay - Desktop Only usually, or absolute top right */}
+                    <div className="absolute top-1 right-1 md:top-2 md:right-2">
+                        {/* Badges: Simple, bordered, transparent, uppercase */}
+                        {item.status === 'pending_price' && (
+                            <span className="bg-white/90 text-[10px] font-bold uppercase tracking-wider text-black border border-black px-1.5 py-0.5 rounded-none">
+                                Pending
                             </span>
-                        ) : item.status === 'completed' ? (
-                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full shadow-sm">
-                                <CheckCircle2 className="w-3 h-3" /> Done
+                        )}
+                        {item.status === 'completed' && (
+                            <span className="hidden md:inline-flex bg-white/90 text-[10px] font-bold uppercase tracking-wider text-black border border-black px-1.5 py-0.5 rounded-none">
+                                Done
                             </span>
-                        ) : item.status === 'needs_review' ? (
-                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-yellow-700 bg-yellow-50 border border-yellow-200 px-2 py-1 rounded-full shadow-sm">
-                                <AlertCircle className="w-3 h-3" /> Review
+                        )}
+                        {item.status === 'needs_review' && (
+                            <span className="bg-white/90 text-[10px] font-bold uppercase tracking-wider text-black border border-black px-1.5 py-0.5 rounded-none">
+                                Review
                             </span>
-                        ) : (
-                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200 px-2 py-1 rounded-full shadow-sm animate-pulse">
-                                Processing
+                        )}
+                        {/* Default/Processing */}
+                        {!['pending_price', 'completed', 'needs_review'].includes(item.status) && (
+                            <span className="bg-white/90 text-[10px] font-bold uppercase tracking-wider text-black border border-black px-1.5 py-0.5 rounded-none animate-pulse">
+                                ...
                             </span>
                         )}
                     </div>
                 </div>
 
                 {/* Content Area */}
-                <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
-                    <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-0.5">
+                <div className="flex-1 md:p-4 min-w-0 w-full flex flex-col justify-center md:justify-between h-full">
+                    <div className="flex flex-col gap-1 md:gap-2">
+                        <p className="hidden md:block text-[10px] text-gray-500 uppercase tracking-widest font-mono mb-0.5 truncate">
                             {item.category || "Uncategorized"}
                         </p>
-                        <h3 className="font-semibold text-base leading-tight line-clamp-2 min-h-[2.5rem]">
+                        <h3 className="font-bold text-sm md:text-base text-black leading-tight truncate md:line-clamp-2 md:whitespace-normal">
                             {item.name || "Unknown Item"}
                         </h3>
+                        {/* Mobile Metadata */}
+                        <p className="md:hidden text-xs text-gray-600 uppercase font-mono tracking-tight truncate">
+                            {item.category || "Item"} • ID:{item.id}
+                        </p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-neutral-800">
+                    <div className="hidden md:flex items-center justify-between pt-3 mt-auto border-t border-transparent md:border-black/5">
                         {item.price ? (
-                            <div className="flex items-center text-green-600 font-bold dark:text-green-400">
-                                <span className="text-lg">${item.price.toFixed(2)}</span>
+                            <div className="flex items-center text-black font-mono font-bold">
+                                <span className="text-sm border border-black px-1 bg-transparent">${item.price.toFixed(2)}</span>
                             </div>
                         ) : (
-                            <div className="flex items-center text-gray-400 text-sm italic">
+                            <div className="flex items-center text-gray-400 text-xs font-mono">
                                 <span>--.--</span>
                             </div>
                         )}
                     </div>
                 </div>
-            </motion.div>
+            </div>
         </Link>
     );
 }
 
-// Skeleton Component
+// Skeleton Component - Brutalist Style
 export function InventoryCardSkeleton() {
     return (
-        <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-xl overflow-hidden h-full">
-            <div className="aspect-square bg-gray-100 dark:bg-neutral-800 animate-pulse" />
-            <div className="p-4 space-y-3">
-                <div className="h-3 bg-gray-100 dark:bg-neutral-800 rounded w-1/3 animate-pulse" />
-                <div className="h-5 bg-gray-100 dark:bg-neutral-800 rounded w-3/4 animate-pulse" />
-                <div className="pt-2 border-t border-gray-100 dark:border-neutral-800 mt-2">
-                    <div className="h-6 bg-gray-100 dark:bg-neutral-800 rounded w-1/2 animate-pulse" />
-                </div>
+        <div className="bg-white border border-black rounded-none h-full flex flex-row md:flex-col p-2 md:p-0 gap-3 md:gap-0">
+            <div className="w-20 h-20 md:w-full md:aspect-square bg-zinc-100 border border-black md:border-none animate-pulse shrink-0" />
+            <div className="md:p-4 space-y-2 flex-1 w-full">
+                <div className="h-3 bg-zinc-100 w-1/3 animate-pulse" />
+                <div className="h-4 bg-zinc-100 w-3/4 animate-pulse" />
             </div>
         </div>
     )
