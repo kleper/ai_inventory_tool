@@ -11,9 +11,10 @@ interface SecureImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     fallbackSrc?: string;
     alt: string;
     className?: string;
+    variant?: "thumbnail" | "original";
 }
 
-export function SecureImage({ itemId, fallbackSrc, alt, className, ...props }: SecureImageProps) {
+export function SecureImage({ itemId, fallbackSrc, alt, className, variant = "original", ...props }: SecureImageProps) {
     const { data: session } = useSession();
     const [src, setSrc] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +39,12 @@ export function SecureImage({ itemId, fallbackSrc, alt, className, ...props }: S
                     headers["Authorization"] = `Bearer ${token}`;
                 }
 
-                const res = await fetch(`${API_BASE_URL}/api/v1/media/items/${itemId}/image`, {
+                // Determine endpoint based on variant
+                const endpoint = variant === "thumbnail"
+                    ? `${API_BASE_URL}/api/v1/media/items/${itemId}/thumbnail`
+                    : `${API_BASE_URL}/api/v1/media/items/${itemId}/original`;
+
+                const res = await fetch(endpoint, {
                     headers
                 });
 

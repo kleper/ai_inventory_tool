@@ -1,7 +1,8 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect, Request
 from typing import Optional, List
 from datetime import datetime
 from sqlmodel import Session, select
+from app.core.limiter import limiter
 
 from app.services.llm_service import get_llm_service, LLMService, ItemExtracted
 from app.dependencies.auth import get_current_user, get_inventory_scope
@@ -9,8 +10,12 @@ from app.models import User, Item, Invoice, InventoryGroup, SharedAccess
 from app.services.matching_service import run_matching_background_task
 from app.services.websocket_manager import manager
 from app.database import get_session
+from app.services.price_service import search_approximate_price
+
+import logging
 
 router = APIRouter(prefix="/api/v1/inventory", tags=["inventory"])
+logger = logging.getLogger(__name__)
 
 # --- Helper ---
 def validate_group_write_access(session: Session, user: User, group_id: int):
@@ -38,7 +43,9 @@ def validate_group_write_access(session: Session, user: User, group_id: int):
 # --- Endpoints ---
 
 @router.post("/process-object", response_model=Item)
+@limiter.limit("10/minute")
 async def process_object(
+    request: Request,
     group_id: Optional[int] = None,
     file: UploadFile = File(...),
     llm_service: LLMService = Depends(get_llm_service),
@@ -52,20 +59,23 @@ async def process_object(
     try:
         contents = await file.read()
         
-        # Save file to disk securely
-        import uuid
-        import os
-        ext = ".jpg"
-        if file.filename:
-            _, ext_part = os.path.splitext(file.filename)
-            if ext_part:
-                ext = ext_part.lower()
-        filename = f"{uuid.uuid4()}{ext}"
-        save_path = f"/app/media/{filename}"
-        with open(save_path, "wb") as f:
-            f.write(contents)
-            
+        from app.services.image_service import save_image
+        
+        # Save file (original + thumb)
+        filename = save_image(contents, "/app/media")
+        
         item_data = await llm_service.analyze_object(contents, user_id=current_user.id)
+        
+        # If LLM didn't find a price, try web search
+        if not item_data.estimated_price or item_data.estimated_price == 0:
+            print(f"No price from LLM for {item_data.name}, searching web...")
+            try:
+                web_price = search_approximate_price(item_data.name)
+                if web_price:
+                     print(f"Found web price: {web_price}")
+                     item_data.estimated_price = web_price
+            except Exception as e:
+                print(f"Web search failed: {e}")
         
         new_item = Item(
             name=item_data.name,
@@ -92,7 +102,9 @@ async def process_object(
         raise HTTPException(status_code=500, detail=f"Error processing object: {str(e)}")
 
 @router.post("/process-invoice")
+@limiter.limit("10/minute")
 async def process_invoice(
+    request: Request,
     group_id: Optional[int] = None,
     file: UploadFile = File(...),
     target_item_name: Optional[str] = None,
@@ -205,24 +217,10 @@ async def update_item_image(
 
     # Process File
     try:
-        import uuid
-        import os
-        contents = await file.read()
+        from app.services.image_service import save_image
         
-        # Determine extension
-        ext = ".jpg"
-        if file.filename:
-            _, ext_part = os.path.splitext(file.filename)
-            if ext_part:
-                ext = ext_part.lower()
-        
-        # New filename
-        new_filename = f"{uuid.uuid4()}{ext}"
-        save_path = f"/app/media/{new_filename}"
-        
-        # Save new file
-        with open(save_path, "wb") as f:
-            f.write(contents)
+        # Save new file (original + thumb)
+        new_filename = save_image(contents, "/app/media")
             
         # Optional: Delete old file if it exists and looks like a UUID (security precaution)
         # For simplicity, we skip deletion or assume cron job cleans up, 
@@ -281,6 +279,10 @@ async def update_item(
     for key, value in item_data.items():
         if key not in ["id", "user_id", "created_at"]:
             setattr(path_item, key, value)
+    
+    # Check if we should update status from pending_price -> completed
+    if path_item.status == "pending_price" and path_item.price and path_item.price > 0:
+        path_item.status = "completed"
             
     session.add(path_item)
     session.commit()

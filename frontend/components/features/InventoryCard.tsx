@@ -45,6 +45,7 @@ export function InventoryCard({ item, canEdit }: { item: Item, canEdit?: boolean
                         fallbackSrc={item.imageUrl} // Fallback for legacy/external images
                         alt={item.name}
                         className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        variant="thumbnail"
                     />
 
                     {/* Status Badge Overlay */}

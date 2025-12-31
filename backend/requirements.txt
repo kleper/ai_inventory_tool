@@ -14,3 +14,7 @@ websockets
 fastapi-mail
 jinja2
 pydantic-settings
+duckduckgo-search
+Pillow
+slowapi
+redis

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
 from app.services.email import EmailService
 from sqlmodel import Session, select
 from app.database import get_session
@@ -7,6 +7,7 @@ from app.models import User, Invitation
 from typing import List
 import secrets
 from datetime import datetime, timedelta
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"], dependencies=[Depends(require_admin)])
 
@@ -21,13 +22,15 @@ class InvitationRequest(BaseModel):
     email: EmailStr
 
 @router.post("/invitations", response_model=Invitation)
+@limiter.limit("20/hour")
 async def create_invitation(
-    request: InvitationRequest,
+    request: Request,
+    invitation_request: InvitationRequest,
     background_tasks: BackgroundTasks,
     current_user: User = Depends(require_admin),
     session: Session = Depends(get_session)
 ):
-    email = request.email
+    email = invitation_request.email
     # Check if user already exists
     existing_user = session.exec(select(User).where(User.email == email)).first()
     if existing_user:
@@ -83,7 +86,9 @@ async def revoke_invitation(
     return {"message": "Invitation revoked"}
 
 @router.post("/invitations/{invitation_id}/resend")
+@limiter.limit("20/hour")
 async def resend_invitation(
+    request: Request,
     invitation_id: int,
     background_tasks: BackgroundTasks,
     session: Session = Depends(get_session)

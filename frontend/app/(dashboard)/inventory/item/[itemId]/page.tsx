@@ -10,11 +10,18 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SecureImage } from "@/components/ui/SecureImage";
 import { ItemPhotoUpdater } from "@/components/features/ItemPhotoUpdater";
+import { downloadSecureFile } from "@/lib/download";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 // import  from "@/components/ui/alert"; // Removed unused Alert import
 
 import { useAuthFetcher } from "@/hooks/useAuthFetcher";
@@ -112,6 +119,23 @@ export default function ItemDetailPage() {
             toast.error("Delete failed");
         }
     };
+    const handleDownload = async () => {
+        try {
+            if (!token || !item?.image_url) return;
+            // Provide a nice filename
+            const filename = `${item.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.jpg`;
+            const downloadUrl = `${API_BASE_URL}/api/v1/inventory/items/${itemId}/download`;
+            // Actually the endpoint is media, let's fix that in next step if logic was wrong, 
+            // but previously defined in media.py as /api/v1/media/items/{id}/download
+            // The plan said /api/v1/media...
+            await downloadSecureFile(`${API_BASE_URL}/api/v1/media/items/${itemId}/download`, filename, token);
+            toast.success("Download started");
+        } catch (err) {
+            toast.error("Download failed");
+        }
+    };
+
+    // ...
 
     // ...
 
@@ -189,6 +213,7 @@ export default function ItemDetailPage() {
                                 alt={item.name}
                                 className="w-full h-full object-cover"
                                 key={item.image_url} // Force remount on image update
+                                variant="original"
                             />
                             <div className="absolute inset-0 border border-transparent group-hover:border-black/20 transition-colors pointer-events-none z-10" />
                             <ItemPhotoUpdater
@@ -206,6 +231,18 @@ export default function ItemDetailPage() {
                                 <Button variant="outline" className="flex-1 border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide" onClick={() => setIsEditing(true)}>
                                     <Edit2 className="w-4 h-4 mr-2" /> Edit Details
                                 </Button>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="outline" size="icon" className="border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide w-10 h-10 p-0" onClick={handleDownload}>
+                                                <Download className="w-4 h-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Download Original</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
                                 <Button variant="destructive" className="px-6 rounded-none bg-white text-destructive border-destructive hover:bg-destructive hover:text-white uppercase font-bold tracking-wide" onClick={handleDelete}>
                                     <Trash2 className="w-5 h-5" />
                                 </Button>

@@ -7,6 +7,8 @@ from typing import Optional
 from datetime import datetime
 from app.services.security import verify_password, get_password_hash, create_access_token
 from app.dependencies.auth import get_current_user
+from app.core.limiter import limiter
+from fastapi import Request
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
@@ -63,7 +65,9 @@ async def validate_registration(
 
 
 @router.post("/complete-registration")
+@limiter.limit("5/minute")
 async def complete_registration(
+    request: Request,
     data: CompleteRegistrationRequest,
     session: Session = Depends(get_session)
 ):
@@ -118,7 +122,9 @@ async def complete_registration(
 
 
 @router.post("/login")
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     data: LoginRequest,
     session: Session = Depends(get_session)
 ):

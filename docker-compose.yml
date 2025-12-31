@@ -12,6 +12,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - REDIS_URL=redis://redis:6379/0
 
   frontend:
     build:
@@ -34,6 +38,13 @@ services:
       - INTERNAL_BACKEND_URL=http://backend:8000
     stdin_open: true
     tty: true
+
+  redis:
+    image: redis:alpine
+    container_name: smartinventory_redis
+    ports:
+      - "6379:6379"
+    restart: always
 
   db:
     image: postgres:15-alpine
