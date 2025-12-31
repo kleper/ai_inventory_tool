@@ -34,27 +34,23 @@ export function AnalyticsDashboard() {
     return (
         <div className="space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white dark:bg-neutral-800 p-6 rounded-xl border border-gray-100 dark:border-neutral-700 shadow-sm">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-green-100 text-green-600 rounded-lg">
-                            <DollarSign className="w-6 h-6" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 border border-black rounded-none shadow-none">
+                    <div className="flex flex-col h-full justify-between">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-xs uppercase tracking-widest text-neutral-500 font-mono">Total AI Cost (7d)</span>
+                            <DollarSign className="w-4 h-4 text-black" />
                         </div>
-                        <div>
-                            <p className="text-sm text-gray-500">Total AI Cost (7d)</p>
-                            <h3 className="text-2xl font-bold">${totals.cost.toFixed(4)}</h3>
-                        </div>
+                        <h3 className="text-4xl font-bold font-mono tracking-tighter">${totals.cost.toFixed(4)}</h3>
                     </div>
                 </div>
-                <div className="bg-white dark:bg-neutral-800 p-6 rounded-xl border border-gray-100 dark:border-neutral-700 shadow-sm">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
-                            <Activity className="w-6 h-6" />
+                <div className="bg-white p-6 border border-black rounded-none shadow-none">
+                    <div className="flex flex-col h-full justify-between">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-xs uppercase tracking-widest text-neutral-500 font-mono">Total Tokens (7d)</span>
+                            <Activity className="w-4 h-4 text-black" />
                         </div>
-                        <div>
-                            <p className="text-sm text-gray-500">Total Tokens (7d)</p>
-                            <h3 className="text-2xl font-bold">{totals.tokens.toLocaleString()}</h3>
-                        </div>
+                        <h3 className="text-4xl font-bold font-mono tracking-tighter">{totals.tokens.toLocaleString()}</h3>
                     </div>
                 </div>
             </div>
@@ -62,29 +58,30 @@ export function AnalyticsDashboard() {
             {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Cost per Day */}
-                <div className="bg-white dark:bg-neutral-800 p-6 rounded-xl border border-gray-100 dark:border-neutral-700 shadow-sm">
-                    <h3 className="text-lg font-semibold mb-6">Daily Cost Trend</h3>
-                    <div className="h-[300px] w-full">
+                <div className="bg-white p-6 border border-black rounded-none shadow-none flex flex-col h-[400px]">
+                    <h3 className="text-sm font-bold uppercase tracking-widest mb-6 border-b border-black pb-2 text-black">Daily Cost Trend</h3>
+                    <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data.daily_usage}>
-                                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                                <XAxis dataKey="date" />
-                                <YAxis />
+                                <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: 'monospace' }} stroke="#000" />
+                                <YAxis tick={{ fontSize: 10, fontFamily: 'monospace' }} stroke="#000" />
                                 <Tooltip
-                                    contentStyle={{ backgroundColor: '#1f2937', color: '#fff', borderRadius: '8px', border: 'none' }}
-                                    formatter={(value: any) => [`$${Number(value).toFixed(4)}`, "Cost"]}
+                                    cursor={{ fill: '#f4f4f5' }}
+                                    contentStyle={{ backgroundColor: '#fff', color: '#000', border: '1px solid #000', borderRadius: '0px', padding: '8px' }}
+                                    formatter={(value: any) => [`$${Number(value).toFixed(4)}`, "COST"]}
+                                    labelStyle={{ fontFamily: 'monospace', textTransform: 'uppercase', fontSize: '10px', fontWeight: 'bold' }}
+                                    itemStyle={{ fontFamily: 'monospace', fontSize: '12px' }}
                                 />
-                                <Legend />
-                                <Bar dataKey="cost" fill="#3b82f6" name="Cost ($)" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="cost" fill="#000000" radius={[0, 0, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* User Distribution */}
-                <div className="bg-white dark:bg-neutral-800 p-6 rounded-xl border border-gray-100 dark:border-neutral-700 shadow-sm">
-                    <h3 className="text-lg font-semibold mb-6">Cost by User</h3>
-                    <div className="h-[300px] w-full">
+                <div className="bg-white p-6 border border-black rounded-none shadow-none flex flex-col h-[400px]">
+                    <h3 className="text-sm font-bold uppercase tracking-widest mb-6 border-b border-black pb-2 text-black">Cost by User</h3>
+                    <div className="flex-1 w-full min-h-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
@@ -92,18 +89,28 @@ export function AnalyticsDashboard() {
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={60}
-                                    outerRadius={100}
-                                    fill="#8884d8"
-                                    paddingAngle={5}
+                                    outerRadius={90}
+                                    fill="#000"
                                     dataKey="cost"
                                     nameKey="user_id"
-                                    label={({ name, percent }: any) => `User ${name} ${(percent * 100).toFixed(0)}%`}
+                                    stroke="#000"
                                 >
                                     {data.user_distribution.map((entry: any, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#000000' : '#ffffff'} stroke="#000000" />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: any) => [`$${Number(value).toFixed(4)}`, "Cost"]} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#fff', color: '#000', border: '1px solid #000', borderRadius: '0px', padding: '8px' }}
+                                    formatter={(value: any) => [`$${Number(value).toFixed(4)}`, "COST"]}
+                                    itemStyle={{ fontFamily: 'monospace', fontSize: '12px' }}
+                                />
+                                <Legend
+                                    layout="vertical"
+                                    verticalAlign="middle"
+                                    align="right"
+                                    iconType="square"
+                                    formatter={(value: string) => <span className="font-mono text-xs uppercase ml-2 text-black">User {value}</span>}
+                                />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
