@@ -3,8 +3,10 @@
 import { useParams } from "next/navigation";
 import useSWR from "swr";
 import { InventoryCard, InventoryCardSkeleton } from "@/components/features/InventoryCard";
+import { SecureImage } from "@/components/ui/SecureImage";
 import { CameraCapture } from "@/components/features/CameraCapture";
 import { API_BASE_URL } from "@/lib/config";
+import { InventoryAnalyticsTab } from "@/components/features/InventoryAnalyticsTab";
 import { InvoiceUpload } from "@/components/features/InvoiceUpload";
 import { ManualItemDialog } from "@/components/features/ManualItemDialog";
 import { Button } from "@/components/ui/button";
@@ -53,6 +55,8 @@ export default function FolderDetailPage() {
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isManualOpen, setIsManualOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
+
+    const [activeTab, setActiveTab] = useState<'items' | 'analytics'>('items');
 
     // Permission Logic
     const role = group?.my_role || "VIEWER";
@@ -121,6 +125,7 @@ export default function FolderDetailPage() {
         <div className="flex flex-col h-full bg-background">
             <div className="bg-card border-b p-6 sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto space-y-4">
+                    {/* Breadcrumbs */}
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Link href="/inventory" className="hover:text-foreground transition-colors flex items-center gap-1">
                             <ArrowLeft className="w-4 h-4" /> My Inventories
@@ -130,6 +135,7 @@ export default function FolderDetailPage() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        {/* Title & Badges */}
                         <div className="flex items-center gap-2">
                             <h1 className="text-2xl font-bold tracking-tight">{groupName}</h1>
                             {group?.is_shared && (
@@ -144,6 +150,7 @@ export default function FolderDetailPage() {
                             )}
                         </div>
 
+                        {/* Actions */}
                         <div className="flex items-center gap-2">
                             {/* Share Button: Only Owner */}
                             {isOwner && (
@@ -183,7 +190,25 @@ export default function FolderDetailPage() {
                         </div>
                     </div>
 
-                    {/* Dialogs */}
+                    {/* Tab Navigation - Brutalist Style */}
+                    <div className="flex border-b border-black mt-4">
+                        <button
+                            onClick={() => setActiveTab('items')}
+                            className={`px-6 py-2 text-sm font-bold uppercase tracking-wider border-t border-x border-black transition-colors ${activeTab === 'items' ? 'bg-black text-white' : 'bg-white text-black hover:bg-neutral-100'}`}
+                            style={{ marginBottom: '-1px' }} // Overlap border
+                        >
+                            Items
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('analytics')}
+                            className={`px-6 py-2 text-sm font-bold uppercase tracking-wider border-t border-r border-black transition-colors ${activeTab === 'analytics' ? 'bg-black text-white' : 'bg-white text-black hover:bg-neutral-100'}`}
+                            style={{ marginBottom: '-1px' }}
+                        >
+                            Analytics
+                        </button>
+                    </div>
+
+                    {/* Dialogs Components (Hidden) */}
                     {canWrite && (
                         <>
                             <Dialog open={isScanOpen} onOpenChange={setIsScanOpen}>
@@ -210,88 +235,93 @@ export default function FolderDetailPage() {
                         isOwner={isOwner}
                     />
 
-                    {/* Filters */}
-                    <div className="flex items-center gap-3 pt-2">
-                        <div className="relative flex-1 max-w-md">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Search items..."
-                                className="pl-9"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
+                    {/* Filters - Only show in Items tab */}
+                    {activeTab === 'items' && (
+                        <div className="flex items-center gap-3 pt-2">
+                            <div className="relative flex-1 max-w-md">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search items..."
+                                    className="pl-9"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
             <div className="flex-1 overflow-auto p-6 bg-muted/20">
                 <div className="max-w-7xl mx-auto">
-                    {isLoading ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            {[1, 2, 3, 4, 5, 6].map(i => <InventoryCardSkeleton key={i} />)}
-                        </div>
-                    ) : (!filteredItems || filteredItems.length === 0) ? (
-                        <div className="text-center py-20">
-                            <p className="text-muted-foreground">No items found.</p>
-                        </div>
+                    {activeTab === 'analytics' ? (
+                        <InventoryAnalyticsTab items={items || []} />
                     ) : (
-                        <div className="space-y-0">
-                            {/* Mobile View: Brutalist List */}
-                            <div className="md:hidden border-t border-black">
-                                {filteredItems.map((item: any) => (
-                                    <Link
-                                        key={item.id}
-                                        href={`/inventory/item/${item.id}`}
-                                        className="w-full bg-white border-x border-b border-black p-3 flex flex-row gap-4 items-center rounded-none active:bg-neutral-100 transition-colors"
-                                    >
-                                        <div className="w-16 h-16 shrink-0 bg-neutral-100 border border-black rounded-none overflow-hidden relative">
-                                            {item.image_url ? (
-                                                <img
-                                                    src={item.image_url}
+                        // Active Tab: Items
+                        isLoading ? (
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                {[1, 2, 3, 4, 5, 6].map(i => <InventoryCardSkeleton key={i} />)}
+                            </div>
+                        ) : (!filteredItems || filteredItems.length === 0) ? (
+                            <div className="text-center py-20">
+                                <p className="text-muted-foreground">No items found.</p>
+                            </div>
+                        ) : (
+                            // Re-using existing layout logic
+                            <div className="space-y-0">
+                                {/* Mobile View: Brutalist List */}
+                                <div className="md:hidden border-t border-black">
+                                    {filteredItems.map((item: any) => (
+                                        <Link
+                                            key={item.id}
+                                            href={`/inventory/item/${item.id}`}
+                                            className="w-full bg-white border-x border-b border-black p-3 flex flex-row gap-4 items-center rounded-none active:bg-neutral-100 transition-colors"
+                                        >
+                                            <div className="w-16 h-16 shrink-0 bg-neutral-100 border border-black rounded-none overflow-hidden relative">
+                                                <SecureImage
+                                                    itemId={item.id}
+                                                    fallbackSrc={item.image_url}
                                                     alt={item.name}
                                                     className="w-full h-full object-cover"
+                                                    variant="thumbnail"
                                                 />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-neutral-300">
-                                                    <Camera className="w-6 h-6" />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex-1 min-w-0 overflow-hidden">
-                                            <h3 className="text-black font-medium text-base truncate uppercase tracking-tight">
-                                                {item.name}
-                                            </h3>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-xs text-black uppercase tracking-wider font-mono">
-                                                    ID: {item.id}
-                                                </span>
-                                                {item.price && (
-                                                    <span className="text-xs text-black font-bold border border-black px-1">
-                                                        ${item.price}
-                                                    </span>
-                                                )}
                                             </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
 
-                            {/* Desktop View: Grid */}
-                            <div className="hidden md:grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                                {filteredItems.map((item: any) => (
-                                    <InventoryCard
-                                        key={item.id}
-                                        item={item}
-                                        canEdit={canWrite}
-                                    />
-                                ))}
+                                            <div className="flex-1 min-w-0 overflow-hidden">
+                                                <h3 className="text-black font-medium text-base truncate uppercase tracking-tight">
+                                                    {item.name}
+                                                </h3>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-xs text-black uppercase tracking-wider font-mono">
+                                                        ID: {item.id}
+                                                    </span>
+                                                    {item.price && (
+                                                        <span className="text-xs text-black font-bold border border-black px-1">
+                                                            ${item.price}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+
+                                {/* Desktop View: Grid */}
+                                <div className="hidden md:grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                    {filteredItems.map((item: any) => (
+                                        <InventoryCard
+                                            key={item.id}
+                                            item={item}
+                                            canEdit={canWrite}
+                                        />
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )
                     )}
                 </div>
             </div>
         </div>
     );
 }
+

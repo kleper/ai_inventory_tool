@@ -213,7 +213,7 @@ export default function ItemDetailPage() {
                                 alt={item.name}
                                 className="w-full h-full object-cover"
                                 key={item.image_url} // Force remount on image update
-                                variant="original"
+                                variant="thumbnail"
                             />
                             <div className="absolute inset-0 border border-transparent group-hover:border-black/20 transition-colors pointer-events-none z-10" />
                             <ItemPhotoUpdater
