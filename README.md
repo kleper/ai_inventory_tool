@@ -62,6 +62,26 @@ The app uses **NextAuth.js**.
     -   Currently configured to accept `admin@example.com` / `admin` (or check `backend/app/controllers/auth.py` for logic if fully implemented).
     -   *Note*: If you see a `NO_SECRET` error, ensure you have rebuilt the container after pulling latest changes (`docker-compose up --build`).
 
+## 🔐 Configuración de Google OAuth
+Para habilitar el inicio de sesión con Google, sigue estos pasos para obtener las credenciales:
+
+1.  Ve a [Google Cloud Console](https://console.cloud.google.com/).
+2.  Crea un nuevo proyecto o selecciona uno existente.
+3.  Ve a **"APIs & Services" > "OAuth consent screen"**.
+    -   Configura como **"External"** (para pruebas).
+    -   Llena los datos básicos (App name, email).
+4.  Ve a **"Credentials" > "Create Credentials" > "OAuth client ID"**.
+    -   Selecciona **"Web application"**.
+5.  **Configuración de URIs (CRÍTICO)**:
+    -   **Authorized JavaScript origins**: `http://localhost:3000`
+    -   **Authorized redirect URIs**: `http://localhost:3000/api/auth/callback/google` (Esta es la ruta por defecto de NextAuth).
+6.  Copia el **Client ID** y **Client Secret**.
+7.  Pégalos en tu archivo `.env`:
+    ```bash
+    GOOGLE_CLIENT_ID="tu-client-id"
+    GOOGLE_CLIENT_SECRET="tu-client-secret"
+    ```
+
 ## ⚠️ Troubleshooting
 
 **"Please define a `secret` in production" (NO_SECRET)**
