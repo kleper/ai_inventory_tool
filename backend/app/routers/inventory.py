@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect, Request
 from typing import Optional, List
 from datetime import datetime
-from sqlmodel import Session, select
+from sqlmodel import Session, select, SQLModel
 from app.core.limiter import limiter
 
 from app.services.llm_service import get_llm_service, LLMService, ItemExtracted
@@ -243,10 +243,19 @@ async def update_item_image(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating image: {str(e)}")
 
+# Update Schema
+class ItemUpdate(SQLModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    price: Optional[float] = None
+    quantity: Optional[int] = None
+    status: Optional[str] = None
+
 @router.put("/items/{item_id}", response_model=Item)
 async def update_item(
     item_id: int,
-    item_update: Item,
+    item_update: ItemUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
     allowed_groups: List[int] = Depends(get_inventory_scope)
@@ -281,8 +290,15 @@ async def update_item(
             setattr(path_item, key, value)
     
     # Check if we should update status from pending_price -> completed
-    if path_item.status == "pending_price" and path_item.price and path_item.price > 0:
-        path_item.status = "completed"
+    if path_item.status == "pending_price" and path_item.price is not None:
+        try:
+             price_val = float(path_item.price)
+             if price_val > 0:
+                 path_item.status = "completed"
+                 # Ensure it is stored as float if it was a string
+                 path_item.price = price_val
+        except ValueError:
+             pass # Invalid price format, ignore status auto-update
             
     session.add(path_item)
     session.commit()
