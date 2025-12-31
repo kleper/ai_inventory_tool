@@ -68,6 +68,7 @@ export const authOptions: NextAuthOptions = {
                 }
                 return process.env.GOOGLE_CLIENT_SECRET;
             })(),
+            allowDangerousEmailAccountLinking: true,
         })
     ],
     callbacks: {
