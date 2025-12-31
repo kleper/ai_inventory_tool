@@ -133,6 +133,19 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
 
+                {/* Developer Settings */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Developer Settings</CardTitle>
+                        <CardDescription>Manage API keys and integrations.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button variant="outline" className="w-full sm:w-auto border-black rounded-none uppercase tracking-widest font-bold hover:bg-black hover:text-white" asChild>
+                            <a href="/profile/developer">Manage API Keys</a>
+                        </Button>
+                    </CardContent>
+                </Card>
+
                 {/* Danger Zone */}
                 <Card className="border-red-100 dark:border-red-900/30">
                     <CardHeader>

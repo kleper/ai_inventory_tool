@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import inventory, admin, groups, auth, admin_stats, media
+from app.routers import inventory, admin, groups, auth, admin_stats, media, api_keys, public_api
 from dotenv import load_dotenv
 from app import database
 from app.models import User
@@ -32,6 +32,8 @@ app.include_router(groups.router)
 app.include_router(admin.router)
 app.include_router(admin_stats.router)
 app.include_router(media.router)
+app.include_router(api_keys.router)
+app.include_router(public_api.router)
 
 @app.on_event("startup")
 def on_startup():

@@ -128,10 +128,6 @@ Reglas para Objetos:
                     {
                         "role": "user",
                         "content": [
-                    },
-                    {
-                        "role": "user",
-                        "content": [
                             {"type": "text", "text": "Analyze this image and extract inventory data."},
                             {
                                 "type": "image_url",

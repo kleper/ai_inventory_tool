@@ -51,6 +51,19 @@ class User(SQLModel, table=True):
     owned_groups: List["InventoryGroup"] = Relationship(back_populates="owner")
     invitations_created: List["Invitation"] = Relationship(back_populates="creator")
     ai_logs: List["AIUsageLog"] = Relationship(back_populates="user")
+    api_keys: List["ApiKey"] = Relationship(back_populates="user")
+
+class ApiKey(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    key_hash: str = Field(index=True)
+    prefix: str
+    label: str
+    scopes: str = Field(default='["read"]')
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_used_at: Optional[datetime] = None
+    
+    user: Optional[User] = Relationship(back_populates="api_keys")
 
 class AIUsageLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
