@@ -31,6 +31,12 @@ class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
 
+class SocialLoginRequest(BaseModel):
+    email: str
+    name: Optional[str] = None
+    provider: str = "GOOGLE"
+    image: Optional[str] = None
+
 # --- Endpoints ---
 
 @router.post("/validate-registration")
@@ -160,6 +166,63 @@ async def login(
         "require_password_reset": user.force_password_change,
         "access_token": access_token
     }
+
+
+@router.post("/social-login")
+async def social_login(
+    data: SocialLoginRequest,
+    session: Session = Depends(get_session)
+):
+    """
+    Trusted Social Login:
+    Since NextAuth has already verified the email with Google,
+    we can trust this request to link/login the user.
+    """
+    user = session.exec(select(User).where(User.email == data.email)).first()
+    
+    if not user:
+        # Option 1: Auto-register (if desired) 
+        # For now, let's auto-register basic user or return 404
+        # User requested to "connect both account", implying account exists.
+        # But if it doesn't, we should create it to support "Sign up with Google".
+        
+        # Check for pending invites? Maybe. For now, basic specific creation.
+        new_user = User(
+            email=data.email,
+            name=data.name or data.email.split("@")[0],
+            auth_provider=data.provider,
+            role="USER",
+            status="ACTIVE",
+            image=data.image
+        )
+        session.add(new_user)
+        session.commit()
+        session.refresh(new_user)
+        user = new_user
+    else:
+        # Link account if not linked (e.g. was EMAIL, now adding GOOGLE info)
+        if user.auth_provider == "EMAIL" and data.provider == "GOOGLE":
+             # We could update provider or just allow it.
+             # Updating provider might lock out password login if we're stricter elsewhere.
+             # Let's just update the image if missing
+             if not user.image and data.image:
+                 user.image = data.image
+                 session.add(user)
+                 session.commit()
+
+    # Create Token
+    access_token = create_access_token(data={"sub": str(user.id), "role": user.role})
+    
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "name": user.name,
+        "role": user.role,
+        "image": user.image,
+        "require_password_reset": user.force_password_change,
+        "access_token": access_token
+    }
+
 
 @router.post("/change-password")
 async def change_password(

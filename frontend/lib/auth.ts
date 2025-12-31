@@ -84,12 +84,42 @@ export const authOptions: NextAuthOptions = {
                 return false;
             }
         },
-        async jwt({ token, user }) {
-            if (user) {
-                token.id = user.id;
-                token.role = (user as any).role;
-                token.require_password_reset = (user as any).require_password_reset;
-                token.accessToken = (user as any).access_token;
+        async jwt({ token, user, account }) {
+            // Initial Login
+            if (account && user) {
+                if (account.provider === 'google') {
+                    try {
+                        const backendUrl = process.env.INTERNAL_API_URL || "http://backend:8000";
+                        const res = await fetch(`${backendUrl}/api/v1/auth/social-login`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                email: user.email,
+                                name: user.name,
+                                image: user.image,
+                                provider: "GOOGLE"
+                            })
+                        });
+
+                        if (res.ok) {
+                            const backendUser = await res.json();
+                            token.id = backendUser.id;
+                            token.role = backendUser.role;
+                            token.require_password_reset = backendUser.require_password_reset;
+                            token.accessToken = backendUser.access_token;
+                        } else {
+                            console.error("Failed to sync social user with backend", await res.text());
+                        }
+                    } catch (error) {
+                        console.error("Social auth sync error:", error);
+                    }
+                } else {
+                    // Credentials provider (already has backend shape)
+                    token.id = user.id;
+                    token.role = (user as any).role;
+                    token.require_password_reset = (user as any).require_password_reset;
+                    token.accessToken = (user as any).access_token;
+                }
             }
             return token
         },
