@@ -66,6 +66,12 @@ class LLMService:
             self.base_url = "https://openrouter.ai/api/v1"
             # OpenRouter often requires a referrer/site-name header, handled by kwargs usually or ignored, 
             # but usually just changing base_url is enough for basic openai client compatibility.
+            self.extra_headers = {
+                "HTTP-Referer": settings.DOMAIN, # Optional, for including your app on openrouter.ai rankings.
+                "X-Title": "SmartInventory", # Optional. Shows in rankings on openrouter.ai.
+            }
+        else:
+             self.extra_headers = {}
 
         if not self.api_key:
             logger.warning("LLM API Key is missing. Service will return mock data or fail.")
@@ -103,7 +109,10 @@ CONTEXT: The user is adding an item to a specific collection.
 """
 
         try:
-            client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
+            client = AsyncOpenAI(
+                api_key=self.api_key, 
+                base_url=self.base_url
+            )
             response = await client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -164,10 +173,34 @@ Reglas para Objetos:
                 except Exception as log_err:
                      logger.error(f"Failed to log usage: {log_err}")
 
-            data = json.loads(content)
+            # Robust parsing for chatty models or markdown blocks
+            try:
+                data = json.loads(content)
+            except json.JSONDecodeError:
+                # Try to find JSON block code
+                if "```json" in content:
+                    import re
+                    match = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL)
+                    if match:
+                        data = json.loads(match.group(1))
+                    else:
+                        raise ValueError("Could not extract JSON from markdown block")
+                else:
+                     # Try to find { ... } raw
+                     start = content.find('{')
+                     end = content.rfind('}')
+                     if start != -1 and end != -1:
+                         data = json.loads(content[start:end+1])
+                     else:
+                         raise
+            
             return ItemExtracted(**data)
 
         except Exception as e:
+            error_msg = str(e)
+            if "No endpoints found that support image input" in error_msg:
+                 logger.error(f"OpenRouter Error: Model '{self.model}' does not support vision or requires 'openai/' prefix.")
+                 raise ValueError("Model Configuration Error: The selected model does not support images. If using OpenRouter with 'gpt-4o', try using 'openai/gpt-4o' in your environment variables.")
             raise ValueError(f"LLM Processing failed: {str(e)}")
 
     async def analyze_invoice(self, image_bytes: bytes, target_item_name: Optional[str] = None) -> Optional[float]:
