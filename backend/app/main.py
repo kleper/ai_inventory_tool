@@ -48,6 +48,7 @@ def on_startup():
             session.exec(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS auth_provider VARCHAR DEFAULT 'EMAIL'"))
             session.exec(text("ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS force_password_change BOOLEAN DEFAULT FALSE"))
             session.exec(text("ALTER TABLE inventorygroup ADD COLUMN IF NOT EXISTS description VARCHAR(250)")) # Critical Fix for Sync Issue
+            session.exec(text("ALTER TABLE inventorygroup ADD COLUMN IF NOT EXISTS currency VARCHAR DEFAULT 'USD'")) 
             session.exec(text("ALTER TABLE inventorygroup ADD COLUMN IF NOT EXISTS owner_id INTEGER")) 
             session.commit()
             print("Migrated User and Group tables")
