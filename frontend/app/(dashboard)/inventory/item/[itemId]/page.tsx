@@ -26,7 +26,7 @@ import {
 
 import { useAuthFetcher } from "@/hooks/useAuthFetcher";
 import { useSession } from "next-auth/react";
-// fetcher removed
+import { formatPrice } from "@/lib/currency";
 
 export default function ItemDetailPage() {
     const params = useParams();
@@ -275,7 +275,7 @@ export default function ItemDetailPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="price" className="text-black uppercase tracking-wide font-bold">Price ($)</Label>
+                                            <Label htmlFor="price" className="text-black uppercase tracking-wide font-bold">Price ({group?.currency || 'USD'})</Label>
                                             <Input
                                                 id="price"
                                                 type="number"
@@ -322,7 +322,7 @@ export default function ItemDetailPage() {
                                         <div>
                                             <span className="text-neutral-500 text-xs uppercase tracking-widest block mb-2">Price Estimate</span>
                                             <span className="text-4xl font-black text-black block">
-                                                {item.price ? `$${parseFloat(item.price.toString()).toFixed(2)}` : "--"}
+                                                {formatPrice(item.price, group?.currency)}
                                             </span>
                                         </div>
                                         <div>

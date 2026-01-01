@@ -25,6 +25,9 @@ export const formatCurrency = (amount: number | null | undefined, currency: stri
     }).format(amount);
 };
 
+// Alias for consistency with prompt requirements
+export const formatPrice = formatCurrency;
+
 export const calculateInventoryTotal = (items: any[]): number => {
     if (!Array.isArray(items)) return 0;
     return items.reduce((total, item) => {
