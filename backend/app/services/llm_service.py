@@ -18,6 +18,7 @@ class ItemExtracted(BaseModel):
     description: str
     category: str
     estimated_price: Optional[float] = None
+    currency_code: str = "USD"
 
 class InvoiceItem(BaseModel):
     raw_name: str
@@ -112,7 +113,8 @@ CONTEXT: The user is adding an item to a specific collection.
 {context_str}
 Reglas Generales:
 - PRIVACIDAD: No extraigas nombres reales ni información biométrica (PII). Limítate a descripciones visuales.
-- Salida estricta en JSON con las claves: 'name', 'description', 'category', 'estimated_price'.
+    - Salida estricta en JSON con las claves: 'name', 'description', 'category', 'estimated_price', 'currency_code'.
+    - currency_code: ISO 4217 code (e.g., USD, EUR, COP) if a price is found. Default to 'USD' if unknown.
 - CONSTRAINT: Use the collection context to infer the specific use case of the item (e.g., if Collection is "Camping", a "Knife" is a "Survival Tool", not "Kitchenware").
 
 Reglas para Personas:
@@ -123,9 +125,11 @@ Reglas para Personas:
 
 Reglas para Objetos:
 - Name: Nombre del objeto.
-- Description: Breve descripción técnica o visual.
-- Category: Categoría corta (1-2 palabras).
-- estimated_price: Valor numérico estimado o null. Si hay una MONEDA en el CONTEXTO, intenta estimar el precio en esa moneda (solo el número)."""
+    - Description: Breve descripción técnica o visual.
+    - Category: Categoría corta (1-2 palabras).
+    - estimated_price: Valor numérico estimado o null. Busque el precio de '{item_name}' en internet o estime basado en su conocimiento.
+    - currency_code: La moneda del precio encontrado.
+    Si hay una MONEDA en el CONTEXTO (Target Currency), intenta estimar el precio en esa moneda, pero si encuentras una referencia mejor en USD/EUR, úsala y reporta la moneda correcta."""
                     },
                     {
                         "role": "user",

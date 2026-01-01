@@ -18,3 +18,4 @@ duckduckgo-search
 Pillow
 slowapi
 redis
+httpx

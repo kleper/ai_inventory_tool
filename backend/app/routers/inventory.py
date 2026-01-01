@@ -11,6 +11,7 @@ from app.services.matching_service import run_matching_background_task
 from app.services.websocket_manager import manager
 from app.database import get_session
 from app.services.price_service import search_approximate_price
+from app.services.currency_service import currency_service
 
 import logging
 
@@ -65,12 +66,33 @@ async def process_object(
         if group_id:
             group = session.get(InventoryGroup, group_id)
             if group:
-                 group_context = {"name": group.name, "description": group.description}
+                 group_context = {"name": group.name, "description": group.description, "currency": group.currency}
         
         # Save file (original + thumb)
         filename = save_image(contents, "/app/media")
         
         item_data = await llm_service.analyze_object(contents, user_id=current_user.id, group_context=group_context)
+
+        # Currency Conversion Logic
+        target_currency = group.currency if (group_id and group) else "USD"
+        if item_data.estimated_price and item_data.estimated_price > 0:
+            if item_data.currency_code and item_data.currency_code != target_currency:
+                logger.info(f"Converting price {item_data.estimated_price} {item_data.currency_code} to {target_currency}")
+                converted_price, success = await currency_service.convert(
+                    item_data.estimated_price, 
+                    item_data.currency_code, 
+                    target_currency
+                )
+                if success:
+                    item_data.estimated_price = converted_price
+                else:
+                    logger.warning(f"Currency conversion failed. Keeping original price {item_data.estimated_price} {item_data.currency_code}")
+                    # Could append warning to description if desired:
+                    # item_data.description += f" [Warning: Price in {item_data.currency_code}]"
+            else:
+                # If currency code is missing but we have a price, assume USD or trust LLM?
+                # Prompt defaults to USD if unknown, so we are safe.
+                pass
         
         # If LLM didn't find a price, try web search
         if not item_data.estimated_price or item_data.estimated_price == 0:
