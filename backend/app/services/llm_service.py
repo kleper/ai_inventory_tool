@@ -52,10 +52,10 @@ class MatchingResult(BaseModel):
     confidence_score: float # 0.0 a 1.0
 
 class LLMService:
-    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None, model: str = "gpt-4o"):
+    def __init__(self, api_key: Optional[str] = None, base_url: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key or settings.LLM_API_KEY
         self.base_url = base_url or settings.LLM_BASE_URL
-        self.model = model or settings.LLM_MODEL
+        self.model = model or settings.LLM_MODEL or "gpt-4o"
         
         # Fallback to legacy OPENAI_API_KEY if LLM_API_KEY not set
         if not self.api_key:
@@ -127,7 +127,7 @@ Reglas para Objetos:
 - Name: Nombre del objeto.
     - Description: Breve descripción técnica o visual.
     - Category: Categoría corta (1-2 palabras).
-    - estimated_price: Valor numérico estimado o null. Busque el precio de '{item_name}' en internet o estime basado en su conocimiento.
+    - estimated_price: Valor numérico estimado o null. Busque el precio del objeto en internet o estime basado en su conocimiento.
     - currency_code: La moneda del precio encontrado.
     Si hay una MONEDA en el CONTEXTO (Target Currency), intenta estimar el precio en esa moneda, pero si encuentras una referencia mejor en USD/EUR, úsala y reporta la moneda correcta."""
                     },
