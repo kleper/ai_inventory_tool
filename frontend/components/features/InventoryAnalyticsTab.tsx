@@ -127,7 +127,7 @@ export function InventoryAnalyticsTab({ items, currency = "USD" }: InventoryAnal
                 <div className="bg-white border border-black p-6 rounded-none h-80 flex flex-col">
                     <h3 className="text-sm font-bold uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">Category Distribution</h3>
                     <div className="flex-1 w-full min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={250}>
                             <BarChart data={categoryData}>
                                 <XAxis dataKey="name" tick={{ fontSize: 10, fontFamily: 'monospace' }} stroke="#000" />
                                 <YAxis tick={{ fontSize: 10, fontFamily: 'monospace' }} stroke="#000" />
@@ -142,7 +142,7 @@ export function InventoryAnalyticsTab({ items, currency = "USD" }: InventoryAnal
                 <div className="bg-white border border-black p-6 rounded-none h-80 flex flex-col">
                     <h3 className="text-sm font-bold uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">Inventory Status</h3>
                     <div className="flex-1 w-full min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
                                     data={completionData}

@@ -74,17 +74,20 @@ async def get_item_thumbnail(
     thumb_filename = f"{base}_thumb{ext}"
     thumb_path = os.path.join(MEDIA_ROOT, thumb_filename)
     
-    # If thumb doesn't exist, fallback to original? Or just return original?
-    # Returning original as fallback is safer for legacy items.
-    if not os.path.exists(thumb_path):
-        original_path = os.path.join(MEDIA_ROOT, item.image_url)
-        if os.path.exists(original_path):
-             # Log warning or silently serve original
-             return FileResponse(original_path, headers={"Cache-Control": "public, max-age=31536000"})
-        else:
-             raise HTTPException(status_code=404, detail="Image not found")
-        
-    return FileResponse(thumb_path, headers={"Cache-Control": "public, max-age=31536000"})
+    # If thumb doesn't exist, try original
+    if os.path.exists(thumb_path):
+         return FileResponse(thumb_path, headers={"Cache-Control": "public, max-age=31536000"})
+    
+    original_path = os.path.join(MEDIA_ROOT, item.image_url)
+    if os.path.exists(original_path):
+         return FileResponse(original_path, headers={"Cache-Control": "public, max-age=31536000"})
+    
+    # If neither exists, return a 1x1 transparent pixel to silence 404s (as requested to clean console)
+    # 1x1 PNG transparent
+    # Base64: iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=
+    import base64
+    params = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    return Response(content=base64.b64decode(params), media_type="image/png")
 
 @router.get("/items/{item_id}/original")
 async def get_item_original(

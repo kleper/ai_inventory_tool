@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"; // Assuming these are compatible
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog"; // Assuming these are compatible
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -107,6 +107,9 @@ export function CreateUpdateFolderModal({
                     <DialogTitle className="uppercase font-bold tracking-wider text-xl">
                         {mode === "create" ? "Create New Folder" : "Edit Folder Settings"}
                     </DialogTitle>
+                    <DialogDescription className="font-mono text-xs uppercase tracking-wide text-neutral-500">
+                        {mode === "create" ? "Configure your new inventory collection." : "Update your folder settings."}
+                    </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-6 pt-4">
