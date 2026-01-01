@@ -113,12 +113,7 @@ CONTEXT: The user is adding an item to a specific collection.
                 api_key=self.api_key, 
                 base_url=self.base_url
             )
-            response = await client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f"""Eres un asistente experto en inventarios y registro. Tu tarea es analizar imágenes y extraer datos estructurados. Identifica el sujeto principal de la foto, que puede ser un Objeto, un Animal o una Persona.
+            system_prompt = f"""Eres un asistente experto en inventarios y registro. Tu tarea es analizar imágenes y extraer datos estructurados. Identifica el sujeto principal de la foto, que puede ser un Objeto, un Animal o una Persona.
 {context_str}
 Reglas Generales:
 - PRIVACIDAD: No extraigas nombres reales ni información biométrica (PII). Limítate a descripciones visuales.
@@ -139,6 +134,30 @@ Reglas para Objetos:
     - estimated_price: Valor numérico estimado o null. Busque el precio del objeto en internet o estime basado en su conocimiento.
     - currency_code: La moneda del precio encontrado.
     Si hay una MONEDA en el CONTEXTO (Target Currency), intenta estimar el precio en esa moneda, pero si encuentras una referencia mejor en USD/EUR, úsala y reporta la moneda correcta."""
+
+            if "gemma" in self.model.lower():
+                # Google/Gemma models often don't support 'system' role or "Developer instruction" on some endpoints.
+                # We merge system prompt into user message.
+                logger.info("Gemma model detected. Merging system prompt into user message.")
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": system_prompt + "\n\nAnalyze this image and extract inventory data."},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{mime_type};base64,{base64_image}"
+                                },
+                            },
+                        ],
+                    }
+                ]
+            else:
+                messages = [
+                    {
+                        "role": "system",
+                        "content": system_prompt
                     },
                     {
                         "role": "user",
@@ -152,7 +171,11 @@ Reglas para Objetos:
                             },
                         ],
                     }
-                ],
+                ]
+
+            response = await client.chat.completions.create(
+                model=self.model,
+                messages=messages,
                 max_tokens=300,
                 response_format={ "type": "json_object" }
             )
