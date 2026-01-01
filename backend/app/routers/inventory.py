@@ -403,3 +403,78 @@ async def match_invoice(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error starting invoice matching: {str(e)}")
+
+@router.post("/items/{item_id}/price-search", response_model=Item)
+@limiter.limit("10/minute")
+async def search_item_price(
+    request: Request,
+    item_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+    llm_service: LLMService = Depends(get_llm_service)
+):
+    # 1. Fetch Item
+    item = session.get(Item, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # 2. Permission Check
+    # (Simplified: Owner or Editor of group)
+    has_write_access = False
+    if item.user_id == current_user.id:
+        has_write_access = True
+    elif item.group_id:
+        access = session.exec(select(SharedAccess).where(
+             SharedAccess.group_id == item.group_id,
+             SharedAccess.user_id == current_user.id
+        )).first()
+        if access and access.role in ["EDITOR", "admin"]: # "admin" just in case legacy role
+             has_write_access = True
+    
+    if not has_write_access:
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    # 3. Determine Goal Currency
+    target_currency = "USD"
+    if item.group_id:
+        group = session.get(InventoryGroup, item.group_id)
+        if group and group.currency:
+            target_currency = group.currency
+
+    # 4. Search Price (Web Search or LLM?)
+    # The prompt implies "Search Price with AI".
+    # Since we don't have the image bytes readily available (stored on disk), 
+    # we can use the 'search_approximate_price' (web search) which is cheaper and faster for existing items.
+    # OR we could re-analyze image if we load it. 
+    # Let's support Web Search first as it's more robust for "Find price of 'iPhone 15'".
+    
+    # Try Web Search First
+    print(f"Searching price for: {item.name}")
+    found_price = search_approximate_price(item.name)
+    found_currency = "USD" # Web search usually returns USD or we assume it for now.
+                           # duckduckgo usually returns regional results but the regex catches $
+    
+    # If using regex '$', it's likely USD.
+    
+    if not found_price:
+        raise HTTPException(status_code=404, detail="Could not find a price for this item.")
+
+    # 5. Currency Conversion
+    final_price = found_price
+    if target_currency != "USD": # Assuming web search gave USD
+         print(f"Converting web price {found_price} USD to {target_currency}")
+         converted, success = await currency_service.convert(found_price, "USD", target_currency)
+         if success:
+             final_price = converted
+    
+    # 6. Update & Save
+    item.price = final_price
+    # Check if we should update status
+    if item.status == "pending_price":
+        item.status = "completed"
+        
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    
+    return item

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon, Download } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon, Download, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SecureImage } from "@/components/ui/SecureImage";
@@ -27,12 +27,16 @@ import {
 import { useAuthFetcher } from "@/hooks/useAuthFetcher";
 import { useSession } from "next-auth/react";
 import { formatPrice } from "@/lib/currency";
+import { usePriceSearch } from "@/hooks/usePriceSearch";
 
 export default function ItemDetailPage() {
     const params = useParams();
-    const itemId = params.itemId as string;
     const router = useRouter();
+    const itemId = parseInt(params.itemId as string);
     const { data: session } = useSession();
+    const { searchPrice, isSearching } = usePriceSearch();
+
+    // ... existing hooks
     const fetcher = useAuthFetcher();
     const token = (session as any)?.accessToken;
 
@@ -142,6 +146,20 @@ export default function ItemDetailPage() {
     // ...
 
     // Loading / Error States
+    const handlePriceSearch = async () => {
+        if (!item) return;
+        try {
+            const updated = await searchPrice(item.id, item.group_id, group?.currency);
+            // Update local state immediately
+            if (updated) {
+                setFormData(prev => ({ ...prev, price: updated.price ? updated.price.toString() : "" }));
+                // Also update the 'item' view data if strictly bound, but SWR should handle it.
+            }
+        } catch (e) {
+            // Error handled in hook
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex h-screen items-center justify-center bg-white text-black">
@@ -210,7 +228,7 @@ export default function ItemDetailPage() {
                     <div className="space-y-6">
                         <div className="aspect-square bg-neutral-50 rounded-none border border-black relative group shadow-none overflow-hidden">
                             <SecureImage
-                                itemId={parseInt(itemId as string)} // Ensure ID is number
+                                itemId={itemId} // Ensure ID is number
                                 fallbackSrc={item.imageUrl}
                                 alt={item.name}
                                 className="w-full h-full object-cover"
@@ -219,7 +237,7 @@ export default function ItemDetailPage() {
                             />
                             <div className="absolute inset-0 border border-transparent group-hover:border-black/20 transition-colors pointer-events-none z-10" />
                             <ItemPhotoUpdater
-                                itemId={parseInt(itemId as string)}
+                                itemId={itemId}
                                 onUpdate={() => mutate()}
                                 canWrite={canWrite}
                             />
@@ -275,14 +293,27 @@ export default function ItemDetailPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="price" className="text-black uppercase tracking-wide font-bold">Price ({group?.currency || 'USD'})</Label>
+                                            <div className="flex justify-between items-center">
+                                                <Label htmlFor="price" className="text-black uppercase tracking-wide font-bold">Price ({group?.currency || 'USD'})</Label>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handlePriceSearch()}
+                                                    disabled={isSearching}
+                                                    className="h-6 text-[10px] uppercase rounded-none border-black hover:bg-black hover:text-white"
+                                                >
+                                                    {isSearching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
+                                                    {isSearching ? "Searching..." : "AI Search"}
+                                                </Button>
+                                            </div>
                                             <Input
                                                 id="price"
                                                 type="number"
                                                 step="0.01"
                                                 value={formData.price}
                                                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                                                className="bg-white text-black border-black h-10"
+                                                className="rounded-none border-black focus-visible:ring-0"
                                             />
                                         </div>
                                         <div className="space-y-2">
