@@ -14,6 +14,12 @@ router = APIRouter(prefix="/api/v1/groups", tags=["groups"])
 class GroupCreate(BaseModel):
     name: str
     description: Optional[str] = None
+    currency: str = "USD"
+
+class GroupUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    currency: Optional[str] = None
 
 class ShareRequest(BaseModel):
     email: str
@@ -39,7 +45,12 @@ async def create_group(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
-    new_group = InventoryGroup(name=group.name, description=group.description, owner_id=current_user.id)
+    new_group = InventoryGroup(
+        name=group.name, 
+        description=group.description, 
+        currency=group.currency,
+        owner_id=current_user.id
+    )
     session.add(new_group)
     session.commit()
     session.refresh(new_group)
@@ -130,8 +141,39 @@ async def get_group(
         **group.model_dump(),
         item_count=0, # Just placeholder or query if needed
         is_shared=is_shared,
-        my_role=my_role
     )
+
+@router.put("/{group_id}", response_model=InventoryGroup)
+async def update_group(
+    group_id: int,
+    group_update: GroupUpdate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    group = session.get(InventoryGroup, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+        
+    if group.owner_id != current_user.id:
+        # Check if EDITOR
+        access = session.exec(select(SharedAccess).where(
+             SharedAccess.group_id == group_id, 
+             SharedAccess.user_id == current_user.id
+        )).first()
+        if not access or access.role != "EDITOR":
+             raise HTTPException(status_code=403, detail="Only owner or editor can update group")
+
+    if group_update.name is not None:
+        group.name = group_update.name
+    if group_update.description is not None:
+        group.description = group_update.description
+    if group_update.currency is not None:
+        group.currency = group_update.currency
+        
+    session.add(group)
+    session.commit()
+    session.refresh(group)
+    return group
 
 # --- Share Management ---
 

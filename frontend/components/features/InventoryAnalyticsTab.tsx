@@ -14,31 +14,33 @@ import {
     Legend
 } from "recharts";
 import { DollarSign, Box } from "lucide-react";
+import { formatCurrency, calculateInventoryTotal } from "@/lib/currency";
 
 interface InventoryAnalyticsTabProps {
     items: any[];
+    currency?: string;
 }
 
-export function InventoryAnalyticsTab({ items }: InventoryAnalyticsTabProps) {
+export function InventoryAnalyticsTab({ items, currency = "USD" }: InventoryAnalyticsTabProps) {
     // 1. Calculate KPIs
     const stats = useMemo(() => {
-        let totalValuation = 0;
-        let totalItems = items.length;
-        let totalPriceCount = 0;
+        const totalValuation = calculateInventoryTotal(items);
+        const totalItems = items.length;
 
+        let sumPrices = 0;
+        let countPrices = 0;
         items.forEach(item => {
             if (item.price) {
-                totalValuation += parseFloat(item.price);
-                totalPriceCount++;
+                sumPrices += parseFloat(item.price);
+                countPrices++;
             }
         });
-
-        const avgPrice = totalPriceCount > 0 ? totalValuation / totalPriceCount : 0;
+        const simpleAvgPrice = countPrices > 0 ? sumPrices / countPrices : 0;
 
         return {
             totalValuation,
             totalItems,
-            avgPrice
+            avgPrice: simpleAvgPrice
         };
     }, [items]);
 
@@ -73,7 +75,7 @@ export function InventoryAnalyticsTab({ items }: InventoryAnalyticsTabProps) {
     // 3. Top Assets
     const topAssets = useMemo(() => {
         return [...items]
-            .sort((a, b) => (b.price || 0) - (a.price || 0))
+            .sort((a, b) => ((b.price || 0) * (b.quantity || 1)) - ((a.price || 0) * (a.quantity || 1)))
             .slice(0, 3);
     }, [items]);
 
@@ -96,7 +98,7 @@ export function InventoryAnalyticsTab({ items }: InventoryAnalyticsTabProps) {
                     <span className="text-xs uppercase tracking-widest text-neutral-500 font-mono">Total Valuation</span>
                     <div className="flex items-baseline gap-1">
                         <span className="text-4xl font-bold font-mono tracking-tighter">
-                            ${stats.totalValuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {formatCurrency(stats.totalValuation, currency)}
                         </span>
                     </div>
                 </div>
@@ -110,10 +112,10 @@ export function InventoryAnalyticsTab({ items }: InventoryAnalyticsTabProps) {
                     </div>
                 </div>
                 <div className="bg-white border border-black p-6 rounded-none flex flex-col justify-between h-32">
-                    <span className="text-xs uppercase tracking-widest text-neutral-500 font-mono">Avg. Item Price</span>
+                    <span className="text-xs uppercase tracking-widest text-neutral-500 font-mono">Avg. Unit Price</span>
                     <div className="flex items-baseline gap-1">
                         <span className="text-4xl font-bold font-mono tracking-tighter">
-                            ${stats.avgPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {formatCurrency(stats.avgPrice, currency)}
                         </span>
                     </div>
                 </div>
@@ -184,14 +186,17 @@ export function InventoryAnalyticsTab({ items }: InventoryAnalyticsTabProps) {
                         <div className="grid grid-cols-12 border-b border-black py-2 bg-neutral-50 text-[10px] uppercase font-bold tracking-widest">
                             <div className="col-span-1 pl-2">#</div>
                             <div className="col-span-7">Item Name</div>
-                            <div className="col-span-4 text-right pr-2">Valuation</div>
+                            <div className="col-span-4 text-right pr-2">Total Value</div>
                         </div>
                         {topAssets.map((asset, idx) => (
                             <div key={asset.id} className="grid grid-cols-12 border-b border-black py-3 text-sm hover:bg-neutral-50 transition-colors">
                                 <div className="col-span-1 pl-2 font-mono text-neutral-500">{idx + 1}</div>
-                                <div className="col-span-7 font-bold truncate pr-2">{asset.name || "Untitled Asset"}</div>
+                                <div className="col-span-7 font-bold truncate pr-2">
+                                    {asset.name || "Untitled Asset"}
+                                    {asset.quantity > 1 && <span className="text-xs text-neutral-500 ml-2 font-mono">x{asset.quantity}</span>}
+                                </div>
                                 <div className="col-span-4 text-right font-mono pr-2">
-                                    {asset.price ? `$${asset.price.toFixed(2)}` : "N/A"}
+                                    {formatCurrency((asset.price || 0) * (asset.quantity || 1), currency)}
                                 </div>
                             </div>
                         ))}

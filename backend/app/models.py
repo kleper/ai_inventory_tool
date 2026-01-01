@@ -19,6 +19,7 @@ class SharedAccess(SQLModel, table=True):
 class InventoryGroupBase(SQLModel):
     name: str
     description: Optional[str] = Field(default=None, max_length=250)
+    currency: str = Field(default="USD") # USD, COP, EUR
     owner_id: int = Field(foreign_key="user.id")
 
 class InventoryGroup(InventoryGroupBase, table=True):

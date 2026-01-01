@@ -93,10 +93,12 @@ class LLMService:
         # Context Injection
         context_str = ""
         if group_context:
+            currency_hint = f"- Target Currency: {group_context.get('currency', 'USD')}"
             context_str = f"""
 CONTEXT: The user is adding an item to a specific collection.
 - Collection Name: "{group_context.get('name', 'General')}"
 - Collection Goal: "{group_context.get('description', '')}"
+{currency_hint}
 """
 
         try:
@@ -123,7 +125,7 @@ Reglas para Objetos:
 - Name: Nombre del objeto.
 - Description: Breve descripción técnica o visual.
 - Category: Categoría corta (1-2 palabras).
-- estimated_price: Valor numérico estimado o null."""
+- estimated_price: Valor numérico estimado o null. Si hay una MONEDA en el CONTEXTO, intenta estimar el precio en esa moneda (solo el número)."""
                     },
                     {
                         "role": "user",

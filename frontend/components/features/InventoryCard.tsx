@@ -16,14 +16,13 @@ interface Item {
     price?: number;
 }
 
-export function InventoryCard({ item, canEdit }: { item: Item, canEdit?: boolean }) {
+import { formatCurrency } from "@/lib/currency";
+
+export function InventoryCard({ item, canEdit, currency }: { item: Item, canEdit?: boolean, currency?: string }) {
     // const [imageError, setImageError] = useState(false); // Managed by SecureImage now
 
     // Construct valid URL
     let imageUrl = item.imageUrl;
-    // If it's a relative path (starts with /), prepend API URL
-    // If it's already http, keep it.
-    // If it is NOT http and NOT /, prepend API URL + /
     if (imageUrl && !imageUrl.startsWith("http")) {
         imageUrl = imageUrl.startsWith("/")
             ? `${API_BASE_URL}${imageUrl}`
@@ -32,16 +31,10 @@ export function InventoryCard({ item, canEdit }: { item: Item, canEdit?: boolean
 
     return (
         <Link href={`/inventory/item/${item.id}`} className="block h-full w-full">
-            {/* 
-              Responsive Layout: 
-              - Mobile (< md): Horizontal Card (flex-row)
-              - Desktop (>= md): Vertical Card (flex-col) 
-            */}
             <div
                 className="group relative bg-white border border-black rounded-none shadow-none hover:bg-zinc-50 transition-colors duration-200 h-full w-full flex flex-row md:flex-col items-center md:items-start p-2 md:p-0 gap-3 md:gap-0"
             >
                 {/* Image Area */}
-                {/* Mobile: Fixed w-20 h-20. Desktop: w-full aspect-square */}
                 <div className="w-20 h-20 shrink-0 md:w-full md:h-auto md:aspect-square bg-zinc-50 border border-black md:border-x-0 md:border-t-0 md:border-b relative overflow-hidden rounded-none">
                     <SecureImage
                         itemId={item.id}
@@ -51,9 +44,7 @@ export function InventoryCard({ item, canEdit }: { item: Item, canEdit?: boolean
                         variant="thumbnail"
                     />
 
-                    {/* Badge Overlay - Desktop Only usually, or absolute top right */}
                     <div className="absolute top-1 right-1 md:top-2 md:right-2">
-                        {/* Badges: Simple, bordered, transparent, uppercase */}
                         {item.status === 'pending_price' && (
                             <span className="bg-white/90 text-[10px] font-bold uppercase tracking-wider text-black border border-black px-1.5 py-0.5 rounded-none">
                                 Pending
@@ -69,7 +60,6 @@ export function InventoryCard({ item, canEdit }: { item: Item, canEdit?: boolean
                                 Review
                             </span>
                         )}
-                        {/* Default/Processing */}
                         {!['pending_price', 'completed', 'needs_review'].includes(item.status) && (
                             <span className="bg-white/90 text-[10px] font-bold uppercase tracking-wider text-black border border-black px-1.5 py-0.5 rounded-none animate-pulse">
                                 ...
@@ -87,7 +77,6 @@ export function InventoryCard({ item, canEdit }: { item: Item, canEdit?: boolean
                         <h3 className="font-bold text-sm md:text-base text-black leading-tight truncate md:line-clamp-2 md:whitespace-normal">
                             {item.name || "Unknown Item"}
                         </h3>
-                        {/* Mobile Metadata */}
                         <p className="md:hidden text-xs text-gray-600 uppercase font-mono tracking-tight truncate">
                             {item.category || "Item"} • ID:{item.id}
                         </p>
@@ -96,7 +85,9 @@ export function InventoryCard({ item, canEdit }: { item: Item, canEdit?: boolean
                     <div className="hidden md:flex items-center justify-between pt-3 mt-auto border-t border-transparent md:border-black/5">
                         {item.price ? (
                             <div className="flex items-center text-black font-mono font-bold">
-                                <span className="text-sm border border-black px-1 bg-transparent">${item.price.toFixed(2)}</span>
+                                <span className="text-sm border border-black px-1 bg-transparent">
+                                    {formatCurrency(item.price, currency)}
+                                </span>
                             </div>
                         ) : (
                             <div className="flex items-center text-gray-400 text-xs font-mono">

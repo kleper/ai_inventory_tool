@@ -25,6 +25,8 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useNotifications } from "@/hooks/useNotifications";
+import { formatCurrency } from "@/lib/currency"; // Import Utils
+import { CreateUpdateFolderModal } from "@/components/features/CreateUpdateFolderModal"; // Import Modal
 
 import { useAuthFetcher } from "@/hooks/useAuthFetcher";
 // fetcher removed
@@ -55,6 +57,7 @@ export default function FolderDetailPage() {
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isManualOpen, setIsManualOpen] = useState(false);
     const [isShareOpen, setIsShareOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false); // Edit State
 
     const [activeTab, setActiveTab] = useState<'items' | 'analytics'>('items');
 
@@ -136,8 +139,19 @@ export default function FolderDetailPage() {
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         {/* Title & Badges */}
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold tracking-tight">{groupName}</h1>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-3xl font-bold tracking-tight uppercase">{groupName}</h1>
+                                {/* Currency Badge */}
+                                <span className="text-xs font-bold bg-black text-white px-2 py-1 square-badge border border-black">
+                                    {group?.currency || "USD"}
+                                </span>
+                            </div>
+                            {group?.description && (
+                                <p className="text-sm text-black font-mono max-w-2xl">
+                                    {group.description}
+                                </p>
+                            )}
                             {group?.is_shared && (
                                 <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-100 flex items-center gap-1">
                                     <UserPlus className="w-3 h-3" /> Shared
@@ -152,9 +166,16 @@ export default function FolderDetailPage() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-2">
+                            {/* Edit Button: Owner or Editor */}
+                            {canWrite && (
+                                <Button variant="ghost" size="icon" onClick={() => setIsEditOpen(true)} className="text-black hover:bg-neutral-100 rounded-none border border-transparent hover:border-black">
+                                    <PenTool className="w-5 h-5" />
+                                </Button>
+                            )}
+
                             {/* Share Button: Only Owner */}
                             {isOwner && (
-                                <Button variant="ghost" size="icon" onClick={() => setIsShareOpen(true)} className="text-muted-foreground hover:text-indigo-600">
+                                <Button variant="ghost" size="icon" onClick={() => setIsShareOpen(true)} className="text-black hover:bg-neutral-100 rounded-none border border-transparent hover:border-black">
                                     <UserPlus className="w-5 h-5" />
                                 </Button>
                             )}
@@ -235,6 +256,15 @@ export default function FolderDetailPage() {
                         isOwner={isOwner}
                     />
 
+                    {/* Edit Modal */}
+                    <CreateUpdateFolderModal
+                        open={isEditOpen}
+                        onOpenChange={setIsEditOpen}
+                        mode="edit"
+                        initialData={group}
+                        onSuccess={() => mutate()}
+                    />
+
                     {/* Filters - Only show in Items tab */}
                     {activeTab === 'items' && (
                         <div className="flex items-center gap-3 pt-2">
@@ -255,7 +285,7 @@ export default function FolderDetailPage() {
             <div className="flex-1 overflow-auto p-6 bg-muted/20">
                 <div className="max-w-7xl mx-auto">
                     {activeTab === 'analytics' ? (
-                        <InventoryAnalyticsTab items={items || []} />
+                        <InventoryAnalyticsTab items={items || []} currency={group?.currency || "USD"} />
                     ) : (
                         // Active Tab: Items
                         isLoading ? (
@@ -297,7 +327,7 @@ export default function FolderDetailPage() {
                                                     </span>
                                                     {item.price && (
                                                         <span className="text-xs text-black font-bold border border-black px-1">
-                                                            ${item.price}
+                                                            {formatCurrency(item.price, group?.currency)}
                                                         </span>
                                                     )}
                                                 </div>
