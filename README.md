@@ -1,104 +1,85 @@
 # SmartInventory
 
-AI-powered inventory management tool built with Next.js 15, FastAPI, and PostgreSQL.
+**SmartInventory** is an AI-powered inventory management tool designed for individuals and businesses to track assets with precision and style. Built with a "Wireframe Brutalism" design system, it combines high-performance visuals with intelligent automation.
 
-## 🚀 Live Stack
-- **Frontend**: Next.js 15 (App Router), Tailwind CSS, ShadcnUI, NextAuth.js
-- **Backend**: FastAPI, SQLModel, Alembic, OpenAI Integration
-- **Database**: PostgreSQL 15
-- **Infrastructure**: Docker Compose
+## 🌟 Key Features
 
-## 🛠 Prerequisites
-- **Docker** & **Docker Compose** installed.
-- **Git** installed.
-- Optional: Node.js 20+ and Python 3.11+ for local development outside Docker.
+### 🧠 AI-Powered Automation
+-   **Object Recognition**: Upload a photo, and the AI automatically identifies the object, categorization, and description.
+-   **Price Estimation**: The system estimates the value of your items based on visual analysis and context.
+-   **Context-Aware**: The AI understands if an item is being added to a specific folder (e.g., "Camping Gear" vs. "Kitchen") to provide more accurate categorizations.
+
+### 💰 Financial Analytics & Multi-Currency
+-   **Global Currency Support**: Track your portfolio in **USD**, **COP** (Colombian Peso), or **EUR**.
+-   **Strict Formatting**: Prices are formatted according to local standards (e.g., `$ 1.500.000` for COP, `$ 1,500.00` for USD).
+-   **Real-time Valuation**: Instantly see the total value of your assets, average unit prices, and high-value items.
+-   **Dynamic Charts**: Visualize category distribution and portfolio completion rates.
+
+### 📂 Advanced Folder Management
+-   **Granular Control**: Create folders for specific collections (e.g., "Office Equipment", "Home Assets").
+-   **Permission System**: Share folders with **Viewer** or **Editor** permissions.
+-   **Full Editing**: Rename folders, update descriptions, and change target currencies at any time.
+
+### 🎨 Wireframe Brutalism Design
+-   **Distinct Aesthetic**: High-contrast, monochromatic design with zero curves and generous spacing.
+-   **Responsive**: Optimized for both desktop and mobile experiences.
+-   **Performance First**: Built on Next.js 15 for lightning-fast navigation.
+
+---
+
+## 🚀 Usage Guide
+
+### 1. Creating an Inventory
+1.  Navigate to the **Dashboard** (`/inventory`).
+2.  Click **"Create Folder"**.
+3.  Enter a name (e.g., "Tech setup"), description, and select your preferred currency (USD, COP, EUR).
+
+### 2. Adding Items
+1.  Open your new folder.
+2.  Click **"Add Item"** or **"Scan"**.
+3.  **Upload a Photo**: The AI will analyze the image and pre-fill the Name, Category, and Estimated Price.
+4.  **Review & Save**: Edit any details if necessary (the price label will remind you of the folder's currency) and save.
+
+### 3. Analyzing Your Net Worth
+1.  Click the **"Analytics"** tab within any folder.
+2.  View your **Total Valuation**, **Item Count**, and **Category Breakdown**.
+3.  Use the charts to identify your most valuable asset classes.
+
+---
+
+## 🛠 Technical Stack
+-   **Frontend**: Next.js 15 (App Router), Tailwind CSS, ShadcnUI, Recharts.
+-   **Backend**: FastAPI, SQLModel (SQLAlchemy), Alembic, Pydantic.
+-   **AI**: OpenAI GPT-4o Integration.
+-   **Database**: PostgreSQL 15.
+-   **Infrastructure**: Docker Compose.
+
+---
 
 ## ⚡ Quick Start (Productive Mode)
 
-The easiest way to run the full stack is using Docker Compose.
-
 ### 1. Configure Environment Variables
-The application uses a single **`.env`** file in the root directory.
-
-### 1. Configure Environment Variables
-The application uses a single **`.env`** file in the root directory.
-
 1.  Copy the example file:
     ```bash
     cp .env.example .env 
     ```
-
-2.  Fill in your specific values, especially:
-    *   `OPENAI_API_KEY`: Required for AI features.
-    *   `INITIAL_ADMIN_EMAIL` & `INITIAL_ADMIN_PASSWORD`: Using these will auto-create an Admin user on startup if they don't exist.
-
-    ```env
-    # Example snippet
-    INITIAL_ADMIN_EMAIL=admin@smartinventory.app
-    INITIAL_ADMIN_PASSWORD=secure_password_123
-    ```
+2.  Fill in your keys (OPENAI_API_KEY is essential for AI features).
 
 ### 2. Build and Run
-Docker Compose automatically reads the `.env` file at the root.
-Docker Compose automatically reads the `.env` file at the root.
-
 ```bash
 docker-compose up --build
 ```
-*Note: This might take a few minutes strictly for the first build.*
+*Note: The first build may take a few minutes.*
 
 ### 3. Access the Application
-- **Frontend (App)**: [http://localhost:3000](http://localhost:3000)
-    -   *Default Redirect*: You will be redirected to `/login`.
--   **Backend (Docs)**: [http://localhost:8000/docs](http://localhost:8000/docs)
--   **Database**: Port `5432` (User: `user`, Pass: `password`)
+-   **Frontend**: [http://localhost:3000](http://localhost:3000)
+-   **Backend Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-## 🔐 Authentication & Setup
-The app uses **NextAuth.js**.
--   **No Account?**: You can log in using **Google** (if configured) or the **Credentials Provider**.
--   **Credentials Login**:
-    -   Currently configured to accept `admin@example.com` / `admin` (or check `backend/app/controllers/auth.py` for logic if fully implemented).
-    -   *Note*: If you see a `NO_SECRET` error, ensure you have rebuilt the container after pulling latest changes (`docker-compose up --build`).
-
-## 🔐 Configuración de Google OAuth
-Para habilitar el inicio de sesión con Google, sigue estos pasos para obtener las credenciales:
-
-1.  Ve a [Google Cloud Console](https://console.cloud.google.com/).
-2.  Crea un nuevo proyecto o selecciona uno existente.
-3.  Ve a **"APIs & Services" > "OAuth consent screen"**.
-    -   Configura como **"External"** (para pruebas).
-    -   Llena los datos básicos (App name, email).
-4.  Ve a **"Credentials" > "Create Credentials" > "OAuth client ID"**.
-    -   Selecciona **"Web application"**.
-5.  **Configuración de URIs (CRÍTICO)**:
-    -   **Authorized JavaScript origins**: `http://localhost:3000`
-    -   **Authorized redirect URIs**: `http://localhost:3000/api/auth/callback/google` (Esta es la ruta por defecto de NextAuth).
-6.  Copia el **Client ID** y **Client Secret**.
-7.  Pégalos en tu archivo `.env`:
-    ```bash
-    GOOGLE_CLIENT_ID="tu-client-id"
-    GOOGLE_CLIENT_SECRET="tu-client-secret"
-    ```
+## 🔐 Authentication
+-   **Google OAuth**: seamless login (configure CLIENT_ID/SECRET in `.env`).
+-   **Email/Password**: Standard credentials login supported.
 
 ## ⚠️ Troubleshooting
-
-**"Please define a `secret` in production" (NO_SECRET)**
--   This means the `NEXTAUTH_SECRET` environment variable is missing in the Docker container.
--   **Fix**: We have added a default fallback in `docker-compose.yml`. specificially:
-    ```yaml
-    environment:
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-super_secret_dev_key}
-    ```
--   Make sure to run `docker-compose up --build` to apply this change.
-
-**"Redirect Loop" or "404 on Root"**
--   The app is configured to redirect `/` to `/inventory` (if authed) or `/login`.
--   Clear your browser cookies/cache if you get stuck or manually visit [http://localhost:3000/login](http://localhost:3000/login).
-
-## 📂 Project Structure
--   `frontend/app/(auth)`: Login and Auth pages.
--   `frontend/app/(dashboard)`: Main application (Inventory, Profile, etc) protected by Middleware.
--   `frontend/middleware.ts`: Handles route protection.
--   `backend/app/`: FastAPI application source.
+-   **Database Errors**: If you encounter `UndefinedColumn` errors on deployment, run `docker-compose exec backend alembic upgrade head` to ensure all migrations are applied.
