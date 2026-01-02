@@ -449,21 +449,21 @@ async def search_item_price(
     # Let's support Web Search first as it's more robust for "Find price of 'iPhone 15'".
     
     # Try Web Search First
+    # Try Web Search First
     print(f"Searching price for: {item.name}")
-    found_price = search_approximate_price(item.name)
-    found_currency = "USD" # Web search usually returns USD or we assume it for now.
-                           # duckduckgo usually returns regional results but the regex catches $
+    found_result = search_approximate_price(item.name)
     
-    # If using regex '$', it's likely USD.
-    
-    if not found_price:
+    if not found_result:
         raise HTTPException(status_code=404, detail="Could not find a price for this item.")
+        
+    found_price, found_currency = found_result
+    print(f"Found price: {found_price} {found_currency}")
 
     # 5. Currency Conversion
     final_price = found_price
-    if target_currency != "USD": # Assuming web search gave USD
-         print(f"Converting web price {found_price} USD to {target_currency}")
-         converted, success = await currency_service.convert(found_price, "USD", target_currency)
+    if target_currency != found_currency:
+         print(f"Converting web price {found_price} {found_currency} to {target_currency}")
+         converted, success = await currency_service.convert(found_price, found_currency, target_currency)
          if success:
              final_price = converted
     

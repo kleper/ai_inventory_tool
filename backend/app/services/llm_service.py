@@ -173,11 +173,15 @@ Reglas para Objetos:
                     }
                 ]
 
+            custom_response_format = { "type": "json_object" }
+            if "gemma" in self.model.lower():
+                 custom_response_format = None
+
             response = await client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 max_tokens=300,
-                response_format={ "type": "json_object" }
+                response_format=custom_response_format
             )
             content = response.choices[0].message.content
             usage = response.usage
