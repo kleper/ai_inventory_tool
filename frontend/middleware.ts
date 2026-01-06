@@ -71,7 +71,7 @@ export async function middleware(req: NextRequest) {
 
     if (pathname === '/login' || pathname === '/register') {
         if (token) {
-            return NextResponse.redirect(new URL('/inventory', req.url));
+            return NextResponse.redirect(new URL('/dashboard', req.url));
         }
         return NextResponse.next();
     }
@@ -89,6 +89,10 @@ export async function middleware(req: NextRequest) {
         const loginUrl = new URL('/login', req.url);
         loginUrl.searchParams.set('callbackUrl', pathname);
         return NextResponse.redirect(loginUrl);
+    }
+
+    if (pathname === '/') {
+        return NextResponse.redirect(new URL('/dashboard', req.url));
     }
 
     return NextResponse.next();

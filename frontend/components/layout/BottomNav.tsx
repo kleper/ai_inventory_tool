@@ -2,38 +2,68 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Scan, FolderOpen, User } from "lucide-react";
-
-const MOBILE_NAV_ITEMS = [
-    { label: "Home", href: "/inventory", icon: LayoutDashboard },
-    { label: "Scan", href: "/scan", icon: Scan },
-    { label: "Folders", href: "/inventory", icon: FolderOpen },
-    { label: "Profile", href: "/profile", icon: User },
-];
+import { LayoutDashboard, FolderOpen, Scan, FileText, User } from "lucide-react";
 
 export function BottomNav() {
     const pathname = usePathname();
 
+    const isActive = (path: string) => {
+        // Special case for dashboard to match root or /dashboard
+        if (path === "/dashboard" && (pathname === "/" || pathname === "/dashboard")) return true;
+        return pathname.startsWith(path);
+    };
+
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-black pb-safe pb-4 pt-2 px-4 z-50">
-            <div className="flex justify-around items-center">
-                {MOBILE_NAV_ITEMS.map((item) => {
-                    const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={`flex flex-col items-center gap-1 p-2 rounded-none transition-colors ${isActive
-                                ? "text-black font-bold"
-                                : "text-neutral-500 hover:text-black"
-                                }`}
-                        >
-                            <item.icon className="w-6 h-6" />
-                            <span className="text-[10px] uppercase tracking-wide">{item.label}</span>
-                        </Link>
-                    );
-                })}
-            </div>
-        </nav>
+        <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-black z-50 h-16 grid grid-cols-5">
+            {/* Dashboard */}
+            <Link
+                href="/dashboard"
+                className={`flex flex-col items-center justify-center h-full border-r border-black relative ${isActive("/dashboard") ? "bg-black text-white" : "text-black bg-white"}`}
+            >
+                {isActive("/dashboard") && <div className="absolute top-0 w-full h-1 bg-white" />}
+                <LayoutDashboard className="w-6 h-6" />
+                <span className="text-[10px] uppercase font-bold mt-1">Home</span>
+            </Link>
+
+            {/* Inventories */}
+            <Link
+                href="/inventory"
+                className={`flex flex-col items-center justify-center h-full border-r border-black relative ${isActive("/inventory") ? "bg-black text-white" : "text-black bg-white"}`}
+            >
+                {isActive("/inventory") && <div className="absolute top-0 w-full h-1 bg-white" />}
+                <FolderOpen className="w-6 h-6" />
+                <span className="text-[10px] uppercase font-bold mt-1">Files</span>
+            </Link>
+
+            {/* SCAN - Highlighted */}
+            <Link
+                href="/scan"
+                className="flex flex-col items-center justify-center h-full bg-black text-white border-r border-black relative"
+            >
+                <div className="p-1 border border-white">
+                    <Scan className="w-6 h-6" />
+                </div>
+            </Link>
+
+            {/* Invoices */}
+            <Link
+                href="/invoices"
+                className={`flex flex-col items-center justify-center h-full border-r border-black relative ${isActive("/invoices") ? "bg-black text-white" : "text-black bg-white"}`}
+            >
+                {isActive("/invoices") && <div className="absolute top-0 w-full h-1 bg-white" />}
+                <FileText className="w-6 h-6" />
+                <span className="text-[10px] uppercase font-bold mt-1">Docs</span>
+            </Link>
+
+            {/* Profile */}
+            <Link
+                href="/profile"
+                className={`flex flex-col items-center justify-center h-full relative ${isActive("/profile") ? "bg-black text-white" : "text-black bg-white"}`}
+            >
+                {isActive("/profile") && <div className="absolute top-0 w-full h-1 bg-white" />}
+                <User className="w-6 h-6" />
+                <span className="text-[10px] uppercase font-bold mt-1">User</span>
+            </Link>
+        </div>
     );
 }
