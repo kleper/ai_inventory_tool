@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 # Cache structure: { base_currency: (timestamp, rates_dict) }
 _rates_cache: Dict[str, Tuple[datetime, Dict[str, float]]] = {}
-CACHE_TTL = timedelta(hours=24)
+CACHE_TTL = timedelta(hours=1)
 
 class CurrencyService:
     def __init__(self, base_url: str = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies"):
