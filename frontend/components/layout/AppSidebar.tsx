@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, FolderOpen, FileText, Settings, User } from "lucide-react";
 import { UserNav } from "./UserNav";
-import { Branding } from "@/components/ui/branding"; // Assuming we might want to extract this later, but inline for now is fine as per prompt
+
 
 const NAV_ITEMS = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
