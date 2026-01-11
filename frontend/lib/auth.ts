@@ -54,6 +54,9 @@ export const authOptions: NextAuthOptions = {
             clientId: process.env.GOOGLE_CLIENT_ID || "mock-client-id-for-build",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "mock-client-secret-for-build",
             allowDangerousEmailAccountLinking: true,
+            httpOptions: {
+                timeout: 10000,
+            }
         })
     ],
     callbacks: {
