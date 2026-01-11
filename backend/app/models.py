@@ -1,7 +1,7 @@
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import UniqueConstraint, Column, JSON
 
 class SharedAccess(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("user_id", "group_id", name="unique_group_member"),)
@@ -24,6 +24,7 @@ class InventoryGroupBase(SQLModel):
 
 class InventoryGroup(InventoryGroupBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    settings: Dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
     
     owner: "User" = Relationship(back_populates="owned_groups")
     items: List["Item"] = Relationship(back_populates="group")
@@ -112,6 +113,7 @@ class Item(SQLModel, table=True):
     quantity: int = Field(default=1)
     image_url: Optional[str] = None
     status: str = Field(default="pending_price") # pending_price, completed, needs_review
+    meta_data: Dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Ownership (Legacy/Direct)

@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { API_BASE_URL } from "@/lib/config";
-import { Link } from "lucide-react"; // Wait, Link is next/link, Icon is Link
+import { Link as LinkIcon, MapPin, Phone, Leaf } from "lucide-react";
 import NextLink from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -370,6 +370,70 @@ export default function ItemDetailPage() {
                                             {item.description || "No description provided."}
                                         </p>
                                     </div>
+
+                                    {/* Specialized Blocks */}
+                                    {item.meta_data && (
+                                        <div className="space-y-6 mt-8">
+
+                                            {/* Botanical Data */}
+                                            {item.meta_data.scientific_name && (
+                                                <div className="border border-black p-4 bg-green-50/50">
+                                                    <div className="flex items-center gap-2 mb-3 border-b border-black/20 pb-2">
+                                                        <Leaf className="w-4 h-4 text-green-700" />
+                                                        <h4 className="font-bold uppercase tracking-widest text-xs text-green-800">Botanical Data</h4>
+                                                    </div>
+                                                    <div className="space-y-2 text-sm">
+                                                        <p><span className="font-mono uppercase text-xs text-neutral-500">Scientific Name:</span> <span className="italic font-serif text-lg">{item.meta_data.scientific_name}</span></p>
+                                                        {item.meta_data.common_name && <p><span className="font-mono uppercase text-xs text-neutral-500">Common Name:</span> <span className="font-bold">{item.meta_data.common_name}</span></p>}
+                                                        {item.meta_data.properties && (
+                                                            <div className="bg-white p-3 border border-black/10 mt-2">
+                                                                <p className="font-mono text-xs text-neutral-500 uppercase mb-1">Properties</p>
+                                                                <p className="text-neutral-700">{item.meta_data.properties}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Places / Contact Data */}
+                                            {item.meta_data.phone && (
+                                                <div className="border border-black p-4 bg-yellow-50/50">
+                                                    <div className="flex items-center gap-2 mb-3 border-b border-black/20 pb-2">
+                                                        <Phone className="w-4 h-4 text-yellow-700" />
+                                                        <h4 className="font-bold uppercase tracking-widest text-xs text-yellow-800">Contact Info</h4>
+                                                    </div>
+                                                    {item.meta_data.business_category && (
+                                                        <p className="mb-4 text-sm"><span className="font-mono uppercase text-xs text-neutral-500">Type:</span> <span className="font-bold">{item.meta_data.business_category}</span></p>
+                                                    )}
+                                                    <a href={`tel:${item.meta_data.phone}`} className="flex items-center justify-center gap-2 w-full bg-black text-white font-bold py-3 uppercase tracking-widest hover:bg-neutral-800 transition-colors">
+                                                        <Phone className="w-4 h-4" /> Call {item.meta_data.phone}
+                                                    </a>
+                                                </div>
+                                            )}
+
+                                            {/* Map Block */}
+                                            {item.meta_data.coordinates && (
+                                                <div className="border border-black p-4 bg-neutral-50">
+                                                    <div className="flex items-center gap-2 mb-3 border-b border-black/20 pb-2">
+                                                        <MapPin className="w-4 h-4 text-neutral-700" />
+                                                        <h4 className="font-bold uppercase tracking-widest text-xs text-neutral-800">Location</h4>
+                                                    </div>
+                                                    <a
+                                                        href={`https://www.google.com/maps/search/?api=1&query=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center justify-center gap-2 w-full border border-black text-black font-bold py-3 uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
+                                                    >
+                                                        <MapPin className="w-4 h-4" /> View on Google Maps
+                                                    </a>
+                                                    <p className="text-[10px] font-mono text-center mt-2 text-neutral-500">
+                                                        {item.meta_data.coordinates.lat.toFixed(6)}, {item.meta_data.coordinates.lng.toFixed(6)}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="pt-6 border-t border-black flex justify-between items-center text-xs font-mono text-neutral-500 uppercase tracking-widest">

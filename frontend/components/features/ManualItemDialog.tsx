@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/config";
 import { NativeCameraInput } from "./NativeCameraInput";
 import { useSession } from "next-auth/react";
+import useSWR from "swr";
+import { MapPin } from "lucide-react";
 
 // Validation Schema
 const itemSchema = z.object({
@@ -45,7 +47,34 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
     const [isLoading, setIsLoading] = useState(false);
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
     const { data: session } = useSession();
+
+    // GPS State
+    const [gpsCoords, setGpsCoords] = useState<{ lat: number, lng: number } | null>(null);
+    const [isGpsLocked, setIsGpsLocked] = useState(false);
+    const [enableGps, setEnableGps] = useState(false);
+
+    // Fetch Group Settings
+    useSWR(`${API_BASE_URL}/api/v1/groups/${groupId}`, async (url) => {
+        const token = (session as any)?.accessToken;
+        const headers: HeadersInit = token ? { "Authorization": `Bearer ${token}` } : {};
+        const res = await fetch(url, { headers });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.settings?.enable_geolocation) {
+            setEnableGps(true);
+            // Auto-trigger GPS if enabled
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                    setIsGpsLocked(true);
+                    toast.info("GPS Location Locked");
+                });
+            }
+        }
+        return data;
+    });
 
     const { register, handleSubmit, formState: { errors }, reset } = useForm({
         resolver: zodResolver(itemSchema),
@@ -93,7 +122,7 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
             const payload = {
                 ...data,
                 group_id: parseInt(groupId),
-                // image_url: ... // ignored for now
+                meta_data: gpsCoords ? { coordinates: gpsCoords } : {}
             };
 
             const token = (session as any)?.accessToken;
@@ -134,7 +163,14 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
             )}
             <DialogContent className="sm:max-w-[425px] overflow-y-auto max-h-[90vh]">
                 <DialogHeader>
-                    <DialogTitle>Add Item Manually</DialogTitle>
+                    <DialogTitle className="flex justify-between items-center">
+                        Add Item Manually
+                        {isGpsLocked && (
+                            <div className="flex items-center gap-1 text-[10px] bg-black text-white px-2 py-1 uppercase tracking-widest font-mono">
+                                <MapPin className="w-3 h-3" /> GPS LOCKED
+                            </div>
+                        )}
+                    </DialogTitle>
                     <DialogDescription>
                         Fill in the details to create a new inventory item.
                     </DialogDescription>

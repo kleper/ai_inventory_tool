@@ -66,7 +66,12 @@ async def process_object(
         if group_id:
             group = session.get(InventoryGroup, group_id)
             if group:
-                 group_context = {"name": group.name, "description": group.description, "currency": group.currency}
+                 group_context = {
+                     "name": group.name, 
+                     "description": group.description, 
+                     "currency": group.currency,
+                     "settings": group.settings
+                 }
         
         # Save file (original + thumb)
         filename = save_image(contents, "/app/media")
@@ -113,7 +118,8 @@ async def process_object(
             user_id=current_user.id,
             group_id=group_id,
             image_url=filename,
-            status="pending_price" if not item_data.estimated_price else "completed"
+            status="pending_price" if not item_data.estimated_price else "completed",
+            meta_data=item_data.meta_data or {}
         )
         session.add(new_item)
         session.commit()

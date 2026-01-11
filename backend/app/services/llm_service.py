@@ -19,6 +19,7 @@ class ItemExtracted(BaseModel):
     category: str
     estimated_price: Optional[float] = None
     currency_code: str = "USD"
+    meta_data: Optional[dict] = {}
 
 class InvoiceItem(BaseModel):
     raw_name: str
@@ -101,11 +102,36 @@ class LLMService:
         context_str = ""
         if group_context:
             currency_hint = f"- Target Currency: {group_context.get('currency', 'USD')}"
+            inventory_type = group_context.get('settings', {}).get('inventory_type', 'GENERAL')
+            
             context_str = f"""
 CONTEXT: The user is adding an item to a specific collection.
 - Collection Name: "{group_context.get('name', 'General')}"
 - Collection Goal: "{group_context.get('description', '')}"
+- Inventory Type: "{inventory_type}"
 {currency_hint}
+"""
+        else:
+             inventory_type = "GENERAL"
+
+        # Dynamic Prompt Injection based on Inventory Type
+        type_specific_instructions = ""
+        if inventory_type == "NATURE":
+             type_specific_instructions = """
+MOODO NATURALEZA (BOTANICA):
+- Identify the plant, flower, or tree species.
+- Output 'meta_data' with keys:
+    - "scientific_name": (Latin name)
+    - "common_name": (Local name)
+    - "properties": (Short summary of medicinal or characteristic properties)
+"""
+        elif inventory_type == "PLACES":
+             type_specific_instructions = """
+MODO LUGARES (COMERCIAL):
+- Detect any visible phone numbers or contact info.
+- Output 'meta_data' with keys:
+    - "phone": (Formatted phone number for dialing)
+    - "business_category": (e.g., Restaurant, Store, Service)
 """
 
         try:
@@ -117,8 +143,9 @@ CONTEXT: The user is adding an item to a specific collection.
 {context_str}
 Reglas Generales:
 - PRIVACIDAD: No extraigas nombres reales ni información biométrica (PII). Limítate a descripciones visuales.
-    - Salida estricta en JSON con las claves: 'name', 'description', 'category', 'estimated_price', 'currency_code'.
+    - Salida estricta en JSON con las claves: 'name', 'description', 'category', 'estimated_price', 'currency_code', 'meta_data'.
     - currency_code: ISO 4217 code (e.g., USD, EUR, COP) if a price is found. Default to 'USD' if unknown.
+    - meta_data: Dictionary with specialized fields based on the mode.
 - CONSTRAINT: Use the collection context to infer the specific use case of the item (e.g., if Collection is "Camping", a "Knife" is a "Survival Tool", not "Kitchenware").
 
 Reglas para Personas:
@@ -133,7 +160,9 @@ Reglas para Objetos:
     - Category: Categoría corta (1-2 palabras).
     - estimated_price: Valor numérico estimado o null. Busque el precio del objeto en internet o estime basado en su conocimiento.
     - currency_code: La moneda del precio encontrado.
-    Si hay una MONEDA en el CONTEXTO (Target Currency), intenta estimar el precio en esa moneda, pero si encuentras una referencia mejor en USD/EUR, úsala y reporta la moneda correcta."""
+    Si hay una MONEDA en el CONTEXTO (Target Currency), intenta estimar el precio en esa moneda, pero si encuentras una referencia mejor en USD/EUR, úsala y reporta la moneda correcta.
+
+{type_specific_instructions}"""
 
             if "gemma" in self.model.lower():
                 # Google/Gemma models often don't support 'system' role or "Developer instruction" on some endpoints.

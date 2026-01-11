@@ -15,11 +15,13 @@ class GroupCreate(BaseModel):
     name: str
     description: Optional[str] = None
     currency: str = "USD"
+    settings: Optional[dict] = {}
 
 class GroupUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     currency: Optional[str] = None
+    settings: Optional[dict] = None
 
 class ShareRequest(BaseModel):
     email: str
@@ -49,6 +51,7 @@ async def create_group(
         name=group.name, 
         description=group.description, 
         currency=group.currency,
+        settings=group.settings or {},
         owner_id=current_user.id
     )
     session.add(new_group)
@@ -169,6 +172,8 @@ async def update_group(
         group.description = group_update.description
     if group_update.currency is not None:
         group.currency = group_update.currency
+    if group_update.settings is not None:
+        group.settings = group_update.settings
         
     session.add(group)
     session.commit()

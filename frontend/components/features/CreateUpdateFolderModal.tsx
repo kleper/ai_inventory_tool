@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { BrutalistSelect } from "@/components/ui/BrutalistSelect";
+import { Checkbox } from "@/components/ui/checkbox"; // Assuming Checkbox component exists
 import { API_BASE_URL } from "@/lib/config";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
@@ -21,6 +22,10 @@ interface CreateUpdateFolderModalProps {
         name: string;
         description?: string;
         currency?: string;
+        settings?: {
+            inventory_type?: string;
+            enable_geolocation?: boolean;
+        };
     };
     onSuccess?: () => void;
     trigger?: React.ReactNode;
@@ -41,6 +46,8 @@ export function CreateUpdateFolderModal({
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [currency, setCurrency] = useState("USD");
+    const [inventoryType, setInventoryType] = useState("GENERAL");
+    const [enableGeolocation, setEnableGeolocation] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -49,11 +56,15 @@ export function CreateUpdateFolderModal({
                 setName(initialData.name || "");
                 setDescription(initialData.description || "");
                 setCurrency(initialData.currency || "USD");
+                setInventoryType(initialData.settings?.inventory_type || "GENERAL");
+                setEnableGeolocation(initialData.settings?.enable_geolocation || false);
             } else {
                 // Reset for create
                 setName("");
                 setDescription("");
                 setCurrency("USD");
+                setInventoryType("GENERAL");
+                setEnableGeolocation(false);
             }
         }
     }, [open, mode, initialData]);
@@ -72,10 +83,20 @@ export function CreateUpdateFolderModal({
 
             const method = mode === "create" ? "POST" : "PUT";
 
+            const payload = {
+                name,
+                description,
+                currency,
+                settings: {
+                    inventory_type: inventoryType,
+                    enable_geolocation: enableGeolocation
+                }
+            };
+
             const res = await fetch(endpoint, {
                 method,
                 headers,
-                body: JSON.stringify({ name, description, currency })
+                body: JSON.stringify(payload)
             });
 
             if (!res.ok) throw new Error(`Failed to ${mode} group`);
@@ -140,6 +161,35 @@ export function CreateUpdateFolderModal({
                             onChange={(e) => setDescription(e.target.value.slice(0, 250))}
                             className="w-full border-black p-2 font-mono text-sm bg-white rounded-none resize-none h-24 focus-visible:ring-0 focus-visible:border-black"
                         />
+                    </div>
+
+                    {/* Inventory Type & Settings */}
+                    <div className="space-y-4 border-t border-black pt-4">
+                        <Label className="uppercase font-mono text-xs block">Specialized Configurations</Label>
+
+                        <BrutalistSelect
+                            label="Inventory Type"
+                            value={inventoryType}
+                            onChange={(e) => setInventoryType(e.target.value)}
+                            options={[
+                                { label: "General (Standard)", value: "GENERAL" },
+                                { label: "Nature & Botany", value: "NATURE" },
+                                { label: "Places & Commerce", value: "PLACES" },
+                            ]}
+                        />
+
+                        <div className="flex items-center space-x-3 bg-neutral-100 p-3 border border-black">
+                            <Checkbox
+                                id="gps_toggle"
+                                checked={enableGeolocation}
+                                onCheckedChange={(c) => setEnableGeolocation(c === true)}
+                                className="h-6 w-6 border-2 border-black rounded-none data-[state=checked]:bg-black data-[state=checked]:text-white"
+                            />
+                            <div className="flex flex-col">
+                                <Label htmlFor="gps_toggle" className="font-bold uppercase tracking-wider text-sm cursor-pointer">Capture Geolocation</Label>
+                                <span className="text-[10px] font-mono text-neutral-500">Record GPS coordinates for each item.</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Currency */}
