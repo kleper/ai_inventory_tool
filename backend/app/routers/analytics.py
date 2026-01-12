@@ -6,7 +6,7 @@ from app.models import User
 from app.services.analytics_service import analytics_service
 
 router = APIRouter(
-    prefix="/analytics",
+    prefix="/api/v1/analytics",
     tags=["analytics"],
     responses={404: {"description": "Not found"}},
 )

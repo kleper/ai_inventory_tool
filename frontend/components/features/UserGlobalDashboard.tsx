@@ -2,7 +2,8 @@
 
 import React from 'react';
 import useSWR from 'swr';
-import { useSession } from 'next-auth/react';
+import { useAuthFetcher } from "@/hooks/useAuthFetcher";
+import { useSession } from "next-auth/react";
 import { API_BASE_URL } from '@/lib/config';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Loader2 } from 'lucide-react';
@@ -20,25 +21,13 @@ interface AnalyticsOverview {
     categories_distribution: CategoryStat[];
 }
 
-// Fetcher
-const fetcher = async ([url, token]: [string, string]) => {
-    const res = await fetch(`${API_BASE_URL}${url}`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
-    });
-    if (!res.ok) {
-        throw new Error('Failed to fetch analytics');
-    }
-    return res.json();
-};
-
 export default function UserGlobalDashboard() {
     const { data: session } = useSession();
+    const fetcher = useAuthFetcher();
+    const token = (session as any)?.accessToken;
 
     const { data, error, isLoading } = useSWR<AnalyticsOverview>(
-        session?.accessToken ? ['/analytics/overview', session.accessToken] : null,
+        token ? `${API_BASE_URL}/api/v1/analytics/overview` : null,
         fetcher
     );
 

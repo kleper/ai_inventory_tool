@@ -187,6 +187,21 @@ async def social_login(
         # But if it doesn't, we should create it to support "Sign up with Google".
         
         # Check for pending invites? Maybe. For now, basic specific creation.
+        # Check for pending invites to consume
+        statement = select(Invitation).where(
+            Invitation.email == data.email, 
+            Invitation.status == "PENDING"
+        )
+        invite = session.exec(statement).first()
+        
+        if invite:
+             # Mark invite as used since they are registering via Google now
+             invite.status = "USED"
+             session.add(invite)
+        else:
+             # STRICT: If no user exists and no invite exists, reject registration.
+             raise HTTPException(status_code=403, detail="No pending invitation found for this email.")
+
         new_user = User(
             email=data.email,
             name=data.name or data.email.split("@")[0],
