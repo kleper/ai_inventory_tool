@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect, Request
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect, Request
 from typing import Optional, List
 from datetime import datetime
 from sqlmodel import Session, select, SQLModel
@@ -48,6 +48,8 @@ def validate_group_write_access(session: Session, user: User, group_id: int):
 async def process_object(
     request: Request,
     group_id: Optional[int] = None,
+    latitude: Optional[float] = Form(None),
+    longitude: Optional[float] = Form(None),
     file: UploadFile = File(...),
     llm_service: LLMService = Depends(get_llm_service),
     current_user: User = Depends(get_current_user),
@@ -110,6 +112,11 @@ async def process_object(
             except Exception as e:
                 print(f"Web search failed: {e}")
         
+        # Prepare Meta Data
+        meta = item_data.meta_data or {}
+        if latitude is not None and longitude is not None:
+             meta["coordinates"] = {"lat": latitude, "lng": longitude}
+
         new_item = Item(
             name=item_data.name,
             description=item_data.description,
@@ -119,7 +126,7 @@ async def process_object(
             group_id=group_id,
             image_url=filename,
             status="pending_price" if not item_data.estimated_price else "completed",
-            meta_data=item_data.meta_data or {}
+            meta_data=meta
         )
         session.add(new_item)
         session.commit()

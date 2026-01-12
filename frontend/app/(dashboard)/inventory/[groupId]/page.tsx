@@ -68,29 +68,57 @@ export default function FolderDetailPage() {
 
     const handleCapture = async (imageSrc: string) => {
         setIsScanOpen(false);
-        toast.info("Procesando imagen en segundo plano...");
+        toast.info("Processing image...");
         setIsProcessing(true);
-        try {
-            const res = await fetch(imageSrc);
-            const blob = await res.blob();
-            const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("group_id", groupId);
 
-            const apiRes = await fetch(`${API_BASE_URL}/api/v1/inventory/process-object?group_id=${groupId}`, {
-                method: "POST",
-                headers: { authorization: `Bearer ${(session as any)?.accessToken}` }, // Add Auth
-                body: formData
-            });
+        const uploadImage = async (lat?: number, lng?: number) => {
+            try {
+                const res = await fetch(imageSrc);
+                const blob = await res.blob();
+                const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
+                const formData = new FormData();
+                formData.append("file", file);
+                formData.append("group_id", groupId);
 
-            if (!apiRes.ok) throw new Error("Processing failed");
-            toast.success("Item processed!");
-            mutate();
-        } catch (err) {
-            toast.error("Error processing object");
-        } finally {
-            setIsProcessing(false);
+                if (lat !== undefined && lng !== undefined) {
+                    formData.append("latitude", lat.toString());
+                    formData.append("longitude", lng.toString());
+                    console.log("Adding GPS to upload:", lat, lng);
+                }
+
+                const apiRes = await fetch(`${API_BASE_URL}/api/v1/inventory/process-object?group_id=${groupId}`, {
+                    method: "POST",
+                    headers: { authorization: `Bearer ${(session as any)?.accessToken}` },
+                    body: formData
+                });
+
+                if (!apiRes.ok) throw new Error("Processing failed");
+                toast.success("Item processed successfully!");
+                mutate();
+            } catch (err) {
+                console.error(err);
+                toast.error("Error processing object");
+            } finally {
+                setIsProcessing(false);
+            }
+        };
+
+        // Check if Geolocation is enabled for this group
+        if (group?.settings?.enable_geolocation && "geolocation" in navigator) {
+            toast.info("Acquiring GPS location...");
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    uploadImage(pos.coords.latitude, pos.coords.longitude);
+                },
+                (err) => {
+                    console.error("GPS Error:", err);
+                    toast.warning("Could not get GPS location. Uploading without it.");
+                    uploadImage(); // Fallback without GPS
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            );
+        } else {
+            uploadImage();
         }
     };
 
