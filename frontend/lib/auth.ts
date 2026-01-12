@@ -137,5 +137,8 @@ export const authOptions: NextAuthOptions = {
             (session as any).accessToken = token.accessToken;
             return session
         }
+    },
+    session: {
+        maxAge: 7 * 24 * 60 * 60, // 7 Days
     }
 }

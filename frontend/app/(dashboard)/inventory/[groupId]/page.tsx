@@ -8,6 +8,7 @@ import { CameraCapture } from "@/components/features/CameraCapture";
 import { API_BASE_URL } from "@/lib/config";
 import { InventoryAnalyticsTab } from "@/components/features/InventoryAnalyticsTab";
 import { InvoiceUpload } from "@/components/features/InvoiceUpload";
+import { useGeolocation } from "@/hooks/useGeolocation"; // Added import
 import { ManualItemDialog } from "@/components/features/ManualItemDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,9 +67,13 @@ export default function FolderDetailPage() {
     const canWrite = role === "OWNER" || role === "EDITOR";
     const isOwner = role === "OWNER";
 
+    // Geolocation Hook (Robust)
+    const { location, loading: gpsLoading, error: gpsError } = useGeolocation(isScanOpen && group?.settings?.enable_geolocation);
+
     const handleCapture = async (imageSrc: string) => {
         setIsScanOpen(false);
-        toast.info("Processing image...");
+        // Toast for processing start
+        const toastId = toast.loading("Analyzing image...", { description: "AI is identifying your item." });
         setIsProcessing(true);
 
         const uploadImage = async (lat?: number, lng?: number) => {
@@ -83,7 +88,10 @@ export default function FolderDetailPage() {
                 if (lat !== undefined && lng !== undefined) {
                     formData.append("latitude", lat.toString());
                     formData.append("longitude", lng.toString());
-                    console.log("Adding GPS to upload:", lat, lng);
+                    console.log("Attached GPS Coords:", lat, lng);
+                } else if (group?.settings?.enable_geolocation) {
+                    console.warn("Geolocation enabled but no coords captured.");
+                    if (gpsError) toast.error("GPS Warning: " + gpsError);
                 }
 
                 const apiRes = await fetch(`${API_BASE_URL}/api/v1/inventory/process-object?group_id=${groupId}`, {
@@ -93,34 +101,29 @@ export default function FolderDetailPage() {
                 });
 
                 if (!apiRes.ok) throw new Error("Processing failed");
+                toast.dismiss(toastId);
                 toast.success("Item processed successfully!");
                 mutate();
             } catch (err) {
                 console.error(err);
+                toast.dismiss(toastId);
                 toast.error("Error processing object");
             } finally {
                 setIsProcessing(false);
             }
         };
 
-        // Check if Geolocation is enabled for this group
-        if (group?.settings?.enable_geolocation && "geolocation" in navigator) {
-            toast.info("Acquiring GPS location...");
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    uploadImage(pos.coords.latitude, pos.coords.longitude);
-                },
-                (err) => {
-                    console.error("GPS Error:", err);
-                    toast.warning("Could not get GPS location. Uploading without it.");
-                    uploadImage(); // Fallback without GPS
-                },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-            );
+        // Use location from hook if available, otherwise upload without
+        if (location) {
+            await uploadImage(location.lat, location.lng);
         } else {
-            uploadImage();
+            // If GPS is mandatory we could block here, but user requirements said "Deshabilita el botón...".
+            // Since this is the "After Capture" phase, we proceed but maybe without GPS if it failed or wasn't fast enough.
+            // Alternatively we could wait? No, let's just send what we have for better UX, relying on the hook having tried its best while Scan was open.
+            await uploadImage();
         }
     };
+
 
     const handleInvoiceUpload = async (file: File) => {
         setIsProcessing(true);

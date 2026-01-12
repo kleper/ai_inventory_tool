@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,13 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PenTool, Plus, Loader2 } from "lucide-react";
+import { PenTool, Plus, Loader2, MapPin, Satellite } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/lib/config";
 import { NativeCameraInput } from "./NativeCameraInput";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
-import { MapPin } from "lucide-react";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 // Validation Schema
 const itemSchema = z.object({
@@ -50,31 +50,20 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
 
     const { data: session } = useSession();
 
-    // GPS State
-    const [gpsCoords, setGpsCoords] = useState<{ lat: number, lng: number } | null>(null);
-    const [isGpsLocked, setIsGpsLocked] = useState(false);
-    const [enableGps, setEnableGps] = useState(false);
-
-    // Fetch Group Settings
-    useSWR(`${API_BASE_URL}/api/v1/groups/${groupId}`, async (url) => {
+    // Group Settings Fetch
+    const { data: groupData } = useSWR(`${API_BASE_URL}/api/v1/groups/${groupId}`, async (url) => {
         const token = (session as any)?.accessToken;
         const headers: HeadersInit = token ? { "Authorization": `Bearer ${token}` } : {};
         const res = await fetch(url, { headers });
         if (!res.ok) return null;
-        const data = await res.json();
-        if (data.settings?.enable_geolocation) {
-            setEnableGps(true);
-            // Auto-trigger GPS if enabled
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-                    setIsGpsLocked(true);
-                    toast.info("GPS Location Locked");
-                });
-            }
-        }
-        return data;
+        return await res.json();
     });
+
+    const enableGps = groupData?.settings?.enable_geolocation || false;
+
+    // GPS Hook
+    // We only enable the hook if the dialog is OPEN and the group has GPS enabled
+    const { location, loading: gpsLoading, error: gpsError } = useGeolocation(isOpen && enableGps);
 
     const { register, handleSubmit, formState: { errors }, reset } = useForm({
         resolver: zodResolver(itemSchema),
@@ -86,43 +75,13 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
 
     const categories = ["General", "Electronics", "Home", "Office", "Tools", "Clothing", "Other"];
 
-    const handleImageSelect = (file: File) => {
-        setImageFile(file);
-        setPreviewUrl(URL.createObjectURL(file));
-    };
-
     const onSubmit = async (data: ItemFormValues) => {
         setIsLoading(true);
         try {
-            // 1. If image exists, process it first or upload?
-            // Since our backend doesn't have a separate /upload endpoint easily ready for this flow, 
-            // we'll try to use the logic: send JSON first? Or FormData?
-            // The process-object endpoint handles image + analysis.
-            // The POST /items endpoint expects JSON body.
-            // If we have an image, we might need to upload it.
-            // But for MVP, if image is optional, maybe we ignore image upload for Manual flow OR 
-            // we use a multipart endpoint?
-            // Plan said: "POST /items". 
-            // If we want to support image, we need to handle it.
-            // Current backend /items endpoint expects `Item` model (JSON).
-            // It does NOT support file upload.
-            // User requirement: "Image (Optional): Reuse NativeCameraInput...".
-            // Implementation detail: If image is provided, we probably just want to store the URL.
-            // Since we don't have S3 set up, we can't easily get a URL without uploading.
-            // compromise: For now, if image is present, we skip uploading it to keep it simple 
-            // OR we assume the user just wants the data.
-            // WAIT: The prompt says "La subida de imagen debe ser completamente opcional".
-            // If I skip it, it's optional! :)
-            // But better: Let's just send the data. If we really need image, we'd need a new endpoint `POST /items/with-image`.
-            // Given the backend implementation only accepts JSON `Item`, I will send JSON.
-            // I'll make a note or toast that image upload in manual mode is WIP if image selected.
-            // OR checks if I can modify backend to accept generic upload?
-            // Let's stick to JSON for now to ensure reliability of the main requirement (Manual Form).
-
             const payload = {
                 ...data,
                 group_id: parseInt(groupId),
-                meta_data: gpsCoords ? { coordinates: gpsCoords } : {}
+                meta_data: location ? { coordinates: location } : {}
             };
 
             const token = (session as any)?.accessToken;
@@ -156,41 +115,61 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
         <Dialog open={isOpen} onOpenChange={setOpen}>
             {showTrigger && (
                 <DialogTrigger asChild>
-                    <Button variant="outline" className="gap-2">
-                        <Plus className="w-4 h-4" /> Add Manually
+                    <Button variant="outline" className="gap-2 rounded-none border-black hover:bg-neutral-100 uppercase font-bold text-xs tracking-wider">
+                        <Plus className="w-4 h-4" /> Add Item
                     </Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[425px] overflow-y-auto max-h-[90vh]">
+            <DialogContent className="sm:max-w-[425px] overflow-y-auto max-h-[90vh] border-black rounded-none shadow-none bg-white p-6">
                 <DialogHeader>
-                    <DialogTitle className="flex justify-between items-center">
-                        Add Item Manually
-                        {isGpsLocked && (
-                            <div className="flex items-center gap-1 text-[10px] bg-black text-white px-2 py-1 uppercase tracking-widest font-mono">
-                                <MapPin className="w-3 h-3" /> GPS LOCKED
+                    <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                            <DialogTitle className="uppercase font-bold tracking-wider text-xl">
+                                Add Item Manually
+                            </DialogTitle>
+                            <DialogDescription className="font-mono text-xs uppercase tracking-wide text-neutral-500">
+                                Enter details manually.
+                            </DialogDescription>
+                        </div>
+
+                        {/* GPS Status Badge */}
+                        {enableGps && (
+                            <div className="flex flex-col items-end gap-1">
+                                {gpsLoading && (
+                                    <div className="flex items-center gap-1 text-[10px] bg-yellow-100 text-yellow-800 border border-yellow-800 px-2 py-1 uppercase tracking-widest font-mono animate-pulse">
+                                        <Satellite className="w-3 h-3 animate-spin" /> ACQUIRING GPS...
+                                    </div>
+                                )}
+                                {location && (
+                                    <div className="flex items-center gap-1 text-[10px] bg-green-100 text-green-800 border border-green-800 px-2 py-1 uppercase tracking-widest font-mono">
+                                        <MapPin className="w-3 h-3" /> GPS LOCKED
+                                    </div>
+                                )}
+                                {gpsError && (
+                                    <div className="flex items-center gap-1 text-[10px] bg-red-100 text-red-800 border border-red-800 px-2 py-1 uppercase tracking-widest font-mono">
+                                        <AlertCircle className="w-3 h-3" /> GPS ERROR
+                                    </div>
+                                )}
                             </div>
                         )}
-                    </DialogTitle>
-                    <DialogDescription>
-                        Fill in the details to create a new inventory item.
-                    </DialogDescription>
+                    </div>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-6">
                     {/* Name */}
                     <div className="space-y-2">
-                        <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
-                        <Input id="name" {...register("name")} placeholder="Item name" />
-                        {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
+                        <Label htmlFor="name" className="uppercase font-mono text-xs">Name</Label>
+                        <Input id="name" {...register("name")} placeholder="ITEM NAME" className="rounded-none border-black focus-visible:ring-0 uppercase placeholder:normal-case" />
+                        {errors.name && <p className="text-xs text-red-600 font-mono mt-1 uppercase">{errors.name.message}</p>}
                     </div>
 
                     {/* Category */}
                     <div className="space-y-2">
-                        <Label htmlFor="category">Category</Label>
+                        <Label htmlFor="category" className="uppercase font-mono text-xs">Category</Label>
                         <select
                             id="category"
                             {...register("category")}
-                            className="flex h-10 w-full rounded-none border border-black bg-white px-3 py-2 text-sm text-black ring-offset-white focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-sans transition-all"
+                            className="flex h-10 w-full rounded-none border border-black bg-white px-3 py-2 text-sm ring-offset-white focus:outline-none focus:ring-0 disabled:opacity-50 font-sans uppercase"
                         >
                             {categories.map(cat => (
                                 <option key={cat} value={cat}>{cat}</option>
@@ -201,39 +180,32 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
                     <div className="grid grid-cols-2 gap-4">
                         {/* Price */}
                         <div className="space-y-2">
-                            <Label htmlFor="price">Price ($)</Label>
-                            <Input id="price" type="number" step="0.01" {...register("price")} placeholder="0.00" />
+                            <Label htmlFor="price" className="uppercase font-mono text-xs">Price ($)</Label>
+                            <Input id="price" type="number" step="0.01" {...register("price")} placeholder="0.00" className="rounded-none border-black focus-visible:ring-0" />
                         </div>
                         {/* Quantity */}
                         <div className="space-y-2">
-                            <Label htmlFor="quantity">Quantity</Label>
-                            <Input id="quantity" type="number" min="1" {...register("quantity")} />
+                            <Label htmlFor="quantity" className="uppercase font-mono text-xs">Quantity</Label>
+                            <Input id="quantity" type="number" min="1" {...register("quantity")} className="rounded-none border-black focus-visible:ring-0" />
                         </div>
                     </div>
 
                     {/* Description */}
                     <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Input id="description" {...register("description")} placeholder="Optional notes" />
+                        <Label htmlFor="description" className="uppercase font-mono text-xs">Description</Label>
+                        <Input id="description" {...register("description")} placeholder="OPTIONAL NOTES" className="rounded-none border-black focus-visible:ring-0 uppercase placeholder:normal-case" />
                     </div>
 
-                    {/* Image (Placeholder UI) */}
-                    <div className="space-y-2">
-                        <Label>Image (Optional)</Label>
-                        <div className="border border-dashed rounded-lg p-4 text-center text-sm text-gray-500">
-                            {/* Since real upload isn't linked to this endpoint yet, showing specific UI */}
-                            <NativeCameraInput onCapture={(base64) => {
-                                // Handle capture if we extended backend to support it
-                                toast.info("Image attachment not supported in manual mode yet");
-                            }} />
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end gap-2 mt-6">
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Item
+                    {/* Footer Actions */}
+                    <div className="flex justify-between items-center pt-4 border-t border-black mt-6">
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="rounded-none uppercase font-bold text-xs hover:bg-neutral-100">Cancel</Button>
+                        <Button
+                            type="submit"
+                            disabled={isLoading || (enableGps && gpsLoading)}
+                            className="bg-black text-white rounded-none uppercase tracking-widest font-bold text-xs hover:bg-neutral-800 px-6 py-2"
+                        >
+                            {(isLoading || (enableGps && gpsLoading)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {enableGps && gpsLoading ? "WAITING FOR GPS..." : "SAVE ITEM"}
                         </Button>
                     </div>
                 </form>
@@ -241,3 +213,5 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
         </Dialog>
     );
 }
+
+import { AlertCircle } from "lucide-react";

@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SecureImage } from "@/components/ui/SecureImage";
 import { ItemPhotoUpdater } from "@/components/features/ItemPhotoUpdater";
+import { StaticMapThumbnail } from "@/components/ui/StaticMapThumbnail";
 import { downloadSecureFile } from "@/lib/download";
 import {
     Tooltip,
@@ -420,12 +421,11 @@ export default function ItemDetailPage() {
                                                     </div>
 
                                                     {/* Static Map Thumbnail */}
-                                                    <div className="mb-4 border border-black w-full h-40 overflow-hidden relative bg-gray-200">
-                                                        {/* Using staticmap.openstreetmap.de as a free service */}
-                                                        <img
-                                                            src={`https://staticmap.openstreetmap.de/staticmap.php?center=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}&zoom=14&size=600x320&markers=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng},ol-marker`}
-                                                            alt="Location Thumbnail"
-                                                            className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                                                    <div className="mb-4 w-full h-40">
+                                                        <StaticMapThumbnail
+                                                            lat={item.meta_data.coordinates.lat}
+                                                            lng={item.meta_data.coordinates.lng}
+                                                            className="h-full"
                                                         />
                                                     </div>
 
