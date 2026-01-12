@@ -101,16 +101,28 @@ async def process_object(
                 # Prompt defaults to USD if unknown, so we are safe.
                 pass
         
-        # If LLM didn't find a price, try web search
+        # If LLM didn't find a price, try web search or fallback
         if not item_data.estimated_price or item_data.estimated_price == 0:
             print(f"No price from LLM for {item_data.name}, searching web...")
+            found_price = False
             try:
                 web_price = search_approximate_price(item_data.name)
                 if web_price:
                      print(f"Found web price: {web_price}")
                      item_data.estimated_price = web_price
+                     found_price = True
             except Exception as e:
                 print(f"Web search failed: {e}")
+            
+            # Fallback Logic
+            if not found_price:
+                 import random # Local import to verify safety
+                 fallback_price = float(random.randint(100, 500))
+                 print(f"Assigning fallback random price: {fallback_price}")
+                 item_data.estimated_price = fallback_price
+                 # Optional: Mark as estimated
+                 if not item_data.meta_data: item_data.meta_data = {}
+                 item_data.meta_data["price_source"] = "estimated_random"
         
         # Prepare Meta Data
         meta = item_data.meta_data or {}

@@ -25,27 +25,63 @@ def search_approximate_price(query: str) -> Tuple[float, str] | None:
             for r in results:
                 snippet = r.get("body", "") + " " + r.get("title", "")
                 
-                # Regex 1: Symbol prefix ($10, €10, £10)
-                # Group 1: Symbol, Group 2: Amount
-                matches_symbol = re.findall(r'([$€£¥])\s?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)', snippet)
-                for symbol, amount_str in matches_symbol:
+                # Improved Parsing Helper
+                def parse_price_string(amount_text: str) -> float | None:
                     try:
-                        amount = float(amount_str.replace(',', ''))
+                        # Clean whitespace
+                        clean = amount_text.strip()
+                        if not clean: return None
+                        
+                        # Case 1: 1,234.56 (US/UK) -> Remove comma
+                        if ',' in clean and '.' in clean:
+                            if clean.find(',') < clean.find('.'):
+                                return float(clean.replace(',', ''))
+                            else:
+                                # Case 2: 1.234,56 (EU/LatAm) -> Remove dot, replace comma with dot
+                                return float(clean.replace('.', '').replace(',', '.'))
+                        
+                        # Case 3: 1,234 or 1234 (US) -> If comma is there
+                        elif ',' in clean:
+                            return float(clean.replace(',', '.')) # Assume it's a decimal comma if only comma exists? Ambiguous.
+                            # Actually, 10,000 usually means 10k. 10,99 usually means 10.99.
+                            # Heuristic: If 3 digits after comma, likely thousands separator.
+                            parts = clean.split(',')
+                            if len(parts[-1]) == 3:
+                                return float(clean.replace(',', ''))
+                            else:
+                                return float(clean.replace(',', '.'))
+                        
+                        # Case 4: 1.234 (EU) -> If dot is there
+                        elif '.' in clean:
+                             # Ambiguous. 10.999 vs 10.99.
+                             # Heuristic: If 3 digits after dot, likely thousands separator?
+                             parts = clean.split('.')
+                             if len(parts[-1]) == 3:
+                                  return float(clean.replace('.', ''))
+                             else:
+                                  return float(clean)
+                        
+                        return float(clean)
+                    except: return None
+
+                # Regex 1: Symbol prefix ($10, €10, £10, $ 10.000)
+                # Matches symbols followed by digits, dots, commas
+                matches_symbol = re.findall(r'([$€£¥])\s?([\d.,]+)', snippet)
+                for symbol, amount_str in matches_symbol:
+                    amount = parse_price_string(amount_str)
+                    if amount:
                         currency = "USD"
                         if symbol == '€': currency = "EUR"
                         elif symbol == '£': currency = "GBP"
                         elif symbol == '¥': currency = "JPY"
                         prices.append((amount, currency))
-                    except ValueError: pass
 
-                # Regex 2: Suffix code (10 USD, 10 EUR)
-                # Group 1: Amount, Group 2: Code
-                matches_code = re.findall(r'(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?)\s?(USD|EUR|GBP|COP|MXN|CAD)', snippet, re.IGNORECASE)
+                # Regex 2: Suffix code (10 USD, 10.000 COP)
+                matches_code = re.findall(r'([\d.,]+)\s?(USD|EUR|GBP|COP|MXN|CAD|AUD|BRL)', snippet, re.IGNORECASE)
                 for amount_str, code in matches_code:
-                    try:
-                        amount = float(amount_str.replace(',', ''))
+                    amount = parse_price_string(amount_str)
+                    if amount:
                         prices.append((amount, code.upper()))
-                    except ValueError: pass
             
             if not prices:
                 # Fallback: Try searching specifically for "precio" if query appears Spanish-like

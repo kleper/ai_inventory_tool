@@ -22,6 +22,7 @@ interface CreateUpdateFolderModalProps {
         name: string;
         description?: string;
         currency?: string;
+        language?: string;
         settings?: {
             inventory_type?: string;
             enable_geolocation?: boolean;
@@ -46,6 +47,7 @@ export function CreateUpdateFolderModal({
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [currency, setCurrency] = useState("USD");
+    const [language, setLanguage] = useState("ES");
     const [inventoryType, setInventoryType] = useState("GENERAL");
     const [enableGeolocation, setEnableGeolocation] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,6 +58,7 @@ export function CreateUpdateFolderModal({
                 setName(initialData.name || "");
                 setDescription(initialData.description || "");
                 setCurrency(initialData.currency || "USD");
+                setLanguage(initialData.language || "ES");
                 setInventoryType(initialData.settings?.inventory_type || "GENERAL");
                 setEnableGeolocation(initialData.settings?.enable_geolocation || false);
             } else {
@@ -63,6 +66,7 @@ export function CreateUpdateFolderModal({
                 setName("");
                 setDescription("");
                 setCurrency("USD");
+                setLanguage("ES");
                 setInventoryType("GENERAL");
                 setEnableGeolocation(false);
             }
@@ -87,6 +91,7 @@ export function CreateUpdateFolderModal({
                 name,
                 description,
                 currency,
+                language,
                 settings: {
                     inventory_type: inventoryType,
                     enable_geolocation: enableGeolocation
@@ -204,9 +209,23 @@ export function CreateUpdateFolderModal({
                                 { label: "🇪🇺 EUR - Euro (€)", value: "EUR" },
                             ]}
                         />
+                        />
                         <p className="text-[10px] font-mono text-neutral-500 mt-1 uppercase">
                             Note: Changing currency affects how prices are displayed and summed.
                         </p>
+                    </div>
+
+                    {/* Language */}
+                    <div className="space-y-2">
+                        <BrutalistSelect
+                            label="AI OUTPUT LANGUAGE"
+                            value={language}
+                            onChange={(e) => setLanguage(e.target.value)}
+                            options={[
+                                { label: "ESPAÑOL (ES)", value: "ES" },
+                                { label: "ENGLISH (EN)", value: "EN" },
+                            ]}
+                        />
                     </div>
 
                     <DialogFooter>

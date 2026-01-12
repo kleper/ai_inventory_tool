@@ -15,12 +15,14 @@ class GroupCreate(BaseModel):
     name: str
     description: Optional[str] = None
     currency: str = "USD"
+    language: str = "ES"
     settings: Optional[dict] = {}
 
 class GroupUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     currency: Optional[str] = None
+    language: Optional[str] = None
     settings: Optional[dict] = None
 
 class ShareRequest(BaseModel):

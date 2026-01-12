@@ -222,10 +222,20 @@ Reglas para Objetos:
              settings_dict = group_context.get('settings') or {} if group_context else {}
              inventory_type = settings_dict.get('inventory_type', 'GENERAL')
              
+             # Language Logic
+             target_language = group_context.get('language', 'ES') if group_context else 'ES'
+             language_instruction = ""
+             if target_language == 'ES':
+                 language_instruction = "CRITICAL RULE: ALL OUTPUT (Title, Description, Tags, Category) MUST BE IN SPANISH. Do not generate English text."
+             elif target_language == 'EN':
+                 language_instruction = "CRITICAL RULE: ALL OUTPUT MUST BE IN ENGLISH."
+
              prompt_text = f"""
              Analyze this image and extract inventory data in strict JSON format.
              Context: Collection "{group_context.get('name', '') if group_context else 'General'}" - "{group_context.get('description', '') if group_context else ''}".
              Inventory Type: {inventory_type}
+             
+             {language_instruction}
              
              Output JSON keys: 
              - name
