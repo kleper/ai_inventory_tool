@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import { useNotifications } from "@/hooks/useNotifications";
 import { formatCurrency } from "@/lib/currency"; // Import Utils
 import { CreateUpdateFolderModal } from "@/components/features/CreateUpdateFolderModal"; // Import Modal
+import { useUploadQueue } from "@/context/UploadQueueContext";
+import { QueueTab } from "@/components/features/queue/QueueTab";
 
 import { useAuthFetcher } from "@/hooks/useAuthFetcher";
 // fetcher removed
@@ -46,6 +48,13 @@ export default function FolderDetailPage() {
         fetcher
     );
 
+    // Revalidate when queue finishes
+    useEffect(() => {
+        const handleUpdate = () => mutate();
+        window.addEventListener('inventory-updated', handleUpdate);
+        return () => window.removeEventListener('inventory-updated', handleUpdate);
+    }, [mutate]);
+
     // Fetch Group Info
     const { data: group } = useSWR(
         (groupId && token) ? `${API_BASE_URL}/api/v1/groups/${groupId}` : null,
@@ -60,7 +69,12 @@ export default function FolderDetailPage() {
     const [isShareOpen, setIsShareOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false); // Edit State
 
-    const [activeTab, setActiveTab] = useState<'items' | 'analytics'>('items');
+    const [activeTab, setActiveTab] = useState<'items' | 'analytics' | 'processing'>('items');
+    const { addToQueue, queue } = useUploadQueue();
+    const processingCount = queue.filter(q => q.groupId === groupId).length;
+
+    // Auto switch to processing tab if items added? Maybe not, disruptive.
+    // Instead show badge on tab.
 
     // Permission Logic
     const role = group?.my_role || "VIEWER";
@@ -71,60 +85,37 @@ export default function FolderDetailPage() {
     const { location, loading: gpsLoading, error: gpsError } = useGeolocation(isScanOpen && group?.settings?.enable_geolocation);
 
     const handleCapture = async (imageSrc: string) => {
-        setIsScanOpen(false);
-        // Toast for processing start
-        const toastId = toast.loading("Analyzing image...", { description: "AI is identifying your item." });
-        setIsProcessing(true);
+        setIsScanOpen(false); // Close camera immediately for rapid fire (user can reopen or generic camera keeps open? User said "Camera liberates instantly for next photo" -> imply Camera stays open? 
+        // Actually CameraCapture component usually closes on capture if it's in a Dialog.
+        // Prompt says: "Camera se libera instantáneamente para la siguiente foto". 
+        // If it's a dialog, it closes. If user wants rapid fire, maybe keep it open? 
+        // For now, allow closing but processing is background.
+        // Wait, if I close the dialog, user has to reopen. 
+        // But "Camera se libera" implies it's ready for another shot. 
+        // If the CameraCapture component supports rapid fire (not closing), that's better.
+        // But `handleCapture` in `CameraCapture` is usually `onCapture`.
+        // Let's assume standard flow: Close dialog -> Background process.
+        // OR better: Don't close dialog if user wants multiple?
+        // User requirements: "Duplicación de ítems... fotos consecutivas rápidamente". 
+        // This implies the user MIGHT be hitting the button fast, or opening/closing fast.
 
-        const uploadImage = async (lat?: number, lng?: number) => {
-            try {
-                const res = await fetch(imageSrc);
-                const blob = await res.blob();
-                const file = new File([blob], "capture.jpg", { type: "image/jpeg" });
-                const formData = new FormData();
-                formData.append("file", file);
-                formData.append("group_id", groupId);
+        try {
+            const res = await fetch(imageSrc);
+            const blob = await res.blob();
 
-                if (lat !== undefined && lng !== undefined) {
-                    formData.append("latitude", lat.toString());
-                    formData.append("longitude", lng.toString());
-                    console.log("Attached GPS Coords:", lat, lng);
-                } else if (group?.settings?.enable_geolocation) {
-                    console.warn("Geolocation enabled but no coords captured.");
-                    if (gpsError) toast.error("GPS Warning: " + gpsError);
-                }
+            // Add to Queue
+            addToQueue(
+                blob,
+                groupId,
+                location?.lat,
+                location?.lng
+            );
 
-                const apiRes = await fetch(`${API_BASE_URL}/api/v1/inventory/process-object?group_id=${groupId}`, {
-                    method: "POST",
-                    headers: { authorization: `Bearer ${(session as any)?.accessToken}` },
-                    body: formData
-                });
-
-                if (!apiRes.ok) throw new Error("Processing failed");
-                toast.dismiss(toastId);
-                toast.success("Item processed successfully!");
-                mutate();
-            } catch (err) {
-                console.error(err);
-                toast.dismiss(toastId);
-                toast.error("Error processing object");
-            } finally {
-                setIsProcessing(false);
-            }
-        };
-
-        // Use location from hook if available, otherwise upload without
-        if (location) {
-            await uploadImage(location.lat, location.lng);
-        } else {
-            // If GPS is mandatory we could block here, but user requirements said "Deshabilita el botón...".
-            // Since this is the "After Capture" phase, we proceed but maybe without GPS if it failed or wasn't fast enough.
-            // Alternatively we could wait? No, let's just send what we have for better UX, relying on the hook having tried its best while Scan was open.
-            await uploadImage();
+        } catch (err) {
+            console.error("Error preparing capture for queue", err);
+            toast.error("Failed to queue image");
         }
     };
-
-
     const handleInvoiceUpload = async (file: File) => {
         setIsProcessing(true);
         try {
@@ -251,12 +242,19 @@ export default function FolderDetailPage() {
                         >
                             Items
                         </button>
+                            Analytics
+                        </button>
                         <button
-                            onClick={() => setActiveTab('analytics')}
-                            className={`px-6 py-2 text-sm font-bold uppercase tracking-wider border-t border-r border-black transition-colors ${activeTab === 'analytics' ? 'bg-black text-white' : 'bg-white text-black hover:bg-neutral-100'}`}
+                            onClick={() => setActiveTab('processing')}
+                            className={`px-6 py-2 text-sm font-bold uppercase tracking-wider border-t border-r border-black transition-colors flex items-center gap-2 ${activeTab === 'processing' ? 'bg-black text-white' : 'bg-white text-black hover:bg-neutral-100'}`}
                             style={{ marginBottom: '-1px' }}
                         >
-                            Analytics
+                            Processing
+                            {processingCount > 0 && (
+                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-[10px] text-white">
+                                    {processingCount}
+                                </span>
+                            )}
                         </button>
                     </div>
 
@@ -317,6 +315,8 @@ export default function FolderDetailPage() {
                 <div className="max-w-7xl mx-auto">
                     {activeTab === 'analytics' ? (
                         <InventoryAnalyticsTab items={items || []} currency={group?.currency || "USD"} />
+                    ) : activeTab === 'processing' ? (
+                        <QueueTab groupId={groupId} />
                     ) : (
                         // Active Tab: Items
                         isLoading ? (
@@ -382,7 +382,7 @@ export default function FolderDetailPage() {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 

@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { WebSocketProvider } from "@/components/providers/WebSocketProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { UploadQueueProvider } from "@/context/UploadQueueContext";
 import { Toaster } from "sonner";
 
 const spaceGrotesk = Space_Grotesk({
@@ -45,12 +46,14 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${spaceGrotesk.variable} ${space.variable} font-sans antialiased bg-white text-black`}>
         <AuthProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <WebSocketProvider>
-              {children}
-              <Toaster />
-            </WebSocketProvider>
-          </ThemeProvider>
+          <UploadQueueProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <WebSocketProvider>
+                {children}
+                <Toaster />
+              </WebSocketProvider>
+            </ThemeProvider>
+          </UploadQueueProvider>
         </AuthProvider>
       </body>
     </html>
