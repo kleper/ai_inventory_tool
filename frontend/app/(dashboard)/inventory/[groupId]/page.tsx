@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Search, SlidersHorizontal, ArrowLeft, Camera, Upload, PenTool, Plus, UserPlus } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -242,6 +242,11 @@ export default function FolderDetailPage() {
                         >
                             Items
                         </button>
+                        <button
+                            onClick={() => setActiveTab('analytics')}
+                            className={`px-6 py-2 text-sm font-bold uppercase tracking-wider border-t border-r border-black transition-colors ${activeTab === 'analytics' ? 'bg-black text-white' : 'bg-white text-black hover:bg-neutral-100'}`}
+                            style={{ marginBottom: '-1px' }}
+                        >
                             Analytics
                         </button>
                         <button

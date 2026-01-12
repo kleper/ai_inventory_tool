@@ -117,6 +117,10 @@ class Item(SQLModel, table=True):
     meta_data: Dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+    # Public Sharing
+    is_public: bool = Field(default=False)
+    public_token: Optional[str] = Field(default=None, unique=True, index=True)
+
     # Ownership (Legacy/Direct)
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     user: Optional[User] = Relationship(back_populates="items")
