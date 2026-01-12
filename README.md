@@ -5,9 +5,17 @@
 ## 🌟 Key Features
 
 ### 🧠 AI-Powered Automation
+-   **Dual Providers**: Choose between **OpenAI (GPT-4o)** or **Google Gemini** for your AI backend.
 -   **Object Recognition**: Upload a photo, and the AI automatically identifies the object, categorization, and description.
--   **Price Estimation**: The system estimates the value of your items based on visual analysis and context.
--   **Context-Aware**: The AI understands if an item is being added to a specific folder (e.g., "Camping Gear" vs. "Kitchen") to provide more accurate categorizations.
+-   **Specialized Modes**:
+    -   **Nature Mode**: Identifies plants, flowers, and trees with scientific names and medicinal properties.
+    -   **Places Mode**: Extracts business contact info and categories from storefronts.
+-   **Context-Aware**: The AI understands if an item is being added to a specific folder (e.g., "Camping Gear") for better categorization.
+
+### 📍 Geolocation & Maps
+-   **GPS Capture**: Automatically captures coordinates when scanning items via mobile.
+-   **Map Preview**: Displays a beautiful static map and pin for items with location data.
+-   **Interactive**: One-click integration with Google Maps.
 
 ### 💰 Financial Analytics & Multi-Currency
 -   **Global Currency Support**: Track your portfolio in **USD**, **COP** (Colombian Peso), or **EUR**.
@@ -50,7 +58,7 @@
 ## 🛠 Technical Stack
 -   **Frontend**: Next.js 15 (App Router), Tailwind CSS, ShadcnUI, Recharts.
 -   **Backend**: FastAPI, SQLModel (SQLAlchemy), Alembic, Pydantic.
--   **AI**: OpenAI GPT-4o Integration.
+-   **AI**: OpenAI GPT-4o or Google Gemini Integration.
 -   **Database**: PostgreSQL 15.
 -   **Infrastructure**: Docker Compose.
 
@@ -63,7 +71,7 @@
     ```bash
     cp .env.example .env 
     ```
-2.  Fill in your keys (OPENAI_API_KEY is essential for AI features).
+2.  Fill in your keys. Set `LLM_PROVIDER=GEMINI` to use Google models, or keep `OPENAI` for GPT-4o.
 
 ### 2. Build and Run
 ```bash

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Camera, Loader2 } from "lucide-react";
 import { CameraCapture } from "@/components/features/CameraCapture";
@@ -76,6 +76,9 @@ export function ItemPhotoUpdater({ itemId, onUpdate, canWrite }: ItemPhotoUpdate
                     <DialogTitle className="text-xl font-bold uppercase tracking-tighter border-b-2 border-black pb-2">
                         Replace Item Photo
                     </DialogTitle>
+                    <DialogDescription className="text-xs font-mono text-neutral-500 uppercase">
+                        Upload a new image for this item using the camera or file selector.
+                    </DialogDescription>
                     {isUploading ? (
                         <div className="flex items-center justify-center p-8 flex-col gap-4">
                             <Loader2 className="w-8 h-8 animate-spin" />

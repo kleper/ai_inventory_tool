@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     LLM_API_KEY: Optional[str] = None
     LLM_MODEL: str = "gpt-4o"
     LLM_BASE_URL: Optional[str] = None
+    LLM_PROVIDER: str = "OPENAI" # OPENAI | GEMINI
+    GEMINI_API_KEY: Optional[str] = None
 
     # Email
     MAIL_USERNAME: str

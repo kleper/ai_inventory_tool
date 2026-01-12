@@ -260,6 +260,7 @@ async def update_item_image(
     try:
         from app.services.image_service import save_image
         
+        contents = await file.read()
         # Save new file (original + thumb)
         new_filename = save_image(contents, "/app/media")
             
