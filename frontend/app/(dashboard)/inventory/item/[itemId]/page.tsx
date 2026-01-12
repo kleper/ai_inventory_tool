@@ -10,12 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon, Download, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon, Download, Sparkles, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SecureImage } from "@/components/ui/SecureImage";
 import { ItemPhotoUpdater } from "@/components/features/ItemPhotoUpdater";
 import { StaticMapThumbnail } from "@/components/ui/StaticMapThumbnail";
+import { ShareItemModal } from "@/components/features/ShareItemModal";
 import { downloadSecureFile } from "@/lib/download";
 import {
     Tooltip,
@@ -53,6 +54,7 @@ export default function ItemDetailPage() {
     );
 
     const [isEditing, setIsEditing] = useState(false);
+    const [isShareOpen, setIsShareOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: "",
         category: "",
@@ -251,6 +253,9 @@ export default function ItemDetailPage() {
                             <div className="flex gap-4">
                                 <Button variant="outline" className="flex-1 border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide" onClick={() => setIsEditing(true)}>
                                     <Edit2 className="w-4 h-4 mr-2" /> Edit Details
+                                </Button>
+                                <Button variant="outline" className="flex-1 border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide" onClick={() => setIsShareOpen(true)}>
+                                    <Share2 className="w-4 h-4 mr-2" /> Share Item
                                 </Button>
                                 <TooltipProvider>
                                     <Tooltip>
@@ -457,6 +462,12 @@ export default function ItemDetailPage() {
                         )}
                     </div>
                 </div>
+                <ShareItemModal
+                    open={isShareOpen}
+                    onOpenChange={setIsShareOpen}
+                    item={item}
+                    onUpdate={mutate}
+                />
             </div>
         </div>
     );

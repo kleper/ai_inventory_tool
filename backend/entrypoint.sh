@@ -9,6 +9,7 @@ alembic upgrade head
 echo "Running manual schema patches..."
 python migrate_language.py
 python migrate_share.py
+python migrate_public_item.py
 
 # Start the application
 echo "Starting Uvicorn..."

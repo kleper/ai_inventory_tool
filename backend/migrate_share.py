@@ -12,24 +12,29 @@ def migrate():
             print("Renaming permission to role...")
             try:
                 session.exec(text("ALTER TABLE sharedaccess RENAME COLUMN permission TO role"))
+                session.commit()
             except Exception as e:
                 print(f"Rename failed (maybe already done?): {e}")
+                session.rollback()
 
             # 2. Add created_at
             print("Adding created_at...")
             try:
                  session.exec(text("ALTER TABLE sharedaccess ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT now()"))
+                 session.commit()
             except Exception as e:
                 print(f"Add created_at failed: {e}")
+                session.rollback()
 
             # 3. Add Unique Constraint
             print("Adding unique constraint...")
             try:
                 session.exec(text("ALTER TABLE sharedaccess ADD CONSTRAINT unique_group_member UNIQUE (user_id, group_id)"))
+                session.commit()
             except Exception as e:
                  print(f"Constraint failed (maybe exists): {e}")
+                 session.rollback()
 
-            session.commit()
             print("Migration successful.")
         except Exception as e:
             print(f"Migration failed: {e}")

@@ -10,7 +10,12 @@ const PUBLIC_PATHS = [
     '/_next',    // Next.js internals (handled by matcher mostly, but good for safety)
     '/static',   // Static files
     '/favicon.ico',
-    '/manifest.json'
+    '/manifest.json',
+    '/share',    // Public items
+    '/sw.js',    // Service Worker
+    '/workbox-', // Workbox scripts
+    '/icons',    // Manifest icons
+    '/images'    // Other public images
 ];
 
 export async function middleware(req: NextRequest) {
@@ -19,7 +24,7 @@ export async function middleware(req: NextRequest) {
     // 1. Check if the path is public
     const isPublicPath = PUBLIC_PATHS.some(path =>
         pathname.startsWith(path) || pathname === path
-    ) || pathname.startsWith('/api/proxy/api/v1/auth'); // Allow backend auth proxy
+    ) || pathname.startsWith('/api/proxy/api/v1/auth') || pathname.startsWith('/api/proxy/api/v1/public'); // Allow backend auth and public proxy
 
     // 2. Get token
     const token = await getToken({

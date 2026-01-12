@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 from sqlmodel import Session, select, SQLModel
 from app.core.limiter import limiter
+import uuid
 
 from app.services.llm_service import get_llm_service, LLMService, ItemExtracted
 from app.dependencies.auth import get_current_user, get_inventory_scope
@@ -504,3 +505,77 @@ async def search_item_price(
     session.refresh(item)
     
     return item
+
+@router.post("/items/{item_id}/share", response_model=dict)
+async def generate_public_link(
+    item_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Generate a public share link for an item.
+    Only Owner or Editor can do this.
+    """
+    item = session.get(Item, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # Permission Check
+    has_access = False
+    if item.user_id == current_user.id:
+        has_access = True
+    elif item.group_id:
+        # Check explicit write access
+        try:
+             validate_group_write_access(session, current_user, item.group_id)
+             has_access = True
+        except HTTPException:
+             pass 
+    
+    if not has_access:
+        raise HTTPException(status_code=403, detail="Permission denied to share this item")
+
+    # Generate Token if not exists
+    if not item.public_token:
+        item.public_token = str(uuid.uuid4())
+    
+    item.is_public = True
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    
+    return {"token": item.public_token, "is_public": True}
+
+@router.delete("/items/{item_id}/share", response_model=dict)
+async def revoke_public_link(
+    item_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Revoke public access.
+    """
+    item = session.get(Item, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # Permission Check (Same as generate)
+    has_access = False
+    if item.user_id == current_user.id:
+        has_access = True
+    elif item.group_id:
+        try:
+             validate_group_write_access(session, current_user, item.group_id)
+             has_access = True
+        except HTTPException:
+             pass 
+    
+    if not has_access:
+        raise HTTPException(status_code=403, detail="Permission denied to modify share settings")
+
+    item.is_public = False
+    item.public_token = None # Optional: Clear token or keep it but invalid? Clearing is safer.
+    session.add(item)
+    session.commit()
+    
+    return {"message": "Public link revoked", "is_public": False}

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import inventory, admin, groups, auth, admin_stats, media, api_keys, public_api, analytics
+from app.routers import inventory, admin, groups, auth, admin_stats, media, api_keys, public_api, analytics, public
 from dotenv import load_dotenv
 from app import database
 from app.models import User
@@ -29,6 +29,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(inventory.router)
 app.include_router(groups.router)
+app.include_router(public.router, prefix="/api/v1/public", tags=["public"])
 app.include_router(admin.router)
 app.include_router(admin_stats.router)
 app.include_router(media.router)
