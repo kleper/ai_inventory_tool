@@ -14,7 +14,7 @@ export function BottomNav() {
     };
 
     return (
-        <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-black z-50 h-16 grid grid-cols-5">
+        <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-black z-50 h-16 grid grid-cols-3">
             {/* Dashboard */}
             <Link
                 href="/dashboard"
@@ -33,26 +33,6 @@ export function BottomNav() {
                 {isActive("/inventory") && <div className="absolute top-0 w-full h-1 bg-white" />}
                 <FolderOpen className="w-6 h-6" />
                 <span className="text-[10px] uppercase font-bold mt-1">Files</span>
-            </Link>
-
-            {/* SCAN - Highlighted */}
-            <Link
-                href="/scan"
-                className="flex flex-col items-center justify-center h-full bg-black text-white border-r border-black relative"
-            >
-                <div className="p-1 border border-white">
-                    <Scan className="w-6 h-6" />
-                </div>
-            </Link>
-
-            {/* Invoices */}
-            <Link
-                href="/invoices"
-                className={`flex flex-col items-center justify-center h-full border-r border-black relative ${isActive("/invoices") ? "bg-black text-white" : "text-black bg-white"}`}
-            >
-                {isActive("/invoices") && <div className="absolute top-0 w-full h-1 bg-white" />}
-                <FileText className="w-6 h-6" />
-                <span className="text-[10px] uppercase font-bold mt-1">Docs</span>
             </Link>
 
             {/* Profile */}

@@ -250,28 +250,30 @@ export default function ItemDetailPage() {
                     {/* Right: Details / Form */}
                     <div className="space-y-8">
                         {!isEditing && canWrite && (
-                            <div className="flex gap-4">
-                                <Button variant="outline" className="flex-1 border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide" onClick={() => setIsEditing(true)}>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <Button variant="outline" className="flex-1 w-full border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide" onClick={() => setIsEditing(true)}>
                                     <Edit2 className="w-4 h-4 mr-2" /> Edit Details
                                 </Button>
-                                <Button variant="outline" className="flex-1 border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide" onClick={() => setIsShareOpen(true)}>
+                                <Button variant="outline" className="flex-1 w-full border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide" onClick={() => setIsShareOpen(true)}>
                                     <Share2 className="w-4 h-4 mr-2" /> Share Item
                                 </Button>
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button variant="outline" size="icon" className="border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide w-10 h-10 p-0" onClick={handleDownload}>
-                                                <Download className="w-4 h-4" />
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Download Original</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                                <Button variant="destructive" className="px-6 rounded-none bg-white text-destructive border-destructive hover:bg-destructive hover:text-white uppercase font-bold tracking-wide" onClick={handleDelete}>
-                                    <Trash2 className="w-5 h-5" />
-                                </Button>
+                                <div className="flex gap-4 w-full sm:w-auto">
+                                    <TooltipProvider>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button variant="outline" size="icon" className="flex-1 sm:flex-none border-black hover:bg-black hover:text-white rounded-none uppercase font-bold tracking-wide w-full sm:w-10 h-10 p-0" onClick={handleDownload}>
+                                                    <Download className="w-4 h-4" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Download Original</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                    <Button variant="destructive" className="flex-1 sm:flex-none px-6 rounded-none bg-white text-destructive border-destructive hover:bg-destructive hover:text-white uppercase font-bold tracking-wide w-full sm:w-auto" onClick={handleDelete}>
+                                        <Trash2 className="w-5 h-5" />
+                                    </Button>
+                                </div>
                             </div>
                         )}
 

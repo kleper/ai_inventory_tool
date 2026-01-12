@@ -48,19 +48,20 @@ export default function UserGlobalDashboard() {
 
     return (
         <div className="w-full space-y-8 font-mono">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* KPI Cards - Compact Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <KPICard title="TOTAL INVENTORIES" value={data.total_inventories} />
                 <KPICard title="TOTAL ITEMS" value={data.total_items} />
                 <KPICard
-                    title="ESTIMATED VALUE (USD)"
+                    title="VALUE (USD)"
                     value={formatCurrency(data.net_worth_usd)}
-                    subtext="*Converted to USD"
+                    subtext="*Est."
+                    className="col-span-2 lg:col-span-1"
                 />
             </div>
 
-            {/* Chart Section */}
-            <div className="w-full h-80 border border-black p-4 relative">
+            {/* Chart Section - Reduced Height */}
+            <div className="w-full h-64 border border-black p-4 relative">
                 <div className="absolute top-0 left-0 bg-black text-white px-2 py-1 text-xs font-bold uppercase">
                     Category Distribution
                 </div>
@@ -69,12 +70,13 @@ export default function UserGlobalDashboard() {
                         <BarChart data={data.categories_distribution}>
                             <XAxis
                                 dataKey="name"
-                                tick={{ fill: 'black', fontFamily: 'monospace', fontSize: 12 }}
+                                tick={{ fill: 'black', fontFamily: 'monospace', fontSize: 10 }}
                                 axisLine={{ stroke: 'black' }}
                                 tickLine={false}
+                                interval={0}
                             />
                             <YAxis
-                                tick={{ fill: 'black', fontFamily: 'monospace', fontSize: 12 }}
+                                tick={{ fill: 'black', fontFamily: 'monospace', fontSize: 10 }}
                                 axisLine={{ stroke: 'black' }}
                                 tickLine={false}
                             />
@@ -93,22 +95,44 @@ export default function UserGlobalDashboard() {
                     </ResponsiveContainer>
                 </div>
             </div>
+
+            {/* Quick Instructions */}
+            <div className="border-t border-black pt-8">
+                <h3 className="text-xl font-bold uppercase tracking-tight mb-4">Quick Guide</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+                    <div className="space-y-2">
+                        <span className="bg-black text-white w-6 h-6 flex items-center justify-center font-bold text-xs rounded-full">1</span>
+                        <h4 className="font-bold uppercase">Scan Items</h4>
+                        <p className="text-gray-600">Use the camera to take a photo of your inventory. AI will auto-fill the details.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <span className="bg-black text-white w-6 h-6 flex items-center justify-center font-bold text-xs rounded-full">2</span>
+                        <h4 className="font-bold uppercase">Organize</h4>
+                        <p className="text-gray-600">Group items into folders (e.g., "Warehouse A", "Kitchen") to keep track of locations.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <span className="bg-black text-white w-6 h-6 flex items-center justify-center font-bold text-xs rounded-full">3</span>
+                        <h4 className="font-bold uppercase">Share</h4>
+                        <p className="text-gray-600">Generate public links to share read-only views of your items with others.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
 
-function KPICard({ title, value, subtext }: { title: string, value: string | number, subtext?: string }) {
+function KPICard({ title, value, subtext, className }: { title: string, value: string | number, subtext?: string, className?: string }) {
     return (
-        <div className="aspect-square flex flex-col justify-between p-4 border border-black bg-white hover:bg-gray-50 transition-colors">
-            <div className="text-xs font-bold uppercase tracking-wider text-gray-600">
+        <div className={`flex flex-col justify-between p-4 border border-black bg-white hover:bg-gray-50 transition-colors h-24 ${className}`}>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-gray-600 truncate">
                 {title}
             </div>
-            <div className="text-right">
-                <div className="text-4xl font-bold tracking-tighter break-all">
+            <div className="flex items-end justify-between">
+                <div className="text-2xl font-bold tracking-tighter truncate">
                     {value}
                 </div>
                 {subtext && (
-                    <div className="text-xs text-gray-500 mt-1 uppercase">
+                    <div className="text-[10px] text-gray-500 uppercase pb-1">
                         {subtext}
                     </div>
                 )}
@@ -120,15 +144,12 @@ function KPICard({ title, value, subtext }: { title: string, value: string | num
 function DashboardSkeleton() {
     return (
         <div className="w-full space-y-8 font-mono">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                    <div key={i} className="aspect-square border border-gray-200 bg-gray-50 animate-pulse p-4 flex flex-col justify-between">
-                        <div className="h-4 w-32 bg-gray-200" />
-                        <div className="self-end h-10 w-24 bg-gray-200" />
-                    </div>
+                    <div key={i} className={`border border-gray-200 bg-gray-50 animate-pulse p-4 h-24 ${i === 3 ? 'col-span-2 lg:col-span-1' : ''}`} />
                 ))}
             </div>
-            <div className="w-full h-80 border border-gray-200 bg-gray-50 animate-pulse" />
+            <div className="w-full h-64 border border-gray-200 bg-gray-50 animate-pulse" />
         </div>
     );
 }

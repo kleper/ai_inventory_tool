@@ -9,7 +9,6 @@ import { UserNav } from "./UserNav";
 const NAV_ITEMS = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
     { label: "Inventories", href: "/inventory", icon: FolderOpen },
-    { label: "Invoices", href: "/invoices", icon: FileText },
     { label: "Admin", href: "/admin", icon: Settings }, // Should check role
 ];
 
