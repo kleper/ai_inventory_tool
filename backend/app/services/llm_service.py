@@ -110,7 +110,7 @@ class LLMService:
         context_str = ""
         if group_context:
             currency_hint = f"- Target Currency: {group_context.get('currency', 'USD')}"
-            inventory_type = group_context.get('settings', {}).get('inventory_type', 'GENERAL')
+            inventory_type = (group_context.get('settings') or {}).get('inventory_type', 'GENERAL')
             
             context_str = f"""
 CONTEXT: The user is adding an item to a specific collection.
