@@ -9,6 +9,7 @@ import os
 from app.services.monitoring import monitoring_service
 import logging
 from app.core.config import settings
+from tenacity import retry, stop_after_attempt, wait_random_exponential, retry_if_exception_type, before_sleep_log
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +80,26 @@ class LLMService:
         
         if self.provider == "GEMINI" and not self.gemini_key:
              logger.warning("Gemini API Key is missing. Service will fail.")
+
+    @retry(
+        retry=retry_if_exception_type(Exception), # We'll narrow this down ideally, but for now capture failures
+        wait=wait_random_exponential(multiplier=1, max=60),
+        stop=stop_after_attempt(5),
+        before_sleep=before_sleep_log(logger, logging.WARNING)
+    )
+    async def _call_openai_with_retry(self, client, **kwargs):
+        """Wrapper to retry OpenAI/OpenRouter calls on failure (429, 500, etc)"""
+        return await client.chat.completions.create(**kwargs)
+
+    @retry(
+        retry=retry_if_exception_type(Exception),
+        wait=wait_random_exponential(multiplier=1, max=60),
+        stop=stop_after_attempt(5),
+        before_sleep=before_sleep_log(logger, logging.WARNING)
+    )
+    def _call_gemini_with_retry(self, client, **kwargs):
+        """Wrapper to retry Gemini calls"""
+        return client.models.generate_content(**kwargs)
 
     def _encode_image(self, image_bytes: bytes) -> str:
         return base64.b64encode(image_bytes).decode('utf-8')
@@ -186,7 +207,8 @@ Reglas para Objetos:
             if "gemma" in self.model.lower():
                  custom_response_format = None
 
-            response = await client.chat.completions.create(
+            response = await self._call_openai_with_retry(
+                client,
                 model=self.model,
                 messages=messages,
                 max_tokens=300,
@@ -259,7 +281,8 @@ Reglas para Objetos:
              # Convert bytes to base64 for the new SDK Part object
              b64_img = base64.b64encode(image_bytes).decode('utf-8')
              
-             response = client.models.generate_content(
+             response = self._call_gemini_with_retry(
+                 client,
                  model=model_name,
                  contents=[
                      types.Part.from_bytes(data=image_bytes, mime_type=mime_type),

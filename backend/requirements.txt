@@ -20,3 +20,4 @@ slowapi
 redis
 httpx
 google-genai
+tenacity
