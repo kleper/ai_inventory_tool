@@ -1,8 +1,9 @@
 from sqlmodel import Session, create_engine, text
-from app.core.config import settings
+import os
 
 # Create engine
-engine = create_engine(settings.DATABASE_URL)
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://user:password@db:5432/smartinventory")
+engine = create_engine(DATABASE_URL)
 
 def migrate():
     print("Starting migration: Adding language column to inventorygroup table...")
