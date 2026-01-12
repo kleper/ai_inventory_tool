@@ -128,7 +128,7 @@ export function CreateUpdateFolderModal({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-            <DialogContent className="border-black rounded-none sm:max-w-[425px] p-6 bg-white">
+            <DialogContent className="border-black rounded-none sm:max-w-[425px] max-h-[90vh] overflow-y-auto p-6 bg-white">
                 <DialogHeader>
                     <DialogTitle className="uppercase font-bold tracking-wider text-xl">
                         {mode === "create" ? "Create New Folder" : "Edit Folder Settings"}
