@@ -418,6 +418,17 @@ export default function ItemDetailPage() {
                                                         <MapPin className="w-4 h-4 text-neutral-700" />
                                                         <h4 className="font-bold uppercase tracking-widest text-xs text-neutral-800">Location</h4>
                                                     </div>
+
+                                                    {/* Static Map Thumbnail */}
+                                                    <div className="mb-4 border border-black w-full h-40 overflow-hidden relative bg-gray-200">
+                                                        {/* Using staticmap.openstreetmap.de as a free service */}
+                                                        <img
+                                                            src={`https://staticmap.openstreetmap.de/staticmap.php?center=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}&zoom=14&size=600x320&markers=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng},ol-marker`}
+                                                            alt="Location Thumbnail"
+                                                            className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                                                        />
+                                                    </div>
+
                                                     <a
                                                         href={`https://www.google.com/maps/search/?api=1&query=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}`}
                                                         target="_blank"
@@ -427,7 +438,7 @@ export default function ItemDetailPage() {
                                                         <MapPin className="w-4 h-4" /> View on Google Maps
                                                     </a>
                                                     <p className="text-[10px] font-mono text-center mt-2 text-neutral-500">
-                                                        {item.meta_data.coordinates.lat.toFixed(6)}, {item.meta_data.coordinates.lng.toFixed(6)}
+                                                        {Number(item.meta_data.coordinates.lat).toFixed(6)}, {Number(item.meta_data.coordinates.lng).toFixed(6)}
                                                     </p>
                                                 </div>
                                             )}
