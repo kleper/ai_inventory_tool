@@ -187,7 +187,7 @@ export function CreateUpdateFolderModal({
                             <Checkbox
                                 id="gps_toggle"
                                 checked={enableGeolocation}
-                                onCheckedChange={(c) => setEnableGeolocation(c === true)}
+                                onCheckedChange={(c: boolean) => setEnableGeolocation(c === true)}
                                 className="h-6 w-6 border-2 border-black rounded-none data-[state=checked]:bg-black data-[state=checked]:text-white"
                             />
                             <div className="flex flex-col">
@@ -209,7 +209,7 @@ export function CreateUpdateFolderModal({
                                 { label: "🇪🇺 EUR - Euro (€)", value: "EUR" },
                             ]}
                         />
-                        />
+
                         <p className="text-[10px] font-mono text-neutral-500 mt-1 uppercase">
                             Note: Changing currency affects how prices are displayed and summed.
                         </p>
