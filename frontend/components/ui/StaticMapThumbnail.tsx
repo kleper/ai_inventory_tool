@@ -13,6 +13,7 @@ export function StaticMapThumbnail({ lat, lng, className = "" }: StaticMapThumbn
     const [isLoading, setIsLoading] = useState(true);
 
     // Using basic staticmap.openstreetmap.de as requested
+    // Note: In production, consider Geoapify or Mapbox for reliability.
     const mapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=17&size=600x300&maptype=mapnik&markers=${lat},${lng},red-pushpin`;
     const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 

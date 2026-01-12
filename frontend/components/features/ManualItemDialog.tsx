@@ -63,7 +63,7 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
 
     // GPS Hook
     // We only enable the hook if the dialog is OPEN and the group has GPS enabled
-    const { location, loading: gpsLoading, error: gpsError } = useGeolocation(isOpen && enableGps);
+    const { location, loading: gpsLoading, error: gpsError, getLocation: retryGps } = useGeolocation(isOpen && enableGps);
 
     const { register, handleSubmit, formState: { errors }, reset } = useForm({
         resolver: zodResolver(itemSchema),
@@ -83,6 +83,8 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
                 group_id: parseInt(groupId),
                 meta_data: location ? { coordinates: location } : {}
             };
+
+            console.log("PAYLOAD TO SEND:", JSON.stringify(payload, null, 2));
 
             const token = (session as any)?.accessToken;
             const headers: HeadersInit = { "Content-Type": "application/json" };
@@ -137,17 +139,28 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
                             <div className="flex flex-col items-end gap-1">
                                 {gpsLoading && (
                                     <div className="flex items-center gap-1 text-[10px] bg-yellow-100 text-yellow-800 border border-yellow-800 px-2 py-1 uppercase tracking-widest font-mono animate-pulse">
-                                        <Satellite className="w-3 h-3 animate-spin" /> ACQUIRING GPS...
+                                        <Satellite className="w-3 h-3 animate-spin" /> SEARCHING SATELLITES...
                                     </div>
                                 )}
                                 {location && (
                                     <div className="flex items-center gap-1 text-[10px] bg-green-100 text-green-800 border border-green-800 px-2 py-1 uppercase tracking-widest font-mono">
-                                        <MapPin className="w-3 h-3" /> GPS LOCKED
+                                        <MapPin className="w-3 h-3" /> GPS LOCKED: [{location.lat.toFixed(4)}, {location.lng.toFixed(4)}]
                                     </div>
                                 )}
                                 {gpsError && (
-                                    <div className="flex items-center gap-1 text-[10px] bg-red-100 text-red-800 border border-red-800 px-2 py-1 uppercase tracking-widest font-mono">
-                                        <AlertCircle className="w-3 h-3" /> GPS ERROR
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 text-[10px] bg-red-100 text-red-800 border border-red-800 px-2 py-1 uppercase tracking-widest font-mono">
+                                            <AlertCircle className="w-3 h-3" /> GPS FAILED
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={retryGps}
+                                            className="h-6 text-[10px] px-2 rounded-none border-black hover:bg-black hover:text-white uppercase"
+                                        >
+                                            Retry
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -202,7 +215,8 @@ export function ManualItemDialog({ groupId, onSuccess, open: controlledOpen, onO
                         <Button
                             type="submit"
                             disabled={isLoading || (enableGps && gpsLoading)}
-                            className="bg-black text-white rounded-none uppercase tracking-widest font-bold text-xs hover:bg-neutral-800 px-6 py-2"
+                            title={enableGps && gpsLoading ? "Please wait for GPS..." : "Save Item"}
+                            className="bg-black text-white rounded-none uppercase tracking-widest font-bold text-xs hover:bg-neutral-800 px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {(isLoading || (enableGps && gpsLoading)) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {enableGps && gpsLoading ? "WAITING FOR GPS..." : "SAVE ITEM"}
