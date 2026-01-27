@@ -3,8 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { API_BASE_URL } from "@/lib/config";
-import { Link as LinkIcon, MapPin, Phone, Leaf } from "lucide-react";
-import NextLink from "next/link";
+import { MapPin, Phone, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,9 +11,9 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon, Download, Sparkles, Share2 } from "lucide-react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SecureImage } from "@/components/ui/SecureImage";
+import { GalleryCarousel } from "@/components/ui/GalleryCarousel";
 import { ItemPhotoUpdater } from "@/components/features/ItemPhotoUpdater";
+import { ItemGalleryUploader } from "@/components/features/ItemGalleryUploader";
 import { StaticMapThumbnail } from "@/components/ui/StaticMapThumbnail";
 import { ShareItemModal } from "@/components/features/ShareItemModal";
 import { downloadSecureFile } from "@/lib/download";
@@ -188,6 +187,14 @@ export default function ItemDetailPage() {
         );
     }
 
+    const maxGalleryImages = 5;
+    const rawGalleryImages = Array.isArray(item?.meta_data?.gallery_images) ? item.meta_data.gallery_images : [];
+    const totalImageCount = (item.image_url ? 1 : 0) + rawGalleryImages.length;
+    const displayGalleryImages = Array.from(new Set(
+        [item.image_url, ...rawGalleryImages].filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    )).slice(0, maxGalleryImages);
+    const remainingSlots = Math.max(0, maxGalleryImages - totalImageCount);
+
     return (
         <div className="min-h-screen bg-white text-black p-6 md:p-12 font-sans">
             <div className="max-w-5xl mx-auto space-y-12">
@@ -229,21 +236,44 @@ export default function ItemDetailPage() {
                 <div className="grid md:grid-cols-2 gap-12">
                     {/* Left: Image */}
                     <div className="space-y-6">
-                        <div className="aspect-square bg-neutral-50 rounded-none border border-black relative group shadow-none overflow-hidden">
-                            <SecureImage
-                                itemId={itemId} // Ensure ID is number
-                                fallbackSrc={item.imageUrl}
-                                alt={item.name}
-                                className="w-full h-full object-cover"
-                                key={item.image_url} // Force remount on image update
-                                variant="thumbnail"
-                            />
-                            <div className="absolute inset-0 border border-transparent group-hover:border-black/20 transition-colors pointer-events-none z-10" />
-                            <ItemPhotoUpdater
-                                itemId={itemId}
-                                onUpdate={() => mutate()}
-                                canWrite={canWrite}
-                            />
+                        <div className="border border-black bg-white shadow-none">
+                            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                    <ImageIcon className="w-4 h-4" />
+                                    <span className="text-xs font-mono uppercase tracking-widest text-black">
+                                        Gallery {totalImageCount}/{maxGalleryImages}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <ItemGalleryUploader
+                                        itemId={itemId}
+                                        currentCount={totalImageCount}
+                                        maxImages={maxGalleryImages}
+                                        onUpdate={() => mutate()}
+                                        canWrite={canWrite}
+                                    />
+                                    {remainingSlots > 0 && canWrite && (
+                                        <span className="text-[10px] font-mono uppercase text-neutral-500">
+                                            {remainingSlots} slots left
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="relative bg-neutral-50">
+                                <GalleryCarousel
+                                    mode="secure"
+                                    items={displayGalleryImages}
+                                    itemId={itemId}
+                                    altBase={item.name}
+                                >
+                                    <ItemPhotoUpdater
+                                        itemId={itemId}
+                                        onUpdate={() => mutate()}
+                                        canWrite={canWrite}
+                                        buttonClassName="absolute bottom-4 right-4"
+                                    />
+                                </GalleryCarousel>
+                            </div>
                         </div>
                     </div>
 

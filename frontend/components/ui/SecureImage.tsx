@@ -8,13 +8,14 @@ import { cn } from "@/lib/utils";
 
 interface SecureImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     itemId: number;
+    imageFilename?: string;
     fallbackSrc?: string;
     alt: string;
     className?: string;
     variant?: "thumbnail" | "original";
 }
 
-export function SecureImage({ itemId, fallbackSrc, alt, className, variant = "original", ...props }: SecureImageProps) {
+export function SecureImage({ itemId, imageFilename, fallbackSrc, alt, className, variant = "original", ...props }: SecureImageProps) {
     const { data: session } = useSession();
     const [src, setSrc] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -40,9 +41,15 @@ export function SecureImage({ itemId, fallbackSrc, alt, className, variant = "or
                 }
 
                 // Determine endpoint based on variant
-                const endpoint = variant === "thumbnail"
-                    ? `${API_BASE_URL}/api/v1/media/items/${itemId}/thumbnail`
-                    : `${API_BASE_URL}/api/v1/media/items/${itemId}/original`;
+                const baseEndpoint = `${API_BASE_URL}/api/v1/media/items/${itemId}`;
+                const encodedFilename = imageFilename ? encodeURIComponent(imageFilename) : null;
+                const endpoint = encodedFilename
+                    ? (variant === "thumbnail"
+                        ? `${baseEndpoint}/gallery/${encodedFilename}/thumbnail`
+                        : `${baseEndpoint}/gallery/${encodedFilename}/original`)
+                    : (variant === "thumbnail"
+                        ? `${baseEndpoint}/thumbnail`
+                        : `${baseEndpoint}/original`);
 
                 const res = await fetch(endpoint, {
                     headers
@@ -80,7 +87,7 @@ export function SecureImage({ itemId, fallbackSrc, alt, className, variant = "or
             isMounted = false;
             if (objectUrl) URL.revokeObjectURL(objectUrl);
         };
-    }, [itemId, session]);
+    }, [itemId, imageFilename, variant, session]);
 
     if (isLoading) {
         return (

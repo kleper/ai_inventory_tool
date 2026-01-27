@@ -1,9 +1,21 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends, BackgroundTasks, WebSocket, WebSocketDisconnect, Request
+from fastapi import (
+    APIRouter,
+    UploadFile,
+    File,
+    Form,
+    HTTPException,
+    Depends,
+    BackgroundTasks,
+    WebSocket,
+    WebSocketDisconnect,
+    Request,
+)
 from typing import Optional, List
 from datetime import datetime
 from sqlmodel import Session, select, SQLModel
 from app.core.limiter import limiter
 import uuid
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.services.llm_service import get_llm_service, LLMService, ItemExtracted
 from app.dependencies.auth import get_current_user, get_inventory_scope
@@ -18,6 +30,9 @@ import logging
 
 router = APIRouter(prefix="/api/v1/inventory", tags=["inventory"])
 logger = logging.getLogger(__name__)
+MAX_ITEM_IMAGES = 5
+GALLERY_KEY = "gallery_images"
+
 
 # --- Helper ---
 def validate_group_write_access(session: Session, user: User, group_id: int):
@@ -26,23 +41,29 @@ def validate_group_write_access(session: Session, user: User, group_id: int):
     if not group:
         # If group doesn't exist, we can't write to it.
         raise HTTPException(status_code=404, detail="Group not found")
-        
+
     # 2. Owner?
     if group.owner_id == user.id:
         return True
-        
+
     # 3. Editor?
-    access = session.exec(select(SharedAccess).where(
-        SharedAccess.group_id == group_id, 
-        SharedAccess.user_id == user.id
-    )).first()
-    
+    access = session.exec(
+        select(SharedAccess).where(
+            SharedAccess.group_id == group_id, SharedAccess.user_id == user.id
+        )
+    ).first()
+
     if access and access.role == "EDITOR":
         return True
-        
-    raise HTTPException(status_code=403, detail="You do not have permission to edit this group (Read-only view)")
+
+    raise HTTPException(
+        status_code=403,
+        detail="You do not have permission to edit this group (Read-only view)",
+    )
+
 
 # --- Endpoints ---
+
 
 @router.post("/process-object", response_model=Item)
 @limiter.limit("10/minute")
@@ -54,7 +75,7 @@ async def process_object(
     file: UploadFile = File(...),
     llm_service: LLMService = Depends(get_llm_service),
     current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     # Permission Check
     if group_id:
@@ -62,46 +83,50 @@ async def process_object(
 
     try:
         contents = await file.read()
-        
+
         from app.services.image_service import save_image
-        
+
         group_context = None
         if group_id:
             group = session.get(InventoryGroup, group_id)
             if group:
-                 group_context = {
-                     "name": group.name, 
-                     "description": group.description, 
-                     "currency": group.currency,
-                     "settings": group.settings
-                 }
-        
+                group_context = {
+                    "name": group.name,
+                    "description": group.description,
+                    "currency": group.currency,
+                    "settings": group.settings,
+                }
+
         # Save file (original + thumb)
         filename = save_image(contents, "/app/media")
-        
-        item_data = await llm_service.analyze_object(contents, user_id=current_user.id, group_context=group_context)
+
+        item_data = await llm_service.analyze_object(
+            contents, user_id=current_user.id, group_context=group_context
+        )
 
         # Currency Conversion Logic
         target_currency = group.currency if (group_id and group) else "USD"
         if item_data.estimated_price and item_data.estimated_price > 0:
             if item_data.currency_code and item_data.currency_code != target_currency:
-                logger.info(f"Converting price {item_data.estimated_price} {item_data.currency_code} to {target_currency}")
+                logger.info(
+                    f"Converting price {item_data.estimated_price} {item_data.currency_code} to {target_currency}"
+                )
                 converted_price, success = await currency_service.convert(
-                    item_data.estimated_price, 
-                    item_data.currency_code, 
-                    target_currency
+                    item_data.estimated_price, item_data.currency_code, target_currency
                 )
                 if success:
                     item_data.estimated_price = converted_price
                 else:
-                    logger.warning(f"Currency conversion failed. Keeping original price {item_data.estimated_price} {item_data.currency_code}")
+                    logger.warning(
+                        f"Currency conversion failed. Keeping original price {item_data.estimated_price} {item_data.currency_code}"
+                    )
                     # Could append warning to description if desired:
                     # item_data.description += f" [Warning: Price in {item_data.currency_code}]"
             else:
                 # If currency code is missing but we have a price, assume USD or trust LLM?
                 # Prompt defaults to USD if unknown, so we are safe.
                 pass
-        
+
         # If LLM didn't find a price, try web search or fallback
         if not item_data.estimated_price or item_data.estimated_price == 0:
             print(f"No price from LLM for {item_data.name}, searching web...")
@@ -109,26 +134,28 @@ async def process_object(
             try:
                 web_price = search_approximate_price(item_data.name)
                 if web_price:
-                     print(f"Found web price: {web_price}")
-                     item_data.estimated_price = web_price
-                     found_price = True
+                    print(f"Found web price: {web_price}")
+                    item_data.estimated_price = web_price
+                    found_price = True
             except Exception as e:
                 print(f"Web search failed: {e}")
-            
+
             # Fallback Logic
             if not found_price:
-                 import random # Local import to verify safety
-                 fallback_price = float(random.randint(100, 500))
-                 print(f"Assigning fallback random price: {fallback_price}")
-                 item_data.estimated_price = fallback_price
-                 # Optional: Mark as estimated
-                 if not item_data.meta_data: item_data.meta_data = {}
-                 item_data.meta_data["price_source"] = "estimated_random"
-        
+                import random  # Local import to verify safety
+
+                fallback_price = float(random.randint(100, 500))
+                print(f"Assigning fallback random price: {fallback_price}")
+                item_data.estimated_price = fallback_price
+                # Optional: Mark as estimated
+                if not item_data.meta_data:
+                    item_data.meta_data = {}
+                item_data.meta_data["price_source"] = "estimated_random"
+
         # Prepare Meta Data
         meta = item_data.meta_data or {}
         if latitude is not None and longitude is not None:
-             meta["coordinates"] = {"lat": latitude, "lng": longitude}
+            meta["coordinates"] = {"lat": latitude, "lng": longitude}
 
         new_item = Item(
             name=item_data.name,
@@ -139,7 +166,7 @@ async def process_object(
             group_id=group_id,
             image_url=filename,
             status="pending_price" if not item_data.estimated_price else "completed",
-            meta_data=meta
+            meta_data=meta,
         )
         session.add(new_item)
         session.commit()
@@ -152,8 +179,12 @@ async def process_object(
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         import traceback
+
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error processing object: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error processing object: {str(e)}"
+        )
+
 
 @router.post("/process-invoice")
 @limiter.limit("10/minute")
@@ -162,7 +193,7 @@ async def process_invoice(
     group_id: Optional[int] = None,
     file: UploadFile = File(...),
     target_item_name: Optional[str] = None,
-    llm_service: LLMService = Depends(get_llm_service)
+    llm_service: LLMService = Depends(get_llm_service),
 ):
     try:
         contents = await file.read()
@@ -171,14 +202,16 @@ async def process_invoice(
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing invoice: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error processing invoice: {str(e)}"
+        )
 
 
 @router.post("/items", response_model=Item)
 async def create_item(
-    item_data: Item, 
+    item_data: Item,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     # Validate Group Access
     if item_data.group_id:
@@ -188,68 +221,69 @@ async def create_item(
     item_data.user_id = current_user.id
     item_data.created_at = datetime.utcnow()
     if item_data.status == "pending_price" and item_data.price is not None:
-         item_data.status = "completed"
-    
+        item_data.status = "completed"
+
     session.add(item_data)
     session.commit()
     session.refresh(item_data)
     return item_data
+
 
 @router.get("/items", response_model=list[Item])
 async def get_items(
     group_id: Optional[int] = None,
     session: Session = Depends(get_session),
     allowed_groups: List[int] = Depends(get_inventory_scope),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     # If explicit group, verify access (Read access via scope is fine)
     if group_id:
         if group_id not in allowed_groups:
-             raise HTTPException(status_code=403, detail="Access to this group denied")
+            raise HTTPException(status_code=403, detail="Access to this group denied")
         statement = select(Item).where(Item.group_id == group_id)
     else:
         # List all accessible items
         # 1. Direct ownership
         # 2. In allowed groups
-        # Combine? 
-        # Actually `get_inventory_scope` covers groups. 
+        # Combine?
+        # Actually `get_inventory_scope` covers groups.
         # But we also want un-grouped items owned by user.
         # select(Item).where( or(Item.user_id == me, Item.group_id.in(allowed)) )
         from sqlmodel import or_
+
         statement = select(Item).where(
-            or_(
-                Item.user_id == current_user.id,
-                Item.group_id.in_(allowed_groups)
-            )
+            or_(Item.user_id == current_user.id, Item.group_id.in_(allowed_groups))
         )
-        
+
     results = session.exec(statement).all()
     return results
+
 
 @router.get("/items/{item_id}", response_model=Item)
 async def get_item(
     item_id: int,
     session: Session = Depends(get_session),
     allowed_groups: List[int] = Depends(get_inventory_scope),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-    
+
     # Access Control
     if item.user_id != current_user.id:
         if item.group_id and item.group_id not in allowed_groups:
-             raise HTTPException(status_code=403, detail="Access denied")
-             
+            raise HTTPException(status_code=403, detail="Access denied")
+
     return item
+
 
 @router.put("/items/{item_id}/image", response_model=Item)
 async def update_item_image(
     item_id: int,
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     item = session.get(Item, item_id)
     if not item:
@@ -265,28 +299,28 @@ async def update_item_image(
             can_edit = True
         except HTTPException:
             can_edit = False
-    
+
     if not can_edit:
-         raise HTTPException(status_code=403, detail="Access denied")
+        raise HTTPException(status_code=403, detail="Access denied")
 
     # Process File
     try:
         from app.services.image_service import save_image
-        
+
         contents = await file.read()
         # Save new file (original + thumb)
         new_filename = save_image(contents, "/app/media")
-            
+
         # Optional: Delete old file if it exists and looks like a UUID (security precaution)
-        # For simplicity, we skip deletion or assume cron job cleans up, 
+        # For simplicity, we skip deletion or assume cron job cleans up,
         # or we check if it is a local file.
         if item.image_url and not item.image_url.startswith("http"):
-             old_path = f"/app/media/{item.image_url}"
-             if os.path.exists(old_path) and item.image_url != new_filename:
-                  try:
-                       os.remove(old_path)
-                  except Exception as e:
-                       print(f"Failed to remove old image: {e}")
+            old_path = f"/app/media/{item.image_url}"
+            if os.path.exists(old_path) and item.image_url != new_filename:
+                try:
+                    os.remove(old_path)
+                except Exception as e:
+                    print(f"Failed to remove old image: {e}")
 
         # Update Item
         item.image_url = new_filename
@@ -294,9 +328,68 @@ async def update_item_image(
         session.commit()
         session.refresh(item)
         return item
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating image: {str(e)}")
+
+
+@router.post("/items/{item_id}/images", response_model=dict)
+async def add_item_image(
+    item_id: int,
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    item = session.get(Item, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    can_edit = False
+    if item.user_id == current_user.id:
+        can_edit = True
+    elif item.group_id:
+        try:
+            validate_group_write_access(session, current_user, item.group_id)
+            can_edit = True
+        except HTTPException:
+            can_edit = False
+
+    if not can_edit:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    meta = dict(item.meta_data or {})
+    gallery_images = meta.get(GALLERY_KEY)
+    if not isinstance(gallery_images, list):
+        gallery_images = []
+    gallery_images = list(gallery_images)
+
+    total_images = (1 if item.image_url else 0) + len(gallery_images)
+    if total_images >= MAX_ITEM_IMAGES:
+        raise HTTPException(status_code=400, detail="Image limit reached (max 5).")
+
+    try:
+        from app.services.image_service import save_image
+
+        contents = await file.read()
+        if not contents:
+            raise HTTPException(status_code=400, detail="Empty upload payload")
+        new_filename = save_image(contents, "/app/media")
+
+        if not item.image_url:
+            item.image_url = new_filename
+        else:
+            gallery_images.append(new_filename)
+            meta[GALLERY_KEY] = gallery_images
+            item.meta_data = dict(meta)
+            flag_modified(item, "meta_data")
+
+        session.add(item)
+        session.commit()
+        session.refresh(item)
+        return {"image_url": item.image_url, "gallery_images": gallery_images}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error adding image: {str(e)}")
+
 
 # Update Schema
 class ItemUpdate(SQLModel):
@@ -307,24 +400,25 @@ class ItemUpdate(SQLModel):
     quantity: Optional[int] = None
     status: Optional[str] = None
 
+
 @router.put("/items/{item_id}", response_model=Item)
 async def update_item(
     item_id: int,
     item_update: ItemUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
-    allowed_groups: List[int] = Depends(get_inventory_scope)
+    allowed_groups: List[int] = Depends(get_inventory_scope),
 ):
     path_item = session.get(Item, item_id)
     if not path_item:
         raise HTTPException(status_code=404, detail="Item not found")
-        
+
     # Check permission
     # If I am owner of item, I can edit (unless legacy/weird case).
     # If item is in group, I must have WRITE access to that group.
-    
+
     can_edit = False
-    
+
     if path_item.user_id == current_user.id:
         can_edit = True
     elif path_item.group_id:
@@ -334,60 +428,62 @@ async def update_item(
             can_edit = True
         except HTTPException:
             can_edit = False
-            
+
     if not can_edit:
         raise HTTPException(status_code=403, detail="Access denied to edit this item")
-             
+
     # Update fields
     item_data = item_update.model_dump(exclude_unset=True)
     for key, value in item_data.items():
         if key not in ["id", "user_id", "created_at"]:
             setattr(path_item, key, value)
-    
+
     # Check if we should update status from pending_price -> completed
     if path_item.status == "pending_price" and path_item.price is not None:
         try:
-             price_val = float(path_item.price)
-             if price_val > 0:
-                 path_item.status = "completed"
-                 # Ensure it is stored as float if it was a string
-                 path_item.price = price_val
+            price_val = float(path_item.price)
+            if price_val > 0:
+                path_item.status = "completed"
+                # Ensure it is stored as float if it was a string
+                path_item.price = price_val
         except ValueError:
-             pass # Invalid price format, ignore status auto-update
-            
+            pass  # Invalid price format, ignore status auto-update
+
     session.add(path_item)
     session.commit()
     session.refresh(path_item)
     return path_item
+
 
 @router.delete("/items/{item_id}")
 async def delete_item(
     item_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
-    allowed_groups: List[int] = Depends(get_inventory_scope)
+    allowed_groups: List[int] = Depends(get_inventory_scope),
 ):
     item = session.get(Item, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
-        
+
     can_delete = False
-    
+
     if item.user_id == current_user.id:
         can_delete = True
     elif item.group_id:
         try:
-             validate_group_write_access(session, current_user, item.group_id)
-             can_delete = True
+            validate_group_write_access(session, current_user, item.group_id)
+            can_delete = True
         except HTTPException:
-             can_delete = False
-             
+            can_delete = False
+
     if not can_delete:
-         raise HTTPException(status_code=403, detail="Access denied to delete this item")
-              
+        raise HTTPException(status_code=403, detail="Access denied to delete this item")
+
     session.delete(item)
     session.commit()
     return {"message": "Item deleted"}
+
 
 @router.websocket("/ws/{user_id}")
 async def websocket_endpoint_standard(websocket: WebSocket, user_id: int):
@@ -403,33 +499,33 @@ async def websocket_endpoint_standard(websocket: WebSocket, user_id: int):
 async def match_invoice(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    user_id: int = 1, # Default/Mock user ID for now
-    session: Session = Depends(get_session)
+    user_id: int = 1,  # Default/Mock user ID for now
+    session: Session = Depends(get_session),
 ):
     try:
         contents = await file.read()
-        
+
         # Create persistent Invoice record with 'processing' status
         new_invoice = Invoice(status="processing", user_id=user_id)
         session.add(new_invoice)
         session.commit()
         session.refresh(new_invoice)
-        
+
         # Dispatch background task
         background_tasks.add_task(
-            run_matching_background_task, 
-            user_id, 
-            new_invoice.id, 
-            contents
+            run_matching_background_task, user_id, new_invoice.id, contents
         )
-        
+
         return {
             "message": "Invoice processing started",
             "invoice_id": new_invoice.id,
-            "status": "processing"
+            "status": "processing",
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error starting invoice matching: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error starting invoice matching: {str(e)}"
+        )
+
 
 @router.post("/items/{item_id}/price-search", response_model=Item)
 @limiter.limit("10/minute")
@@ -438,7 +534,7 @@ async def search_item_price(
     item_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
-    llm_service: LLMService = Depends(get_llm_service)
+    llm_service: LLMService = Depends(get_llm_service),
 ):
     # 1. Fetch Item
     item = session.get(Item, item_id)
@@ -451,13 +547,18 @@ async def search_item_price(
     if item.user_id == current_user.id:
         has_write_access = True
     elif item.group_id:
-        access = session.exec(select(SharedAccess).where(
-             SharedAccess.group_id == item.group_id,
-             SharedAccess.user_id == current_user.id
-        )).first()
-        if access and access.role in ["EDITOR", "admin"]: # "admin" just in case legacy role
-             has_write_access = True
-    
+        access = session.exec(
+            select(SharedAccess).where(
+                SharedAccess.group_id == item.group_id,
+                SharedAccess.user_id == current_user.id,
+            )
+        ).first()
+        if access and access.role in [
+            "EDITOR",
+            "admin",
+        ]:  # "admin" just in case legacy role
+            has_write_access = True
+
     if not has_write_access:
         raise HTTPException(status_code=403, detail="Permission denied")
 
@@ -470,47 +571,54 @@ async def search_item_price(
 
     # 4. Search Price (Web Search or LLM?)
     # The prompt implies "Search Price with AI".
-    # Since we don't have the image bytes readily available (stored on disk), 
+    # Since we don't have the image bytes readily available (stored on disk),
     # we can use the 'search_approximate_price' (web search) which is cheaper and faster for existing items.
-    # OR we could re-analyze image if we load it. 
+    # OR we could re-analyze image if we load it.
     # Let's support Web Search first as it's more robust for "Find price of 'iPhone 15'".
-    
+
     # Try Web Search First
     # Try Web Search First
     print(f"Searching price for: {item.name}")
     found_result = search_approximate_price(item.name)
-    
+
     if not found_result:
-        raise HTTPException(status_code=404, detail="Could not find a price for this item.")
-        
+        raise HTTPException(
+            status_code=404, detail="Could not find a price for this item."
+        )
+
     found_price, found_currency = found_result
     print(f"Found price: {found_price} {found_currency}")
 
     # 5. Currency Conversion
     final_price = found_price
     if target_currency != found_currency:
-         print(f"Converting web price {found_price} {found_currency} to {target_currency}")
-         converted, success = await currency_service.convert(found_price, found_currency, target_currency)
-         if success:
-             final_price = converted
-    
+        print(
+            f"Converting web price {found_price} {found_currency} to {target_currency}"
+        )
+        converted, success = await currency_service.convert(
+            found_price, found_currency, target_currency
+        )
+        if success:
+            final_price = converted
+
     # 6. Update & Save
     item.price = final_price
     # Check if we should update status
     if item.status == "pending_price":
         item.status = "completed"
-        
+
     session.add(item)
     session.commit()
     session.refresh(item)
-    
+
     return item
+
 
 @router.post("/items/{item_id}/share", response_model=dict)
 async def generate_public_link(
     item_id: int,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Generate a public share link for an item.
@@ -527,30 +635,33 @@ async def generate_public_link(
     elif item.group_id:
         # Check explicit write access
         try:
-             validate_group_write_access(session, current_user, item.group_id)
-             has_access = True
+            validate_group_write_access(session, current_user, item.group_id)
+            has_access = True
         except HTTPException:
-             pass 
-    
+            pass
+
     if not has_access:
-        raise HTTPException(status_code=403, detail="Permission denied to share this item")
+        raise HTTPException(
+            status_code=403, detail="Permission denied to share this item"
+        )
 
     # Generate Token if not exists
     if not item.public_token:
         item.public_token = str(uuid.uuid4())
-    
+
     item.is_public = True
     session.add(item)
     session.commit()
     session.refresh(item)
-    
+
     return {"token": item.public_token, "is_public": True}
+
 
 @router.delete("/items/{item_id}/share", response_model=dict)
 async def revoke_public_link(
     item_id: int,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Revoke public access.
@@ -565,17 +676,21 @@ async def revoke_public_link(
         has_access = True
     elif item.group_id:
         try:
-             validate_group_write_access(session, current_user, item.group_id)
-             has_access = True
+            validate_group_write_access(session, current_user, item.group_id)
+            has_access = True
         except HTTPException:
-             pass 
-    
+            pass
+
     if not has_access:
-        raise HTTPException(status_code=403, detail="Permission denied to modify share settings")
+        raise HTTPException(
+            status_code=403, detail="Permission denied to modify share settings"
+        )
 
     item.is_public = False
-    item.public_token = None # Optional: Clear token or keep it but invalid? Clearing is safer.
+    item.public_token = (
+        None  # Optional: Clear token or keep it but invalid? Clearing is safer.
+    )
     session.add(item)
     session.commit()
-    
+
     return {"message": "Public link revoked", "is_public": False}

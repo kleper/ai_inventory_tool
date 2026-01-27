@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
-import { API_BASE_URL } from '@/lib/config';
-import { SecureImage } from '@/components/ui/SecureImage';
 import { formatCurrency } from '@/lib/currency';
+import { GalleryCarousel } from '@/components/ui/GalleryCarousel';
 
 
 /* 
@@ -90,6 +89,19 @@ export default async function PublicSharePage({ params }: Props) {
         );
     }
 
+    const rawGalleryImages = Array.isArray(item?.meta_data?.gallery_images)
+        ? item.meta_data.gallery_images
+        : [];
+    const galleryImages = Array.from(
+        new Set([item.image_url, ...rawGalleryImages].filter((value): value is string => typeof value === "string" && value.trim().length > 0))
+    );
+    const publicBase = process.env.NEXT_PUBLIC_API_URL || "";
+    const gallerySources = galleryImages
+        .map((value) => value.startsWith("http")
+            ? value
+            : `${publicBase}/api/v1/public/share/${token}/gallery/${encodeURIComponent(value)}/thumbnail`)
+        .filter(Boolean);
+
     return (
         <div className="min-h-screen bg-white flex flex-col font-sans text-black">
 
@@ -97,23 +109,12 @@ export default async function PublicSharePage({ params }: Props) {
             <main className="flex-1 flex items-center justify-center p-6 bg-neutral-50">
                 <div className="max-w-md w-full bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-0 overflow-hidden">
                     {/* Image */}
-                    <div className="aspect-square bg-neutral-100 border-b-2 border-black relative">
-                        {item.image_url ? (
-                            <img
-                                src={item.image_url.startsWith('http') ? item.image_url : `${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/public/share/${token}/image`}
-                                alt={item.name}
-                                className="w-full h-full object-cover"
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-neutral-300">
-                                No Image
+                    <div className="bg-neutral-100 border-b-2 border-black">
+                        <GalleryCarousel mode="public" items={gallerySources} altBase={item.name}>
+                            <div className="absolute top-4 right-4 bg-black text-white px-3 py-1 text-xs font-bold uppercase tracking-wider">
+                                {item.status}
                             </div>
-                        )}
-
-                        {/* Status Badge */}
-                        <div className="absolute top-4 right-4 bg-black text-white px-3 py-1 text-xs font-bold uppercase tracking-wider">
-                            {item.status}
-                        </div>
+                        </GalleryCarousel>
                     </div>
 
                     {/* Content */}
@@ -169,5 +170,3 @@ export default async function PublicSharePage({ params }: Props) {
         </div>
     );
 }
-
-
