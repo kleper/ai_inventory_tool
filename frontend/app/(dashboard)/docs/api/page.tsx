@@ -40,7 +40,7 @@ export default function ApiDocsPage() {
                     <div>
                         <h3 className="uppercase text-xs font-bold text-neutral-500 mb-2">Inventories</h3>
                         <a href="#list-inventories" className="block hover:underline">List Inventories</a>
-                        <a href="#list-items" className="block hover:underline">List Items</a>
+                        <a href="#geojson" className="block hover:underline">GeoJSON Map Data</a>
                     </div>
                 </nav>
             </div>
@@ -117,6 +117,59 @@ console.log(data);`}
     "limit": 20,
     "pages": 1
   }
+}`}
+                            </pre>
+                        </div>
+                    </section>
+
+                    {/* GeoJSON Endpoint */}
+                    <section id="geojson" className="space-y-6 pt-8 border-t border-dashed border-black">
+                        <div className="flex items-center gap-3">
+                            <span className="bg-black text-white px-2 py-1 font-mono text-xs">GET</span>
+                            <h2 className="text-2xl font-bold uppercase">/groups/{`{id}`}/geojson</h2>
+                        </div>
+                        <p className="font-mono text-sm">Retrieves a standard GeoJSON FeatureCollection of all items in a group that have GPS coordinates. Useful for map integrations.</p>
+
+                        <div className="space-y-2">
+                            <h3 className="font-bold uppercase text-xs">Path Parameters</h3>
+                            <ul className="list-disc list-inside font-mono text-xs space-y-1">
+                                <li><span className="font-bold">id</span> (int): The ID of the inventory group (folder).</li>
+                            </ul>
+                        </div>
+
+                        <CodeBlock
+                            label="Javascript Example"
+                            code={`const response = await fetch('https://api.smartinventory.com/api/v1/groups/123/geojson', {
+  headers: {
+    'X-API-KEY': 'sk_live_...'
+  }
+});
+const geojson = await response.json();
+
+// Use with Mapbox / Leaflet
+L.geoJSON(geojson).addTo(map);`}
+                        />
+
+                        <div className="border border-black p-4 bg-neutral-50">
+                            <h4 className="font-bold uppercase text-xs mb-2">Response Example</h4>
+                            <pre className="text-xs font-mono text-neutral-600">
+                                {`{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-74.006, 40.7128]
+      },
+      "properties": {
+        "id": 45,
+        "name": "Tent",
+        "price": 299.99,
+        "popup_html": "<div...>...</div>"
+      }
+    }
+  ]
 }`}
                             </pre>
                         </div>

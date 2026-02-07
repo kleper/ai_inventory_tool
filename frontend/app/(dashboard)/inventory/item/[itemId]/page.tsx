@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { API_BASE_URL } from "@/lib/config";
-import { MapPin, Phone, Leaf } from "lucide-react";
+import { MapPin, Phone, Leaf, Globe, Navigation, CarFront } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -596,14 +596,45 @@ export default function ItemDetailPage() {
                                                                 )}
                                                             </div>
 
-                                                            <a
-                                                                href={`https://www.google.com/maps/search/?api=1&query=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}`}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="flex items-center justify-center gap-2 w-full border border-black text-black font-bold py-3 uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
-                                                            >
-                                                                <MapPin className="w-4 h-4" /> View on Google Maps
-                                                            </a>
+                                                            {/* External Map Links */}
+                                                            <div className="flex gap-2 mt-4">
+                                                                <a
+                                                                    href={`https://www.google.com/maps/search/?api=1&query=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    title="Google Maps"
+                                                                    className="flex-1 flex items-center justify-center border border-black p-2 hover:bg-black hover:text-white transition-colors"
+                                                                >
+                                                                    <MapPin className="w-4 h-4" />
+                                                                </a>
+                                                                <a
+                                                                    href={`https://www.openstreetmap.org/?mlat=${item.meta_data.coordinates.lat}&mlon=${item.meta_data.coordinates.lng}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    title="OpenStreetMap"
+                                                                    className="flex-1 flex items-center justify-center border border-black p-2 hover:bg-black hover:text-white transition-colors"
+                                                                >
+                                                                    <Globe className="w-4 h-4" />
+                                                                </a>
+                                                                <a
+                                                                    href={`https://waze.com/ul?ll=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}&navigate=yes`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    title="Waze"
+                                                                    className="flex-1 flex items-center justify-center border border-black p-2 hover:bg-black hover:text-white transition-colors"
+                                                                >
+                                                                    <Navigation className="w-4 h-4" />
+                                                                </a>
+                                                                <a
+                                                                    href={`https://m.uber.com/ul/?action=setPickup&dropoff[latitude]=${item.meta_data.coordinates.lat}&dropoff[longitude]=${item.meta_data.coordinates.lng}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    title="Uber"
+                                                                    className="flex-1 flex items-center justify-center border border-black p-2 hover:bg-black hover:text-white transition-colors"
+                                                                >
+                                                                    <CarFront className="w-4 h-4" />
+                                                                </a>
+                                                            </div>
 
                                                             <a
                                                                 href={`geo:${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}`}
