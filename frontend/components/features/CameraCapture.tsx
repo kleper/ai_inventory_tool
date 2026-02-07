@@ -10,11 +10,17 @@ interface CameraCaptureProps {
 
 export function CameraCapture({ onCapture }: CameraCaptureProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const galleryInputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleButtonClick = () => {
         fileInputRef.current?.click();
+    };
+
+    const handleGalleryClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent triggering the camera click
+        galleryInputRef.current?.click();
     };
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,30 +34,49 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
         }
     };
 
+    // ... (handleRetake and handleConfirm remain the same, but need to check both refs or store file in state? 
+    // actually handleConfirm uses fileInputRef.current.files[0]. 
+    // We need to know WHICH input has the file, or just store the file in state on select.
+    // The current implementation reads from ref on confirm.
+    // Let's update handleFileSelect to STORE the file in a ref or state, so handleConfirm can access it regardless of source.
+
+    // Better: Update handleConfirm to check both, or better yet, store the selected file in a state variable `selectedFile`.
+    // But to minimize changes, let's see.
+    // handleFileSelect sets previewUrl. Let's also store the file object in a ref or state.
+
+    const selectedFileRef = useRef<File | null>(null);
+
+    const handleFileSelectCommon = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            selectedFileRef.current = file; // Store for confirm
+            setIsLoading(true);
+            const objectUrl = URL.createObjectURL(file);
+            setPreviewUrl(objectUrl);
+            setIsLoading(false);
+        }
+    };
+
     const handleRetake = () => {
         if (previewUrl) {
             URL.revokeObjectURL(previewUrl);
         }
         setPreviewUrl(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
+        selectedFileRef.current = null;
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        if (galleryInputRef.current) galleryInputRef.current.value = "";
     };
 
     const handleConfirm = () => {
-        if (!fileInputRef.current?.files?.[0]) return;
+        if (!selectedFileRef.current) return;
 
         setIsLoading(true);
-        const file = fileInputRef.current.files[0];
+        const file = selectedFileRef.current;
         const reader = new FileReader();
 
         reader.onloadend = () => {
             const base64String = reader.result as string;
             onCapture(base64String);
-            // Cleanup and reset is optional, but depends on UX. 
-            // Invoking onCapture usually submits the form or adds the item.
-            // We'll keep the preview until the parent unmounts or resets us, 
-            // but let's clear loading.
             setIsLoading(false);
         };
 
@@ -60,32 +85,54 @@ export function CameraCapture({ onCapture }: CameraCaptureProps) {
 
     return (
         <div className="w-full flex flex-col items-center gap-4 font-mono">
-            {/* Hidden Input */}
+            {/* Hidden Input for Camera */}
             <input
                 type="file"
                 accept="image/*"
                 capture="environment"
                 className="hidden"
                 ref={fileInputRef}
-                onChange={handleFileSelect}
+                onChange={handleFileSelectCommon}
+            />
+            {/* Hidden Input for Gallery */}
+            <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                ref={galleryInputRef}
+                onChange={handleFileSelectCommon}
             />
 
             {!previewUrl ? (
                 // Idle State - Wireframe
                 <div
-                    onClick={handleButtonClick}
-                    className="w-full h-64 border border-dashed border-black bg-neutral-50 hover:bg-neutral-100 transition-colors cursor-pointer group flex flex-col items-center justify-center gap-6"
+                    className="w-full border border-dashed border-black bg-neutral-50 p-8 flex flex-col items-center justify-center gap-6"
                 >
-                    <div className="p-4 bg-white text-black border border-black group-hover:scale-105 transition-transform rounded-none">
+                    <div className="p-4 bg-white text-black border border-black rounded-none mb-2">
                         {isLoading ? <Loader2 className="animate-spin text-black" size={32} /> : <Camera size={32} className="text-black" />}
                     </div>
-                    <div className="text-center space-y-2">
-                        <span className="font-bold text-black text-lg uppercase tracking-wide block">Tap to Capture</span>
-                        <span className="text-xs text-neutral-500 font-mono uppercase">Device Camera API</span>
+
+                    <div className="text-center space-y-2 mb-4">
+                        <span className="font-bold text-black text-lg uppercase tracking-wide block">Add Item Photo</span>
+                        <span className="text-xs text-neutral-500 font-mono uppercase">Choose source</span>
                     </div>
-                    <Button variant="outline" className="mt-2 border-black text-black hover:bg-black hover:text-white uppercase font-bold tracking-wide rounded-none">
-                        Open Camera
-                    </Button>
+
+                    <div className="flex flex-col w-full gap-3 max-w-xs">
+                        <Button
+                            onClick={handleButtonClick}
+                            variant="outline"
+                            className="w-full border-black text-black hover:bg-black hover:text-white uppercase font-bold tracking-wide rounded-none h-12"
+                        >
+                            <Camera className="mr-2 h-4 w-4" /> Take Photo
+                        </Button>
+                        <Button
+                            onClick={handleGalleryClick}
+                            variant="secondary"
+                            className="w-full bg-neutral-200 text-black hover:bg-neutral-300 uppercase font-bold tracking-wide rounded-none h-12"
+                        >
+                            <Upload className="mr-2 h-4 w-4" /> Upload from Device
+                        </Button>
+                    </div>
                 </div>
             ) : (
                 // Preview State - Brutalist Wireframe
