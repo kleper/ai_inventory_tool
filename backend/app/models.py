@@ -113,7 +113,7 @@ class Item(SQLModel, table=True):
     price: Optional[float] = None
     quantity: int = Field(default=1)
     image_url: Optional[str] = None
-    status: str = Field(default="pending_price") # pending_price, completed, needs_review
+    status: str = Field(default="pending_price") # pending_price, completed, needs_review, analyzing, error
     meta_data: Dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

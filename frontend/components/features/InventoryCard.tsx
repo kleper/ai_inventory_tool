@@ -1,25 +1,30 @@
 "use client";
-import { AlertCircle, CheckCircle2, Clock, Tag, Box } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Tag, Box, Loader2, RotateCw } from "lucide-react";
 import { SecureImage } from "@/components/ui/SecureImage";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { API_BASE_URL } from "@/lib/config";
 import { useState } from "react";
+import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 interface Item {
     id: number;
     name: string;
     description?: string;
     category?: string;
-    status: string; // pending_price, completed, processing
+    status: string; // pending_price, completed, processing, analyzing, error, needs_review
     imageUrl?: string;
     price?: number;
+    meta_data?: any;
 }
 
 import { formatCurrency } from "@/lib/currency";
 
 export function InventoryCard({ item, canEdit, currency }: { item: Item, canEdit?: boolean, currency?: string }) {
-    // const [imageError, setImageError] = useState(false); // Managed by SecureImage now
+    const { data: session } = useSession();
+    const token = (session as any)?.accessToken;
+    const [isRetrying, setIsRetrying] = useState(false);
 
     // Construct valid URL
     let imageUrl = item.imageUrl;
@@ -28,6 +33,33 @@ export function InventoryCard({ item, canEdit, currency }: { item: Item, canEdit
             ? `${API_BASE_URL}${imageUrl}`
             : `${API_BASE_URL}/${imageUrl}`;
     }
+
+    const handleRetry = async (e: React.MouseEvent) => {
+        e.preventDefault(); // Prevent Link navigation
+        if (isRetrying) return;
+
+        setIsRetrying(true);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/v1/inventory/items/${item.id}/analyze`, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (!res.ok) throw new Error("Retry failed");
+
+            toast.success("Analysis restarted in background");
+            // Optimistic update could go here, or rely on SWR revalidation
+            // For now, we assume parent revalidates or user refreshes
+            // We can manually trigger a reload if we had the mutate function
+            window.location.reload();
+        } catch (error) {
+            toast.error("Failed to restart analysis");
+        } finally {
+            setIsRetrying(false);
+        }
+    };
 
     return (
         <Link href={`/inventory/item/${item.id}`} className="block h-full w-full">
@@ -44,7 +76,7 @@ export function InventoryCard({ item, canEdit, currency }: { item: Item, canEdit
                         variant="thumbnail"
                     />
 
-                    <div className="absolute top-1 right-1 md:top-2 md:right-2">
+                    <div className="absolute top-1 right-1 md:top-2 md:right-2 flex flex-col gap-1 items-end">
                         {item.status === 'pending_price' && (
                             <span className="bg-white/90 text-[10px] font-bold uppercase tracking-wider text-black border border-black px-1.5 py-0.5 rounded-none">
                                 Pending
@@ -60,9 +92,14 @@ export function InventoryCard({ item, canEdit, currency }: { item: Item, canEdit
                                 Review
                             </span>
                         )}
-                        {!['pending_price', 'completed', 'needs_review'].includes(item.status) && (
-                            <span className="bg-white/90 text-[10px] font-bold uppercase tracking-wider text-black border border-black px-1.5 py-0.5 rounded-none animate-pulse">
-                                ...
+                        {item.status === 'error' && (
+                            <span className="bg-red-100/90 text-[10px] font-bold uppercase tracking-wider text-red-700 border border-red-700 px-1.5 py-0.5 rounded-none flex items-center gap-1">
+                                <AlertCircle size={10} /> Error
+                            </span>
+                        )}
+                        {(item.status === 'analyzing' || item.status === 'processing') && (
+                            <span className="bg-blue-50/90 text-[10px] font-bold uppercase tracking-wider text-blue-700 border border-blue-700 px-1.5 py-0.5 rounded-none flex items-center gap-1 animate-pulse">
+                                <Loader2 size={10} className="animate-spin" /> Analyzing
                             </span>
                         )}
                     </div>
@@ -83,7 +120,16 @@ export function InventoryCard({ item, canEdit, currency }: { item: Item, canEdit
                     </div>
 
                     <div className="hidden md:flex items-center justify-between pt-3 mt-auto border-t border-transparent md:border-black/5">
-                        {item.price ? (
+                        {item.status === 'error' ? (
+                            <button
+                                onClick={handleRetry}
+                                disabled={isRetrying}
+                                className="text-xs font-mono font-bold text-red-600 hover:text-red-800 flex items-center gap-1 uppercase underline decoration-1 underline-offset-2 disabled:opacity-50"
+                            >
+                                {isRetrying ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />}
+                                Retry Analysis
+                            </button>
+                        ) : item.price ? (
                             <div className="flex items-center text-black font-mono font-bold">
                                 <span className="text-sm border border-black px-1 bg-transparent">
                                     {formatCurrency(item.price, currency)}

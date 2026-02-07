@@ -25,6 +25,7 @@ from app.services.websocket_manager import manager
 from app.database import get_session
 from app.services.price_service import search_approximate_price
 from app.services.currency_service import currency_service
+from app.services.analysis_orchestrator import analyze_item_background
 
 import logging
 
@@ -69,11 +70,11 @@ def validate_group_write_access(session: Session, user: User, group_id: int):
 @limiter.limit("10/minute")
 async def process_object(
     request: Request,
+    background_tasks: BackgroundTasks,
     group_id: Optional[int] = None,
     latitude: Optional[float] = Form(None),
     longitude: Optional[float] = Form(None),
     file: UploadFile = File(...),
-    llm_service: LLMService = Depends(get_llm_service),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
@@ -83,95 +84,38 @@ async def process_object(
 
     try:
         contents = await file.read()
-
+        
         from app.services.image_service import save_image
-
-        group_context = None
-        if group_id:
-            group = session.get(InventoryGroup, group_id)
-            if group:
-                group_context = {
-                    "name": group.name,
-                    "description": group.description,
-                    "currency": group.currency,
-                    "settings": group.settings,
-                }
 
         # Save file (original + thumb)
         filename = save_image(contents, "/app/media")
 
-        item_data = await llm_service.analyze_object(
-            contents, user_id=current_user.id, group_context=group_context
-        )
-
-        # Currency Conversion Logic
-        target_currency = group.currency if (group_id and group) else "USD"
-        if item_data.estimated_price and item_data.estimated_price > 0:
-            if item_data.currency_code and item_data.currency_code != target_currency:
-                logger.info(
-                    f"Converting price {item_data.estimated_price} {item_data.currency_code} to {target_currency}"
-                )
-                converted_price, success = await currency_service.convert(
-                    item_data.estimated_price, item_data.currency_code, target_currency
-                )
-                if success:
-                    item_data.estimated_price = converted_price
-                else:
-                    logger.warning(
-                        f"Currency conversion failed. Keeping original price {item_data.estimated_price} {item_data.currency_code}"
-                    )
-                    # Could append warning to description if desired:
-                    # item_data.description += f" [Warning: Price in {item_data.currency_code}]"
-            else:
-                # If currency code is missing but we have a price, assume USD or trust LLM?
-                # Prompt defaults to USD if unknown, so we are safe.
-                pass
-
-        # If LLM didn't find a price, try web search or fallback
-        if not item_data.estimated_price or item_data.estimated_price == 0:
-            print(f"No price from LLM for {item_data.name}, searching web...")
-            found_price = False
-            try:
-                web_price = search_approximate_price(item_data.name)
-                if web_price:
-                    print(f"Found web price: {web_price}")
-                    item_data.estimated_price = web_price
-                    found_price = True
-            except Exception as e:
-                print(f"Web search failed: {e}")
-
-            # Fallback Logic
-            if not found_price:
-                import random  # Local import to verify safety
-
-                fallback_price = float(random.randint(100, 500))
-                print(f"Assigning fallback random price: {fallback_price}")
-                item_data.estimated_price = fallback_price
-                # Optional: Mark as estimated
-                if not item_data.meta_data:
-                    item_data.meta_data = {}
-                item_data.meta_data["price_source"] = "estimated_random"
-
         # Prepare Meta Data
-        meta = item_data.meta_data or {}
+        meta = {}
         if latitude is not None and longitude is not None:
             meta["coordinates"] = {"lat": latitude, "lng": longitude}
 
+        # Create Item immediately with "analyzing" status
         new_item = Item(
-            name=item_data.name,
-            description=item_data.description,
-            category=item_data.category,
-            price=item_data.estimated_price,
+            name="Processing...",
+            description="Analysis in progress...",
+            category="Uncategorized",
+            price=None,
             user_id=current_user.id,
             group_id=group_id,
             image_url=filename,
-            status="pending_price" if not item_data.estimated_price else "completed",
+            status="analyzing",
             meta_data=meta,
         )
         session.add(new_item)
         session.commit()
         session.refresh(new_item)
+
+        # Dispatch Background Task
+        background_tasks.add_task(analyze_item_background, new_item.id)
+        
         return new_item
+
     except HTTPException as he:
         raise he
     except ValueError as e:
@@ -179,7 +123,6 @@ async def process_object(
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         import traceback
-
         traceback.print_exc()
         raise HTTPException(
             status_code=500, detail=f"Error processing object: {str(e)}"
@@ -611,6 +554,44 @@ async def search_item_price(
     session.commit()
     session.refresh(item)
 
+    return item
+
+
+@router.post("/items/{item_id}/analyze", response_model=Item)
+async def analyze_item_manual(
+    item_id: int,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    item = session.get(Item, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    # Permission Check
+    can_edit = False
+    if item.user_id == current_user.id:
+        can_edit = True
+    elif item.group_id:
+        try:
+            validate_group_write_access(session, current_user, item.group_id)
+            can_edit = True
+        except HTTPException:
+            can_edit = False
+            
+    if not can_edit:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Reset status and trigger analysis
+    item.status = "analyzing"
+    # Optional: Reset error in metadata? 
+    # if item.meta_data: item.meta_data.pop("last_error", None)
+    
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    
+    background_tasks.add_task(analyze_item_background, item.id)
     return item
 
 

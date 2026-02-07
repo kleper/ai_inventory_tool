@@ -139,6 +139,19 @@ export const UploadQueueProvider = ({ children }: { children: ReactNode }) => {
 
     }, [queue, token, removeItem]);
 
+    // Prevent closing window while uploading
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            // Only warn if items are pending or uploading
+            const hasPending = queue.some(item => item.status === 'PENDING' || item.status === 'UPLOADING' || item.status === 'ANALYZING');
+            if (hasPending) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [queue]);
 
     return (
         <UploadQueueContext.Provider value={{ queue, addToQueue, retryItem, removeItem, isProcessing: queue.length > 0 }}>

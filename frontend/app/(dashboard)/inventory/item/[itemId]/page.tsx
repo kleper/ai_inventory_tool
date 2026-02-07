@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon, Download, Sparkles, Share2 } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Edit2, Loader2, Image as ImageIcon, Download, Sparkles, Share2, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { GalleryCarousel } from "@/components/ui/GalleryCarousel";
 import { ItemPhotoUpdater } from "@/components/features/ItemPhotoUpdater";
@@ -412,6 +412,40 @@ export default function ItemDetailPage() {
                                     {/* Specialized Blocks */}
                                     {item.meta_data && (
                                         <div className="space-y-6 mt-8">
+
+                                            {/* Re-Analyze Button */}
+                                            {canWrite && (
+                                                <div className="border border-black p-4 bg-gray-50 flex flex-col gap-2">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Sparkles className="w-4 h-4 text-black" />
+                                                        <h4 className="font-bold uppercase tracking-widest text-xs text-black">AI Analysis</h4>
+                                                    </div>
+                                                    <p className="text-xs text-neutral-600 mb-2">
+                                                        Run the AI analysis again to update description, tags, and category based on the image.
+                                                    </p>
+                                                    <Button
+                                                        onClick={async () => {
+                                                            if (!confirm("This will overwrite the current description and category. Continue?")) return;
+                                                            try {
+                                                                toast.info("Starting analysis...");
+                                                                const res = await fetch(`${API_BASE_URL}/api/v1/inventory/items/${itemId}/analyze`, {
+                                                                    method: "POST",
+                                                                    headers: token ? { "Authorization": `Bearer ${token}` } : {}
+                                                                });
+                                                                if (!res.ok) throw new Error("Analysis failed to start");
+                                                                toast.success("Analysis started in background. Page will update shortly.");
+                                                                mutate(); // Re-fetch item to show "Analyzing" status
+                                                            } catch (e) {
+                                                                toast.error("Failed to start analysis");
+                                                            }
+                                                        }}
+                                                        variant="outline"
+                                                        className="w-full border-black text-black hover:bg-black hover:text-white uppercase font-bold tracking-wide text-xs h-10"
+                                                    >
+                                                        <RotateCw className="w-3 h-3 mr-2" /> Re-analyze Image
+                                                    </Button>
+                                                </div>
+                                            )}
 
                                             {/* Botanical Data */}
                                             {item.meta_data.scientific_name && (
