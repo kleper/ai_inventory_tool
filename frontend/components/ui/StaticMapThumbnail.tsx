@@ -14,12 +14,12 @@ export function StaticMapThumbnail({ lat, lng, className = "" }: StaticMapThumbn
 
     const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
-    // Mapbox URL
+    // Mapbox URL only
     // Style: streets-v12, outdoors-v12, light-v11
     // Overlay: pin-s-marker+000 (standard marker)
     const mapUrl = mapboxToken
         ? `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/pin-s+000(${lng},${lat})/${lng},${lat},15,0,0/600x300@2x?access_token=${mapboxToken}`
-        : `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=17&size=600x300&maptype=mapnik&markers=${lat},${lng},red-pushpin`;
+        : "";
 
     const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 
@@ -35,14 +35,14 @@ export function StaticMapThumbnail({ lat, lng, className = "" }: StaticMapThumbn
                 </div>
             )}
 
-            {/* Error Fallback */}
-            {isError ? (
+            {/* Error / Missing Config State */}
+            {isError || !mapboxToken ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-200 text-neutral-500 p-4 text-center">
                     <MapPin className="w-8 h-8 mb-2 opacity-20" />
                     <span className="font-mono text-[10px] uppercase font-bold">
-                        {mapboxToken ? "Map Preview Unavailable" : "Map Token Missing"}
+                        {mapboxToken ? "Map Preview Error" : "Map Configuration Missing"}
                     </span>
-                    {!mapboxToken && <span className="text-[10px] text-red-500 mt-1">Configure MAPBOX_TOKEN</span>}
+                    {!mapboxToken && <span className="text-[10px] text-red-500 mt-1">Missing MAPBOX TOKEN</span>}
                 </div>
             ) : (
                 <img
