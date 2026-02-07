@@ -83,7 +83,16 @@ async def analyze_item_background(item_id: int):
             current_meta.update(new_meta)
             item.meta_data = current_meta
 
-            item.status = "completed" if item.price else "pending_price"
+            # Determine final status
+            is_price_req = True
+            if group_context and group_context.get("settings"):
+                 if group_context["settings"].get("is_price_enabled") is False:
+                     is_price_req = False
+            
+            if not is_price_req:
+                item.status = "completed"
+            else:
+                item.status = "completed" if item.price else "pending_price"
             
             session.add(item)
             session.commit()

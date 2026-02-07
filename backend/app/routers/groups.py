@@ -40,6 +40,7 @@ class GroupWithCount(InventoryGroupBase):
     item_count: int = 0
     is_shared: bool = False
     my_role: str = "OWNER"
+    settings: Optional[dict] = {}
 
 # --- Group Management ---
 

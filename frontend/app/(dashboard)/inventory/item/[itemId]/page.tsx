@@ -72,6 +72,7 @@ export default function ItemDetailPage() {
     // If group_id => Check group role.
 
     const canWrite = !item?.group_id || (group?.my_role === "OWNER" || group?.my_role === "EDITOR");
+    const showPrice = group?.settings?.is_price_enabled !== false;
 
     useEffect(() => {
         if (item) {
@@ -330,30 +331,32 @@ export default function ItemDetailPage() {
                                                 className="bg-white text-black border-black h-10"
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-center">
-                                                <Label htmlFor="price" className="text-black uppercase tracking-wide font-bold">Price ({group?.currency || 'USD'})</Label>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handlePriceSearch()}
-                                                    disabled={isSearching}
-                                                    className="h-6 text-[10px] uppercase rounded-none border-black hover:bg-black hover:text-white"
-                                                >
-                                                    {isSearching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
-                                                    {isSearching ? "Searching..." : "AI Search"}
-                                                </Button>
+                                        {showPrice && (
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <Label htmlFor="price" className="text-black uppercase tracking-wide font-bold">Price ({group?.currency || 'USD'})</Label>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handlePriceSearch()}
+                                                        disabled={isSearching}
+                                                        className="h-6 text-[10px] uppercase rounded-none border-black hover:bg-black hover:text-white"
+                                                    >
+                                                        {isSearching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3 mr-1" />}
+                                                        {isSearching ? "Searching..." : "AI Search"}
+                                                    </Button>
+                                                </div>
+                                                <Input
+                                                    id="price"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={formData.price}
+                                                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                                    className="rounded-none border-black focus-visible:ring-0"
+                                                />
                                             </div>
-                                            <Input
-                                                id="price"
-                                                type="number"
-                                                step="0.01"
-                                                value={formData.price}
-                                                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                                                className="rounded-none border-black focus-visible:ring-0"
-                                            />
-                                        </div>
+                                        )}
                                         <div className="space-y-2">
                                             <Label htmlFor="quantity" className="text-black uppercase tracking-wide font-bold">Quantity</Label>
                                             <Input
@@ -388,12 +391,14 @@ export default function ItemDetailPage() {
                             <div className="space-y-8">
                                 <div className="bg-white border border-black p-6 shadow-none">
                                     <div className="grid grid-cols-2 gap-8 mb-6">
-                                        <div>
-                                            <span className="text-neutral-500 text-xs uppercase tracking-widest block mb-2">Price Estimate</span>
-                                            <span className="text-4xl font-black text-black block">
-                                                {formatPrice(item.price, group?.currency)}
-                                            </span>
-                                        </div>
+                                        {showPrice && (
+                                            <div>
+                                                <span className="text-neutral-500 text-xs uppercase tracking-widest block mb-2">Price Estimate</span>
+                                                <span className="text-4xl font-black text-black block">
+                                                    {formatPrice(item.price, group?.currency)}
+                                                </span>
+                                            </div>
+                                        )}
                                         <div>
                                             <span className="text-neutral-500 text-xs uppercase tracking-widest block mb-2">Quantity</span>
                                             <span className="text-4xl font-black text-black block">
@@ -484,7 +489,7 @@ export default function ItemDetailPage() {
                                             )}
 
                                             {/* Map Block */}
-                                            {item.meta_data.coordinates && (
+                                            {item.meta_data.coordinates && group?.settings?.enable_geolocation !== false && (
                                                 <div className="border border-black p-4 bg-neutral-50">
                                                     <div className="flex items-center gap-2 mb-3 border-b border-black/20 pb-2">
                                                         <MapPin className="w-4 h-4 text-neutral-700" />
@@ -508,9 +513,13 @@ export default function ItemDetailPage() {
                                                     >
                                                         <MapPin className="w-4 h-4" /> View on Google Maps
                                                     </a>
-                                                    <p className="text-[10px] font-mono text-center mt-2 text-neutral-500">
+
+                                                    <a
+                                                        href={`geo:${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}`}
+                                                        className="block text-[10px] font-mono text-center mt-3 text-neutral-500 hover:text-black hover:underline cursor-pointer"
+                                                    >
                                                         {Number(item.meta_data.coordinates.lat).toFixed(6)}, {Number(item.meta_data.coordinates.lng).toFixed(6)}
-                                                    </p>
+                                                    </a>
                                                 </div>
                                             )}
 

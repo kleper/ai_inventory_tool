@@ -26,6 +26,7 @@ interface CreateUpdateFolderModalProps {
         settings?: {
             inventory_type?: string;
             enable_geolocation?: boolean;
+            is_price_enabled?: boolean;
         };
     };
     onSuccess?: () => void;
@@ -50,6 +51,7 @@ export function CreateUpdateFolderModal({
     const [language, setLanguage] = useState("ES");
     const [inventoryType, setInventoryType] = useState("GENERAL");
     const [enableGeolocation, setEnableGeolocation] = useState(false);
+    const [isPriceEnabled, setIsPriceEnabled] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -61,6 +63,8 @@ export function CreateUpdateFolderModal({
                 setLanguage(initialData.language || "ES");
                 setInventoryType(initialData.settings?.inventory_type || "GENERAL");
                 setEnableGeolocation(initialData.settings?.enable_geolocation || false);
+                // Default to true if undefined, but explicit false should be false
+                setIsPriceEnabled(initialData.settings?.is_price_enabled !== false);
             } else {
                 // Reset for create
                 setName("");
@@ -69,6 +73,7 @@ export function CreateUpdateFolderModal({
                 setLanguage("ES");
                 setInventoryType("GENERAL");
                 setEnableGeolocation(false);
+                setIsPriceEnabled(true);
             }
         }
     }, [open, mode, initialData]);
@@ -94,7 +99,8 @@ export function CreateUpdateFolderModal({
                 language,
                 settings: {
                     inventory_type: inventoryType,
-                    enable_geolocation: enableGeolocation
+                    enable_geolocation: enableGeolocation,
+                    is_price_enabled: isPriceEnabled
                 }
             };
 
@@ -183,7 +189,7 @@ export function CreateUpdateFolderModal({
                             ]}
                         />
 
-                        <div className="flex items-center space-x-3 bg-neutral-100 p-3 border border-black">
+                        <div className="flex items-center space-x-3 p-3 border border-black bg-white hover:bg-neutral-50 transition-colors">
                             <Checkbox
                                 id="gps_toggle"
                                 checked={enableGeolocation}
@@ -191,8 +197,21 @@ export function CreateUpdateFolderModal({
                                 className="h-6 w-6 border-2 border-black rounded-none data-[state=checked]:bg-black data-[state=checked]:text-white"
                             />
                             <div className="flex flex-col">
-                                <Label htmlFor="gps_toggle" className="font-bold uppercase tracking-wider text-sm cursor-pointer">Capture Geolocation</Label>
+                                <Label htmlFor="gps_toggle" className="font-bold uppercase tracking-wider text-sm cursor-pointer text-black">Capture Geolocation</Label>
                                 <span className="text-[10px] font-mono text-neutral-500">Record GPS coordinates for each item.</span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3 p-3 border border-black bg-white hover:bg-neutral-50 transition-colors">
+                            <Checkbox
+                                id="price_toggle"
+                                checked={isPriceEnabled}
+                                onCheckedChange={(c: boolean) => setIsPriceEnabled(c === true)}
+                                className="h-6 w-6 border-2 border-black rounded-none data-[state=checked]:bg-black data-[state=checked]:text-white"
+                            />
+                            <div className="flex flex-col">
+                                <Label htmlFor="price_toggle" className="font-bold uppercase tracking-wider text-sm cursor-pointer text-black">Enable Price Tracking</Label>
+                                <span className="text-[10px] font-mono text-neutral-500">If disabled, price field will be hidden and optional.</span>
                             </div>
                         </div>
                     </div>

@@ -80,6 +80,7 @@ export default function FolderDetailPage() {
     const role = group?.my_role || "VIEWER";
     const canWrite = role === "OWNER" || role === "EDITOR";
     const isOwner = role === "OWNER";
+    const showPrice = group?.settings?.is_price_enabled !== false;
 
     // Geolocation Hook (Robust)
     const { location, loading: gpsLoading, error: gpsError } = useGeolocation(isScanOpen && group?.settings?.enable_geolocation);
@@ -361,7 +362,7 @@ export default function FolderDetailPage() {
                                                     <span className="text-xs text-black uppercase tracking-wider font-mono">
                                                         ID: {item.id}
                                                     </span>
-                                                    {item.price && (
+                                                    {item.price && showPrice && (
                                                         <span className="text-xs text-black font-bold border border-black px-1">
                                                             {formatCurrency(item.price, group?.currency)}
                                                         </span>
@@ -379,6 +380,8 @@ export default function FolderDetailPage() {
                                             key={item.id}
                                             item={item}
                                             canEdit={canWrite}
+                                            currency={group?.currency}
+                                            showPrice={showPrice}
                                         />
                                     ))}
                                 </div>

@@ -21,7 +21,7 @@ interface Item {
 
 import { formatCurrency } from "@/lib/currency";
 
-export function InventoryCard({ item, canEdit, currency }: { item: Item, canEdit?: boolean, currency?: string }) {
+export function InventoryCard({ item, canEdit, currency, showPrice = true }: { item: Item, canEdit?: boolean, currency?: string, showPrice?: boolean }) {
     const { data: session } = useSession();
     const token = (session as any)?.accessToken;
     const [isRetrying, setIsRetrying] = useState(false);
@@ -129,17 +129,17 @@ export function InventoryCard({ item, canEdit, currency }: { item: Item, canEdit
                                 {isRetrying ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />}
                                 Retry Analysis
                             </button>
-                        ) : item.price ? (
+                        ) : (item.price !== undefined && item.price !== null) && showPrice ? (
                             <div className="flex items-center text-black font-mono font-bold">
                                 <span className="text-sm border border-black px-1 bg-transparent">
                                     {formatCurrency(item.price, currency)}
                                 </span>
                             </div>
-                        ) : (
+                        ) : showPrice ? (
                             <div className="flex items-center text-gray-400 text-xs font-mono">
                                 <span>--.--</span>
                             </div>
-                        )}
+                        ) : null}
                     </div>
                 </div>
             </div>
