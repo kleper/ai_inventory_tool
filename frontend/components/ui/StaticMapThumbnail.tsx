@@ -14,12 +14,19 @@ export function StaticMapThumbnail({ lat, lng, className = "" }: StaticMapThumbn
 
     const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
-    // Mapbox URL only
-    // Style: streets-v12, outdoors-v12, light-v11
-    // Overlay: pin-s-marker+000 (standard marker)
+    // Mapbox URL construction
+    // Using user-provided structure: pin-s+000000 (Black pin) with dark-v11 style
+    // Explicitly enabled attribution to prevent API errors.
     const mapUrl = mapboxToken
-        ? `https://api.mapbox.com/styles/v1/mapbox/outdoors-v12/static/pin-s+000(${lng},${lat})/${lng},${lat},15,0,0/600x300@2x?access_token=${mapboxToken}`
+        ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/pin-s+000000(${lng},${lat})/${lng},${lat},17,0/600x300?access_token=${mapboxToken}&attribution=true&logo=false`
         : "";
+
+    // Debug logging
+    React.useEffect(() => {
+        if (mapboxToken && isLoading) {
+            console.log("Generating Mapbox URL:", mapUrl);
+        }
+    }, [mapUrl, mapboxToken, isLoading]);
 
     const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 
