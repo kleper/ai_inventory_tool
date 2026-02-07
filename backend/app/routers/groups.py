@@ -287,6 +287,90 @@ async def remove_member(
     if not share:
         raise HTTPException(status_code=404, detail="Member not found")
         
-    session.delete(share)
-    session.commit()
-    return {"message": "Member removed"}
+
+# --- GeoJSON Integration ---
+from app.dependencies.api_key_auth import get_user_from_api_key
+
+@router.get("/{group_id}/geojson")
+async def get_group_geojson(
+    group_id: int,
+    current_user: User = Depends(get_user_from_api_key),
+    session: Session = Depends(get_session)
+):
+    """
+    Returns a GeoJSON FeatureCollection of all items in the group that have coordinates.
+    Requires X-API-KEY header.
+    """
+    group = session.get(InventoryGroup, group_id)
+    if not group:
+         raise HTTPException(status_code=404, detail="Group not found")
+
+    # Access Check
+    if group.owner_id != current_user.id:
+         access = session.exec(select(SharedAccess).where(
+             SharedAccess.group_id == group_id, 
+             SharedAccess.user_id == current_user.id
+         )).first()
+         if not access:
+             raise HTTPException(status_code=403, detail="Access denied")
+
+    # Fetch Items
+    items = session.exec(select(Item).where(Item.group_id == group_id)).all()
+    
+    features = []
+    
+    for item in items:
+        # Check for numeric coordinates
+        if not item.meta_data or not item.meta_data.get("coordinates"):
+            continue
+            
+        coords = item.meta_data.get("coordinates")
+        lat = coords.get("lat")
+        lng = coords.get("lng")
+        
+        if lat is None or lng is None:
+            continue
+            
+        # Construct Popup HTML (Card Style)
+        # Using inline styles for maximum compatibility
+        image_html = ""
+        if item.image_url:
+            image_html = f'<img src="{item.image_url}" style="width:100%; height:150px; object-fit:cover; margin-bottom:8px; border-radius:4px;" />'
+            
+        price_display = f"{item.price} {group.currency}" if item.price else "N/A"
+        
+        popup_html = f"""
+        <div style="font-family: sans-serif; width: 200px;">
+            {image_html}
+            <h3 style="margin:0 0 4px 0; font-size:14px; font-weight:bold;">{item.name}</h3>
+            <p style="margin:0 0 4px 0; font-size:12px; color:#666;">{item.category or 'Uncategorized'}</p>
+            <p style="margin:0 0 8px 0; font-size:14px; font-weight:bold;">{price_display}</p>
+            <a href="/inventory/item/{item.id}" target="_blank" style="display:block; text-align:center; background:#000; color:#fff; text-decoration:none; padding:6px; font-size:11px; border-radius:2px; font-weight:bold;">VIEW DETAILS</a>
+        </div>
+        """
+
+        feature = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [float(lng), float(lat)] # GeoJSON is [lng, lat]
+            },
+            "properties": {
+                "id": item.id,
+                "name": item.name,
+                "description": item.description,
+                "category": item.category,
+                "price": item.price,
+                "currency": group.currency,
+                "image_url": item.image_url,
+                "quantity": item.quantity,
+                "status": item.status,
+                "popup_html": popup_html
+            }
+        }
+        features.append(feature)
+
+    return {
+        "type": "FeatureCollection",
+        "features": features
+    }

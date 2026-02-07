@@ -342,6 +342,7 @@ class ItemUpdate(SQLModel):
     price: Optional[float] = None
     quantity: Optional[int] = None
     status: Optional[str] = None
+    meta_data: Optional[dict] = None
 
 
 @router.put("/items/{item_id}", response_model=Item)

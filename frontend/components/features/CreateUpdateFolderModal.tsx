@@ -247,6 +247,40 @@ export function CreateUpdateFolderModal({
                         />
                     </div>
 
+                    {/* API Integration Info (Edit Mode Only) */}
+                    {mode === "edit" && initialData?.id && (
+                        <div className="space-y-2 pt-4 border-t border-black">
+                            <Label className="uppercase font-mono text-xs block text-blue-600">Developer API Integration</Label>
+                            <div className="bg-neutral-100 p-3 border border-dashed border-neutral-400">
+                                <p className="text-[10px] font-mono mb-2">
+                                    Use this GeoJSON endpoint to visualize this inventory on external maps (Leaflet, Mapbox, etc).
+                                </p>
+                                <div className="flex gap-2">
+                                    <code className="flex-1 bg-white border border-neutral-300 p-2 text-[10px] font-mono break-all select-all">
+                                        {`${API_BASE_URL}/api/v1/groups/${initialData.id}/geojson`}
+                                    </code>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-auto text-[10px] uppercase"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`${API_BASE_URL}/api/v1/groups/${initialData.id}/geojson`);
+                                            toast.success("URL copied");
+                                        }}
+                                    >
+                                        Copy
+                                    </Button>
+                                </div>
+                                <p className="text-[10px] font-mono mt-2 text-neutral-500">
+                                    <strong>Auth Required:</strong> You must include your API Key in the header:<br />
+                                    <span className="bg-neutral-200 px-1">X-API-KEY: sk_live_...</span>
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+
                     <DialogFooter>
                         <Button
                             type="submit"

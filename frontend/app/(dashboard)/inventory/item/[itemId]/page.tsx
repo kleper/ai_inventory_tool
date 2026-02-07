@@ -149,6 +149,82 @@ export default function ItemDetailPage() {
     // ...
 
     // Loading / Error States
+    const [isCapturingLocation, setIsCapturingLocation] = useState(false);
+
+    const handleCaptureLocation = async () => {
+        if (!navigator.geolocation) {
+            toast.error("Geolocation is not supported by your browser");
+            return;
+        }
+
+        setIsCapturingLocation(true);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const coords = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+
+                    // Deep merge the new coords into existing meta_data
+                    const existingMeta = item.meta_data || {};
+                    const updatedMeta = {
+                        ...existingMeta,
+                        coordinates: coords
+                    };
+
+                    // API Call to update
+                    const headers: HeadersInit = { "Content-Type": "application/json" };
+                    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+                    // Current update endpoint expects full body? or partial? 
+                    // Let's use the same pattern as handleUpdate but only allow partial if backend supports it.
+                    // The backend typically expects the full ItemUpdate model. 
+                    // We should construct a payload that includes the current form data + new meta.
+                    // HOWEVER, FormData state might be stale if user hasn't edited anything.
+                    // Safe bet: Use current item fields + new meta.
+
+                    const payload = {
+                        ...item, // dangerous if item has extra fields backend rejects? model usually filters.
+                        // Better: map explicitly
+                        name: item.name,
+                        description: item.description,
+                        quantity: item.quantity,
+                        price: item.price,
+                        category: item.category,
+                        meta_data: updatedMeta
+                    };
+
+                    const res = await fetch(`${API_BASE_URL}/api/v1/inventory/items/${itemId}`, {
+                        method: "PUT",
+                        headers,
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!res.ok) throw new Error("Failed to save coordinates");
+
+                    toast.success("Location updated successfully");
+                    mutate(); // Refresh UI
+                } catch (err) {
+                    console.error(err);
+                    toast.error("Failed to save location to server");
+                } finally {
+                    setIsCapturingLocation(false);
+                }
+            },
+            (error) => {
+                console.error("Geo error:", error);
+                let msg = "Unable to retrieve location";
+                if (error.code === 1) msg = "Location permission denied";
+                if (error.code === 2) msg = "Position unavailable";
+                if (error.code === 3) msg = "Location request timeout";
+                toast.error(msg);
+                setIsCapturingLocation(false);
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+    };
+
     const handlePriceSearch = async () => {
         if (!item) return;
         try {
@@ -489,37 +565,70 @@ export default function ItemDetailPage() {
                                             )}
 
                                             {/* Map Block */}
-                                            {item.meta_data.coordinates && group?.settings?.enable_geolocation !== false && (
-                                                <div className="border border-black p-4 bg-neutral-50">
+                                            {group?.settings?.enable_geolocation !== false && (
+                                                <div className="border border-black p-4 bg-neutral-50 relative">
                                                     <div className="flex items-center gap-2 mb-3 border-b border-black/20 pb-2">
                                                         <MapPin className="w-4 h-4 text-neutral-700" />
                                                         <h4 className="font-bold uppercase tracking-widest text-xs text-neutral-800">Location</h4>
                                                     </div>
 
-                                                    {/* Static Map Thumbnail */}
-                                                    <div className="mb-4 w-full h-40">
-                                                        <StaticMapThumbnail
-                                                            lat={item.meta_data.coordinates.lat}
-                                                            lng={item.meta_data.coordinates.lng}
-                                                            className="h-full"
-                                                        />
-                                                    </div>
+                                                    {item.meta_data?.coordinates ? (
+                                                        <>
+                                                            {/* Static Map Thumbnail */}
+                                                            <div className="mb-4 w-full h-40 relative">
+                                                                <StaticMapThumbnail
+                                                                    lat={item.meta_data.coordinates.lat}
+                                                                    lng={item.meta_data.coordinates.lng}
+                                                                    className="h-full"
+                                                                />
+                                                                {/* Update Button Overlay */}
+                                                                {canWrite && (
+                                                                    <Button
+                                                                        variant="secondary"
+                                                                        size="sm"
+                                                                        onClick={() => handleCaptureLocation()}
+                                                                        disabled={isCapturingLocation}
+                                                                        className="absolute top-2 right-2 h-7 text-[10px] uppercase font-bold tracking-wider bg-white/90 border border-black hover:bg-black hover:text-white shadow-sm z-20"
+                                                                    >
+                                                                        {isCapturingLocation ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCw className="w-3 h-3 mr-1" />}
+                                                                        Update GPS
+                                                                    </Button>
+                                                                )}
+                                                            </div>
 
-                                                    <a
-                                                        href={`https://www.google.com/maps/search/?api=1&query=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center justify-center gap-2 w-full border border-black text-black font-bold py-3 uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
-                                                    >
-                                                        <MapPin className="w-4 h-4" /> View on Google Maps
-                                                    </a>
+                                                            <a
+                                                                href={`https://www.google.com/maps/search/?api=1&query=${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="flex items-center justify-center gap-2 w-full border border-black text-black font-bold py-3 uppercase tracking-widest hover:bg-black hover:text-white transition-colors"
+                                                            >
+                                                                <MapPin className="w-4 h-4" /> View on Google Maps
+                                                            </a>
 
-                                                    <a
-                                                        href={`geo:${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}`}
-                                                        className="block text-[10px] font-mono text-center mt-3 text-neutral-500 hover:text-black hover:underline cursor-pointer"
-                                                    >
-                                                        {Number(item.meta_data.coordinates.lat).toFixed(6)}, {Number(item.meta_data.coordinates.lng).toFixed(6)}
-                                                    </a>
+                                                            <a
+                                                                href={`geo:${item.meta_data.coordinates.lat},${item.meta_data.coordinates.lng}`}
+                                                                className="block text-[10px] font-mono text-center mt-3 text-neutral-500 hover:text-black hover:underline cursor-pointer"
+                                                            >
+                                                                {Number(item.meta_data.coordinates.lat).toFixed(6)}, {Number(item.meta_data.coordinates.lng).toFixed(6)}
+                                                            </a>
+                                                        </>
+                                                    ) : (
+                                                        <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
+                                                            <MapPin className="w-8 h-8 text-neutral-300" />
+                                                            <p className="text-xs text-neutral-500 font-mono uppercase">No Location Data</p>
+                                                            {canWrite && (
+                                                                <Button
+                                                                    onClick={() => handleCaptureLocation()}
+                                                                    disabled={isCapturingLocation}
+                                                                    title="Capture GPS Location"
+                                                                    className="border border-black bg-black text-white hover:bg-neutral-800 uppercase font-bold tracking-wider text-xs px-4"
+                                                                >
+                                                                    {isCapturingLocation ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                                                                    <span className="ml-2">GPS</span>
+                                                                </Button>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
 
