@@ -1,34 +1,52 @@
-
 import React, { useState } from "react";
 import { Loader2, MapPin } from "lucide-react";
+import { API_BASE_URL } from "@/lib/config";
 
 interface StaticMapThumbnailProps {
     lat: number;
     lng: number;
-    className?: string; // Additional classes
+    mapImage?: string | null;
+    itemId?: number; // Added itemId for fallback
+    className?: string;
 }
 
-export function StaticMapThumbnail({ lat, lng, className = "" }: StaticMapThumbnailProps) {
-    const [isError, setIsError] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
-
+export function StaticMapThumbnail({ lat, lng, mapImage, itemId, className = "" }: StaticMapThumbnailProps) {
     const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
-    // Mapbox URL construction
-    // Using user-provided structure: pin-s+000000 (Black pin) with dark-v11 style
-    // Explicitly enabled attribution to prevent API errors.
-    const mapUrl = mapboxToken
-        ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/pin-s+000000(${lng},${lat})/${lng},${lat},17,0/600x300?access_token=${mapboxToken}&attribution=true&logo=false`
-        : "";
+    // Determine Image Source
+    let imageUrl = "";
+    if (mapImage) {
+        imageUrl = mapImage.startsWith("http") ? mapImage : `${API_BASE_URL}${mapImage}`;
+    } else if (itemId) {
+        // Fallback: Try to load the backend generated image directly using the predictable path convention
+        // This handles cases where DB update hasn't propagated to frontend yet but file exists
+        imageUrl = `${API_BASE_URL}/api/v1/media/maps/map_${itemId}.png`;
+        // Wait, backend saves as "map_{item_id}.png" in /app/media/maps
+        // Served at /media/maps/map_{item_id}.png
+        // Proxied at /api/proxy/media/maps/map_{item_id}.png? 
+        // My proxy rule is /media/:path* -> http://backend:8000/media/:path*
+        // So frontend URL should be /media/maps/map_{item_id}.png
+        // But API_BASE_URL is /api/proxy usually?
+        // Let's use the /media proxy rule I added.
+        imageUrl = `/media/maps/map_${itemId}.png`;
+    } else {
+        imageUrl = mapboxToken
+            ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/pin-s+000000(${lng},${lat})/${lng},${lat},15,0/600x320?access_token=${mapboxToken}&attribution=true&logo=false`
+            : "";
+    }
 
-    // Debug logging
-    React.useEffect(() => {
-        if (mapboxToken && isLoading) {
-            console.log("Generating Mapbox URL:", mapUrl);
-        }
-    }, [mapUrl, mapboxToken, isLoading]);
+    // Initialize loading
+    // If we are using fallback itemId, we assume it *might* exist.
+    const [isLoading, setIsLoading] = useState(true);
+    const [isError, setIsError] = useState(false);
 
     const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+    // Effect to update loading state
+    React.useEffect(() => {
+        setIsLoading(true); // Always start loading when props change
+        setIsError(false);
+    }, [imageUrl]);
 
     return (
         <div className={`relative border border-black bg-neutral-100 overflow-hidden ${className}`} style={{ minHeight: '150px' }}>
@@ -42,26 +60,31 @@ export function StaticMapThumbnail({ lat, lng, className = "" }: StaticMapThumbn
                 </div>
             )}
 
-            {/* Error / Missing Config State */}
-            {isError || !mapboxToken ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-200 text-neutral-500 p-4 text-center">
-                    <MapPin className="w-8 h-8 mb-2 opacity-20" />
-                    <span className="font-mono text-[10px] uppercase font-bold">
-                        {mapboxToken ? "Map Preview Error" : "Map Configuration Missing"}
-                    </span>
-                    {!mapboxToken && <span className="text-[10px] text-red-500 mt-1">Missing MAPBOX TOKEN</span>}
-                </div>
-            ) : (
+            {/* Content */}
+            {!isError ? (
                 <img
-                    src={mapUrl}
+                    src={imageUrl}
                     alt={`Map location ${lat}, ${lng}`}
                     className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
                     onLoad={() => setIsLoading(false)}
-                    onError={() => {
+                    onError={(e) => {
+                        console.log("Map Load Error (Fallback likely failed):", imageUrl);
+                        // If fallback failed, AND we have no mapbox token, then it's a real error.
+                        // If we have mapbox token, we could fallback to that? 
+                        // Too complex. Just show error.
                         setIsError(true);
                         setIsLoading(false);
                     }}
                 />
+            ) : (
+                /* Error / Missing Config State */
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-200 text-neutral-500 p-4 text-center z-0">
+                    <MapPin className="w-8 h-8 mb-2 opacity-20" />
+                    <span className="font-mono text-[10px] uppercase font-bold text-red-500">
+                        Map Load Failed
+                    </span>
+                    {!mapboxToken && !mapImage && <span className="text-[10px] text-red-500 mt-1">Check Backend Logs</span>}
+                </div>
             )}
 
             {/* Brutalist Button Overlay */}

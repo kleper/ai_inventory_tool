@@ -91,6 +91,19 @@ export default function ItemDetailPage() {
         }
     }, [item, canWrite]);
 
+    // Poll for Map Image if coordinates exist but map is missing
+    useEffect(() => {
+        let intervalId: NodeJS.Timeout;
+        if (item?.meta_data?.coordinates && !item?.meta_data?.map_image) {
+            intervalId = setInterval(() => {
+                mutate();
+            }, 3000); // Check every 3 seconds
+        }
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [item?.meta_data?.coordinates, item?.meta_data?.map_image, mutate]);
+
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -579,6 +592,8 @@ export default function ItemDetailPage() {
                                                                 <StaticMapThumbnail
                                                                     lat={item.meta_data.coordinates.lat}
                                                                     lng={item.meta_data.coordinates.lng}
+                                                                    mapImage={item.meta_data.map_image}
+                                                                    itemId={item.id}
                                                                     className="h-full"
                                                                 />
                                                                 {/* Update Button Overlay */}

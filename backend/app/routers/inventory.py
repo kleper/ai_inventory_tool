@@ -36,6 +36,56 @@ GALLERY_KEY = "gallery_images"
 
 
 # --- Helper ---
+def ensure_item_map_background(item_id: int):
+    """
+    Background task to generate map image if missing.
+    """
+    # Create new session using database.engine
+    from app.database import engine
+    with Session(engine) as session:
+        item = session.get(Item, item_id)
+        if not item or not item.meta_data:
+            return
+        
+        coords = item.meta_data.get("coordinates")
+        if not coords:
+            return
+
+        # Check if map already exists
+        if item.meta_data.get("map_image"):
+            print(f"Map already exists for item {item_id}: {item.meta_data.get('map_image')}")
+            return
+        
+        print(f"Generating map for item {item_id}...")
+        
+        # Generate Map
+        try:
+            from app.services.mapbox_service import MapboxService
+            map_path = MapboxService.generate_static_map(
+                lat=coords["lat"], 
+                lng=coords["lng"], 
+                item_id=item_id
+            )
+            if map_path:
+                print(f"Map generated at {map_path}. Updating DB...")
+                # Update Item
+                # Must copy and update to trigger JSON change detection if needed
+                meta = dict(item.meta_data)
+                meta["map_image"] = map_path
+                item.meta_data = meta
+                flag_modified(item, "meta_data")
+                
+                session.add(item)
+                session.commit()
+                # session.refresh(item) # Optional
+                print(f"Auto-generated map for item {item_id} and updated DB.")
+            else:
+                print(f"MapboxService returned None for item {item_id}")
+        except Exception as e:
+            print(f"Background map generation failed for item {item_id}: {e}")
+            import traceback
+            traceback.print_exc()
+
 def validate_group_write_access(session: Session, user: User, group_id: int):
     # 1. Check if group exists
     group = session.get(InventoryGroup, group_id)
@@ -205,6 +255,7 @@ async def get_items(
 @router.get("/items/{item_id}", response_model=Item)
 async def get_item(
     item_id: int,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     allowed_groups: List[int] = Depends(get_inventory_scope),
     current_user: User = Depends(get_current_user),
@@ -218,6 +269,11 @@ async def get_item(
         if item.group_id and item.group_id not in allowed_groups:
             raise HTTPException(status_code=403, detail="Access denied")
 
+    # Lazy Map Generation
+    if item.meta_data and item.meta_data.get("coordinates") and not item.meta_data.get("map_image"):
+        background_tasks.add_task(ensure_item_map_background, item.id)
+
+    print(f"Returning item {item_id} meta_data: {item.meta_data}")
     return item
 
 

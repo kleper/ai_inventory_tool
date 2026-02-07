@@ -17,6 +17,10 @@ const nextConfig = {
             {
                 source: '/ws/:path*',
                 destination: `${process.env.INTERNAL_API_URL || 'http://backend:8000'}/:path*`, // Proxy WebSockets
+            },
+            {
+                source: '/media/:path*',
+                destination: `${process.env.INTERNAL_API_URL || 'http://backend:8000'}/media/:path*`, // Serve Media
             }
         ];
     },
