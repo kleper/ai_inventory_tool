@@ -81,22 +81,53 @@ class LLMService:
         if self.provider == "GEMINI" and not self.gemini_key:
              logger.warning("Gemini API Key is missing. Service will fail.")
 
-    @retry(
-        retry=retry_if_exception_type(Exception), # We'll narrow this down ideally, but for now capture failures
-        wait=wait_random_exponential(multiplier=1, max=60),
-        stop=stop_after_attempt(5),
-        before_sleep=before_sleep_log(logger, logging.WARNING)
-    )
     async def _call_openai_with_retry(self, client, **kwargs):
-        """Wrapper to retry OpenAI/OpenRouter calls on failure (429, 500, etc)"""
-        return await client.chat.completions.create(**kwargs)
+        """Custom wrapper to smartly retry OpenAI/OpenRouter calls on 429 RateLimitError"""
+        import asyncio
+        from openai import RateLimitError
+        import time
 
-    @retry(
-        retry=retry_if_exception_type(Exception),
-        wait=wait_random_exponential(multiplier=1, max=60),
-        stop=stop_after_attempt(5),
-        before_sleep=before_sleep_log(logger, logging.WARNING)
-    )
+        max_attempts = 10
+        for attempt in range(max_attempts):
+            try:
+                return await client.chat.completions.create(**kwargs)
+            except RateLimitError as e:
+                if attempt == max_attempts - 1:
+                    logger.error(f"Rate limit exceeded completely after {max_attempts} attempts. Failing task.")
+                    raise
+                
+                # Default backoff
+                wait_seconds = min(2 ** attempt + 5, 120) 
+                
+                # Check for OpenRouter headers
+                if hasattr(e, 'response') and e.response:
+                    reset_header = e.response.headers.get('x-ratelimit-reset')
+                    
+                    if reset_header:
+                        try:
+                            # It comes in as UNIX epoch like 1773606420000 or 1773606420
+                            # Let's handle both
+                            reset_time = int(reset_header)
+                            if len(str(reset_time)) > 10:
+                                reset_time = reset_time / 1000 # convert ms to sec
+                            
+                            current_time = time.time()
+                            needed_wait = reset_time - current_time
+                            
+                            if needed_wait > 0:
+                                wait_seconds = min(needed_wait + 2, 300) # Max wait 5 minutes per attempt
+                        except ValueError:
+                            pass
+                
+                logger.warning(f"Rate limited by LLM provider. Sleeping for {wait_seconds:.1f} seconds (Attempt {attempt+1}/{max_attempts})")
+                await asyncio.sleep(wait_seconds)
+            except Exception as e:
+                # Other exceptions (500s, 400s) might need a small backoff or fail fast
+                if attempt == max_attempts - 1:
+                    raise
+                wait_seconds = min(2 ** attempt, 30)
+                logger.warning(f"LLM API Error: {e}. Retrying in {wait_seconds}s (Attempt {attempt+1}/{max_attempts})")
+                await asyncio.sleep(wait_seconds)
     def _call_gemini_with_retry(self, client, **kwargs):
         """Wrapper to retry Gemini calls"""
         return client.models.generate_content(**kwargs)
