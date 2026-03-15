@@ -16,30 +16,28 @@ async def analyze_item_background(item_id: int):
     """
     logger.info(f"Starting background analysis for item {item_id}")
     
-    with Session(engine) as session:
-        item = session.get(Item, item_id)
-        if not item:
-            logger.error(f"Item {item_id} not found in background task")
-            return
+    try:
+        with Session(engine) as session:
+            item = session.get(Item, item_id)
+            if not item:
+                logger.error(f"Item {item_id} not found in background task")
+                return
 
-        # Update status to analyzing if not already
-        if item.status != "analyzing":
-           item.status = "analyzing"
-           session.add(item)
-           session.commit()
-           session.refresh(item)
-
-        try:
-            # 1. Load Image
-            # Assuming image_url is the filename in /app/media
-            file_path = f"/app/media/{item.image_url}"
-            with open(file_path, "rb") as f:
-                image_bytes = f.read()
-
-            # 2. Prepare Context
+            # Update status to analyzing if not already
+            if item.status != "analyzing":
+               item.status = "analyzing"
+               session.add(item)
+               session.commit()
+               session.refresh(item)
+               
+            # Extract basic data needed for LLM before closing DB session
+            image_url = item.image_url
+            group_id = item.group_id
+            user_id = item.user_id
+            
             group_context = None
-            if item.group_id:
-                group = session.get(InventoryGroup, item.group_id)
+            if group_id:
+                group = session.get(InventoryGroup, group_id)
                 if group:
                     group_context = {
                         "name": group.name,
@@ -49,29 +47,42 @@ async def analyze_item_background(item_id: int):
                         "language": group.language
                     }
 
-            # 3. Call LLM Service
-            llm_service = get_llm_service()
-            item_data = await llm_service.analyze_object(
-                image_bytes, 
-                user_id=item.user_id, 
-                group_context=group_context
-            )
+        # Session is closed here. No DB connections are held during the LLM call!
 
-            # 4. Process Results (Currency Conversion, etc.)
-            target_currency = group_context.get("currency", "USD") if group_context else "USD"
-            
-            if item_data.estimated_price and item_data.estimated_price > 0:
-                if item_data.currency_code and item_data.currency_code != target_currency:
-                    logger.info(
-                        f"Converting price {item_data.estimated_price} {item_data.currency_code} to {target_currency}"
-                    )
-                    converted_price, success = await currency_service.convert(
-                        item_data.estimated_price, item_data.currency_code, target_currency
-                    )
-                    if success:
-                        item_data.estimated_price = converted_price
+        # 1. Load Image
+        # Assuming image_url is the filename in /app/media
+        file_path = f"/app/media/{image_url}"
+        with open(file_path, "rb") as f:
+            image_bytes = f.read()
 
-            # 5. Update Item
+        # 3. Call LLM Service
+        llm_service = get_llm_service()
+        item_data = await llm_service.analyze_object(
+            image_bytes, 
+            user_id=user_id, 
+            group_context=group_context
+        )
+
+        # 4. Process Results (Currency Conversion, etc.)
+        target_currency = group_context.get("currency", "USD") if group_context else "USD"
+        
+        if item_data.estimated_price and item_data.estimated_price > 0:
+            if item_data.currency_code and item_data.currency_code != target_currency:
+                logger.info(
+                    f"Converting price {item_data.estimated_price} {item_data.currency_code} to {target_currency}"
+                )
+                converted_price, success = await currency_service.convert(
+                    item_data.estimated_price, item_data.currency_code, target_currency
+                )
+                if success:
+                    item_data.estimated_price = converted_price
+
+        # 5. Re-open session to update Item
+        with Session(engine) as session:
+            item = session.get(Item, item_id)
+            if not item:
+                return
+                
             item.name = item_data.name
             item.description = item_data.description
             item.category = item_data.category
@@ -98,15 +109,18 @@ async def analyze_item_background(item_id: int):
             session.commit()
             logger.info(f"Item {item_id} analysis completed. Status: {item.status}")
 
-        except Exception as e:
-            logger.error(f"Error analyzing item {item_id}: {e}")
-            # Mark as error so user can retry
-            item.status = "error"
-            # create meta_data dict if None
-            if item.meta_data is None:
-                item.meta_data = {}
-            # Store error message in metadata for debugging/UI
-            item.meta_data["last_error"] = str(e)
-            session.add(item)
-            session.commit()
+    except Exception as e:
+        logger.error(f"Error analyzing item {item_id}: {e}")
+        # Mark as error so user can retry
+        with Session(engine) as session:
+            item = session.get(Item, item_id)
+            if item:
+                item.status = "error"
+                # create meta_data dict if None
+                if item.meta_data is None:
+                    item.meta_data = {}
+                # Store error message in metadata for debugging/UI
+                item.meta_data["last_error"] = str(e)
+                session.add(item)
+                session.commit()
 
