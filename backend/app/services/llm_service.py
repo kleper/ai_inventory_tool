@@ -218,24 +218,43 @@ Reglas para Objetos:
 
 {type_specific_instructions}"""
 
-            messages = [
-                {
-                    "role": "user",
-                     # Some models (like gemma via openrouter) prefer single user message with instructions + image
-                    "content": [
-                        {"type": "text", "text": system_prompt + "\n\nAnalyze this image and extract inventory data."},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:{mime_type};base64,{base64_image}"
+            # Determine if the model supports vision
+            supports_vision = True
+            model_lower = self.model.lower()
+            
+            # Known text-only model identifiers that throw 400 Bad Request with image arrays
+            text_only_markers = ["llama-3.1", "llama-3.3", "8b-instant", "70b-versatile", "mixtral", "gemma"]
+            if any(marker in model_lower for marker in text_only_markers):
+                supports_vision = False
+                
+            # Explicit vision overrides (just explicitly re-enabling if it has 'vision' or is a known vision model)
+            if "vision" in model_lower or "scout" in model_lower:
+                supports_vision = True
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": system_prompt + "\n\nAnalyze this image and extract inventory data."},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{mime_type};base64,{base64_image}"
+                                },
                             },
-                        },
-                    ],
-                }
-            ]
+                        ],
+                    }
+                ]
+            else:
+                messages = [
+                    {
+                        "role": "user",
+                        "content": system_prompt + "\n\n(Image omitted due to model capability constraint. Please classify and extract data based on the collection context provided above only.)"
+                    }
+                ]
 
+            # Custom format rules
             custom_response_format = { "type": "json_object" }
-            if "gemma" in self.model.lower():
+            if "gemma" in self.model.lower() or "llama" in self.model.lower():
                  custom_response_format = None
 
             response = await self._call_openai_with_retry(
