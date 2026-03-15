@@ -139,44 +139,26 @@ def on_startup():
     async def retry_stuck_items():
         while True:
             try:
-                # Find items that are 'analyzing' for too long, or just pick up any 'analyzing'
-                # For simplicity, we just pick up 'analyzing' items (maybe server crashed)
-                # Ideally check updated_at < now - 5min
-                # But we don't have updated_at easily.
-                # We can just pick all 'analyzing' items. 
-                # If multiple workers, this is bad. But with one worker/docker, it's ok.
-                # Better: Add 'error' items? No, error is manual.
-                
-                # To avoid re-processing currently active items, we might need a lock or just ignore for now
-                # and rely on user manual retry if it gets stuck.
-                # BUT the user asked "si el llm no puede procesarlos... pruebe mas tarde".
-                # If we implement a queue, we should consume it.
-                # Our "queue" is the Items table with status='analyzing'.
-                pass
+                with Session(database.engine) as session:
+                    # Look for items stuck in "analyzing" or "error" that need to be re-processed
+                    # Since we want to retry if the LLM couldn't process them
+                    stuck_items = session.exec(
+                        select(Item).where(Item.status.in_(["analyzing", "error"]))
+                    ).all()
+
+                    if stuck_items:
+                        print(f"Cron Job: Found {len(stuck_items)} stuck items. Re-queuing for analysis.")
+                        for item in stuck_items:
+                            # Re-queue the background task for each stuck item
+                            asyncio.create_task(analyze_item_background(item.id))
             except Exception as e:
                 print(f"Background loop error: {e}")
-            await asyncio.sleep(60)
+            
+            # Run every hour (3600 seconds)
+            await asyncio.sleep(3600)
 
-    # Note: process_pending_items loop implementation is risky without proper locking/timestamps.
-    # The requirement "pruebe mas tarde" is satisfied by:
-    # 1. Immediate retry in analyze_item_background (via tenacity).
-    # 2. If valid failure (rate limit exhausted), set to 'error'.
-    # 3. User can manually retry.
-    # For "Server Crash" case, items stay 'analyzing'.
-    # We will leave them as 'analyzing' so user sees them. 
-    # Or we can mark them as 'error' on startup?
-    
-    # Let's perform a one-time cleanup on startup: Mark 'analyzing' -> 'error' (Potential crash).
-    with Session(database.engine) as session:
-        stuck_items = session.exec(select(Item).where(Item.status == "analyzing")).all()
-        if stuck_items:
-            print(f"Found {len(stuck_items)} stuck items. Resetting to 'error' to allow retry.")
-            for item in stuck_items:
-                item.status = "error"
-                if not item.meta_data: item.meta_data = {}
-                item.meta_data["last_error"] = "System restart during analysis"
-                session.add(item)
-            session.commit()
+    # Start the background task loop
+    asyncio.create_task(retry_stuck_items())
 
 
 @app.get("/")
