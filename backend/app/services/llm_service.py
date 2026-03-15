@@ -139,6 +139,34 @@ class LLMService:
         mime = magic.Magic(mime=True)
         return mime.from_buffer(image_bytes)
 
+    def _optimize_image(self, image_bytes: bytes, max_size=(1200, 1200), max_bytes=1000000) -> bytes:
+        """
+        Compresses and resizes image if it exceeds max_bytes to avoid 413 Payload Too Large errors.
+        """
+        if len(image_bytes) < max_bytes:
+            return image_bytes
+
+        try:
+            from PIL import Image
+            import io
+            
+            logger.info(f"Optimizing image. Original size: {len(image_bytes)/1024:.2f} KB")
+            img = Image.open(io.BytesIO(image_bytes))
+            
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+                
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            output = io.BytesIO()
+            img.save(output, format='JPEG', quality=85)
+            
+            optimized_bytes = output.getvalue()
+            logger.info(f"Image optimized. New size: {len(optimized_bytes)/1024:.2f} KB")
+            return optimized_bytes
+        except Exception as e:
+            logger.warning(f"Image optimization failed, proceeding with original image. Error: {e}")
+            return image_bytes
+
     async def analyze_object(self, image_bytes: bytes, user_id: Optional[int] = None, group_context: Optional[dict] = None) -> ItemExtracted:
         if user_id:
             monitoring_service.check_quota(user_id)
@@ -155,8 +183,9 @@ class LLMService:
                 description="This is a mock analysis because LLM_API_KEY is missing."
             )
 
-        base64_image = self._encode_image(image_bytes)
-        mime_type = self._get_mime_type(image_bytes)
+        optimized_image_bytes = self._optimize_image(image_bytes)
+        base64_image = self._encode_image(optimized_image_bytes)
+        mime_type = self._get_mime_type(optimized_image_bytes)
         
         # Context Injection
         context_str = ""
@@ -379,8 +408,9 @@ Reglas para Objetos:
         if user_id:
             monitoring_service.check_quota(user_id)
             
-        base64_image = self._encode_image(image_bytes)
-        mime_type = self._get_mime_type(image_bytes)
+        optimized_image_bytes = self._optimize_image(image_bytes)
+        base64_image = self._encode_image(optimized_image_bytes)
+        mime_type = self._get_mime_type(optimized_image_bytes)
         
         try:
             client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
