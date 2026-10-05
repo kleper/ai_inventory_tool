@@ -15,7 +15,9 @@ const PUBLIC_PATHS = [
     '/sw.js',    // Service Worker
     '/workbox-', // Workbox scripts
     '/icons',    // Manifest icons
-    '/images'    // Other public images
+    '/images',   // Other public images
+    '/mcp',      // Model Context Protocol endpoint (handles own auth)
+    '/docs'      // Public API & MCP documentation
 ];
 
 export async function middleware(req: NextRequest) {

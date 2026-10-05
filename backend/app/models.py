@@ -1,7 +1,10 @@
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import UniqueConstraint, Column, JSON
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 class SharedAccess(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("user_id", "group_id", name="unique_group_member"),)
@@ -10,7 +13,7 @@ class SharedAccess(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
     group_id: int = Field(foreign_key="inventorygroup.id")
     role: str = Field(default="VIEWER") # VIEWER, EDITOR
-    created_at: datetime = Field(default_factory=datetime.utcnow) # New field
+    created_at: datetime = Field(default_factory=utc_now) # New field
 
     # Relationships slightly helpful
     user: "User" = Relationship()
@@ -63,7 +66,7 @@ class ApiKey(SQLModel, table=True):
     prefix: str
     label: str
     scopes: str = Field(default='["read"]')
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
     last_used_at: Optional[datetime] = None
     
     user: Optional[User] = Relationship(back_populates="api_keys")
@@ -79,7 +82,7 @@ class AIUsageLog(SQLModel, table=True):
     status: str # SUCCESS, FAILED
     input_image_url: Optional[str] = None # For Audit
     output_json: Optional[str] = None # For Audit
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
     
     user: Optional[User] = Relationship(back_populates="ai_logs")
 
@@ -98,7 +101,7 @@ class Invoice(SQLModel, table=True):
     raw_text: Optional[str] = None
     file_url: str
     total_amount: Optional[float] = None
-    date: datetime = Field(default_factory=datetime.utcnow)
+    date: datetime = Field(default_factory=utc_now)
     
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     user: Optional[User] = Relationship(back_populates="invoices")
@@ -115,7 +118,7 @@ class Item(SQLModel, table=True):
     image_url: Optional[str] = None
     status: str = Field(default="pending_price") # pending_price, completed, needs_review, analyzing, error
     meta_data: Dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
     # Public Sharing
     is_public: bool = Field(default=False)

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, FolderOpen, FileText, Settings, User } from "lucide-react";
+import { LayoutDashboard, FolderOpen, Settings, Terminal } from "lucide-react";
 import { UserNav } from "./UserNav";
 
 
 const NAV_ITEMS = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
     { label: "Inventories", href: "/inventory", icon: FolderOpen },
+    { label: "API & MCP Docs", href: "/docs/api", icon: Terminal },
     { label: "Admin", href: "/admin", icon: Settings }, // Should check role
 ];
 

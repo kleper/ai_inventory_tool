@@ -15,7 +15,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSession, signOut } from "next-auth/react";
-import { LogOut, User, Settings } from "lucide-react";
+import { LogOut, User, Settings, Key, Terminal } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -60,6 +60,18 @@ export function UserNav() {
                         <DropdownMenuItem className="cursor-pointer">
                             <User className="mr-2 h-4 w-4" />
                             <span>Profile</span>
+                        </DropdownMenuItem>
+                    </Link>
+                    <Link href="/profile/developer">
+                        <DropdownMenuItem className="cursor-pointer">
+                            <Key className="mr-2 h-4 w-4" />
+                            <span>API Keys & MCP</span>
+                        </DropdownMenuItem>
+                    </Link>
+                    <Link href="/docs/api">
+                        <DropdownMenuItem className="cursor-pointer">
+                            <Terminal className="mr-2 h-4 w-4" />
+                            <span>API & MCP Docs</span>
                         </DropdownMenuItem>
                     </Link>
                     <Link href="/admin">

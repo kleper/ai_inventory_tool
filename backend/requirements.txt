@@ -21,3 +21,6 @@ redis
 httpx
 google-genai
 tenacity
+pytest
+pytest-asyncio
+mcp>=1.0.0

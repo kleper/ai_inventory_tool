@@ -4,7 +4,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import ApiKey, User
 from passlib.context import CryptContext
-from datetime import datetime
+from datetime import datetime, timezone
 
 api_key_header = APIKeyHeader(name="X-API-KEY", auto_error=False)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -35,7 +35,7 @@ async def get_user_from_api_key(
             # Update usage stats
             # Ideally this is done in background to avoid write-lock contention on high velocity APIs
             # For now, simple update is fine.
-            candidate.last_used_at = datetime.utcnow()
+            candidate.last_used_at = datetime.now(timezone.utc)
             session.add(candidate)
             session.commit()
             

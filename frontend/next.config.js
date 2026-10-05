@@ -38,6 +38,14 @@ const nextConfig = {
                 destination: `${process.env.INTERNAL_API_URL || 'http://backend:8000'}/:path*`, // Proxy WebSockets
             },
             {
+                source: '/mcp/:path*',
+                destination: `${process.env.INTERNAL_API_URL || 'http://backend:8000'}/mcp/:path*`, // Proxy MCP
+            },
+            {
+                source: '/mcp',
+                destination: `${process.env.INTERNAL_API_URL || 'http://backend:8000'}/mcp`, // Proxy MCP Root
+            },
+            {
                 source: '/media/:path*',
                 destination: `${process.env.INTERNAL_API_URL || 'http://backend:8000'}/media/:path*`, // Serve Media
             }

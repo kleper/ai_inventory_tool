@@ -12,6 +12,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
     environment:
       - REDIS_URL=redis://redis:6379/0
 
@@ -22,7 +24,7 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     container_name: smartinventory_frontend
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-3002}:3000"
     # Volumes removed to ensure we use the standalone build from the image
     # volumes:
     #   - ./frontend:/app
@@ -41,7 +43,7 @@ services:
     image: redis:alpine
     container_name: smartinventory_redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6389}:6379"
     restart: always
 
   db:

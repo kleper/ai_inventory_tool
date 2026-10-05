@@ -11,7 +11,7 @@ from fastapi import (
     Request,
 )
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import Session, select, SQLModel
 from app.core.limiter import limiter
 import uuid
@@ -212,7 +212,7 @@ async def create_item(
 
     item_data.id = None
     item_data.user_id = current_user.id
-    item_data.created_at = datetime.utcnow()
+    item_data.created_at = datetime.now(timezone.utc)
     if item_data.status == "pending_price" and item_data.price is not None:
         item_data.status = "completed"
 

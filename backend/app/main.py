@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Request, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import inventory, admin, groups, auth, admin_stats, media, api_keys, public_api, analytics, public
+from fastapi.openapi.utils import get_openapi
+from app.routers import inventory, admin, groups, auth, admin_stats, media, api_keys, public_api, analytics, public, mcp
 from dotenv import load_dotenv
 from app import database
 from app.models import User
@@ -14,7 +15,110 @@ from slowapi import _rate_limit_exceeded_handler
 
 load_dotenv()
 
-app = FastAPI(title="SmartInventory API")
+tags_metadata = [
+    {
+        "name": "developer-api",
+        "description": "API Key authenticated REST endpoints for external developer integrations, programmatic automation, and LLM agents.",
+    },
+    {
+        "name": "mcp",
+        "description": "Native Model Context Protocol (MCP) server endpoints over HTTP (JSON-RPC 2.0 and Server-Sent Events). Supports dual authentication (API Key or Bearer JWT) with strict per-user inventory isolation.",
+    },
+    {
+        "name": "inventory",
+        "description": "Core inventory item operations, camera uploads, AI visual analysis, and background matching.",
+    },
+    {
+        "name": "groups",
+        "description": "Inventory collections/folders, collaborative permissions (Owner, Editor, Viewer), and GeoJSON mapping.",
+    },
+    {
+        "name": "auth",
+        "description": "User registration, authentication sessions, invitation acceptance, and password lifecycle.",
+    },
+    {
+        "name": "api-keys",
+        "description": "Developer API credential issuance, management, and revocation.",
+    },
+    {
+        "name": "public-share",
+        "description": "Token-based unauthenticated read-only share links for items and galleries.",
+    },
+    {
+        "name": "analytics",
+        "description": "Financial portfolio valuation, currency conversion, and AI token consumption metrics.",
+    },
+    {
+        "name": "media",
+        "description": "Static media storage, thumbnail generation, and map asset delivery.",
+    },
+    {
+        "name": "admin",
+        "description": "Administrative management, invitation generation, user directory, and platform controls.",
+    },
+]
+
+app = FastAPI(
+    title="SmartInventory API",
+    version="1.0.0",
+    summary="AI-Powered Inventory & Asset Management Platform",
+    description="""
+# SmartInventory Platform API
+
+SmartInventory is a full-stack, enterprise-grade inventory management system combining a Wireframe Brutalist UI design with automated AI visual recognition and multi-currency portfolio valuation.
+
+### Key Capabilities:
+- **Developer REST API**: Fully authenticated CRUD operations on inventories and items via `X-API-KEY`.
+- **Model Context Protocol (MCP)**: Native `/mcp` HTTP endpoint supporting JSON-RPC and SSE transports for direct LLM agent control.
+- **Strict Per-User Scoping**: Multi-tenant access controls enforcing Owner, Editor, and Viewer permission boundaries.
+- **Specialized Modes**: Tailored recognition modes for `GENERAL`, `NATURE` (botanical/medicinal metadata), and `PLACES` (storefront and architectural metadata).
+- **Dual Authentication**: Session Bearer JWTs for the web application and `sk_live_...` API keys for external agents.
+""",
+    openapi_tags=tags_metadata,
+    contact={
+        "name": "SmartInventory Engineering",
+        "email": "support@smartinventory.com",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+)
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        summary=app.summary,
+        description=app.description,
+        routes=app.routes,
+        tags=app.openapi_tags,
+    )
+    if "components" not in openapi_schema:
+        openapi_schema["components"] = {}
+    
+    openapi_schema["components"]["securitySchemes"] = {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-API-KEY",
+            "description": "API Key authentication for Developer API and MCP. Format: `sk_live_...`"
+        },
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "Session JWT Bearer token for authenticated frontend requests."
+        }
+    }
+    
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -36,13 +140,14 @@ app.mount("/media", StaticFiles(directory=media_path), name="media")
 app.include_router(auth.router)
 app.include_router(inventory.router)
 app.include_router(groups.router)
-app.include_router(public.router, prefix="/api/v1/public", tags=["public"])
+app.include_router(public.router, prefix="/api/v1/public", tags=["public-share"])
 app.include_router(admin.router)
 app.include_router(admin_stats.router)
 app.include_router(media.router)
 app.include_router(api_keys.router)
 app.include_router(public_api.router)
 app.include_router(analytics.router)
+app.include_router(mcp.router)
 
 @app.on_event("startup")
 def on_startup():
