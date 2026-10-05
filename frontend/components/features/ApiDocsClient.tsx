@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, Terminal, Bot, FolderPlus, PackagePlus, Search, ShieldCheck, Check, Layers, CodeXml } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Copy, Terminal, Bot, FolderPlus, PackagePlus, Search, ShieldCheck, Check, Layers, CodeXml, Globe, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 function CodeBlock({ code, label }: { code: string; label: string }) {
@@ -52,11 +52,22 @@ function MethodBadge({ method }: { method: "GET" | "POST" | "PUT" | "DELETE" }) 
 }
 
 interface ApiDocsClientProps {
-    baseUrl: string;
+    baseUrl?: string;
 }
 
 export default function ApiDocsClient({ baseUrl }: ApiDocsClientProps) {
-    const apiUrl = baseUrl.replace(/\/$/, "");
+    const [apiUrl, setApiUrl] = useState<string>(baseUrl ? baseUrl.replace(/\/$/, "") : "");
+    const [clientHost, setClientHost] = useState<string>("");
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.location.origin) {
+            const origin = window.location.origin.replace(/\/$/, "");
+            setClientHost(origin);
+            if (!apiUrl) {
+                setApiUrl(origin);
+            }
+        }
+    }, [apiUrl]);
 
     return (
         <div className="flex min-h-screen bg-white text-black font-sans">
@@ -134,6 +145,51 @@ export default function ApiDocsClient({ baseUrl }: ApiDocsClientProps) {
                     <p className="font-mono text-sm text-neutral-600 mt-3 max-w-3xl leading-relaxed">
                         Complete reference for managing SmartInventory programmatically. Create inventory folders, add objects, batch import assets, and let autonomous LLMs query and control your assets via the native HTTP Model Context Protocol (MCP) server.
                     </p>
+
+                    {/* Environment Selector Bar */}
+                    <div className="mt-6 border-2 border-black p-4 bg-neutral-50 flex flex-col md:flex-row md:items-center justify-between gap-4 font-mono text-xs">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <Globe className="w-4 h-4 text-green-600" />
+                                <span className="font-bold uppercase tracking-wider text-black">Active Base URL:</span>
+                                <code className="bg-white border border-black px-2 py-0.5 font-bold text-black text-xs">
+                                    {apiUrl}
+                                </code>
+                            </div>
+                            <p className="text-[11px] text-neutral-600">
+                                All cURL, Python, JavaScript, and MCP examples on this page are rendered using this target endpoint.
+                            </p>
+                        </div>
+
+                        {clientHost && (
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <button
+                                    type="button"
+                                    onClick={() => setApiUrl(clientHost)}
+                                    className={`px-3 py-1.5 font-bold uppercase text-xs border border-black transition-colors ${
+                                        apiUrl === clientHost
+                                            ? "bg-black text-white"
+                                            : "bg-white text-black hover:bg-neutral-200"
+                                    }`}
+                                >
+                                    Current Origin ({clientHost})
+                                </button>
+                                {clientHost.startsWith("https") && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setApiUrl("http://localhost:3000")}
+                                        className={`px-3 py-1.5 font-bold uppercase text-xs border border-black transition-colors ${
+                                            apiUrl === "http://localhost:3000"
+                                                ? "bg-black text-white"
+                                                : "bg-white text-black hover:bg-neutral-200"
+                                        }`}
+                                    >
+                                        Localhost (Dev)
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Authentication Section */}
@@ -186,20 +242,22 @@ export default function ApiDocsClient({ baseUrl }: ApiDocsClientProps) {
                         </div>
                         <div className="flex items-center gap-2">
                             <a
-                                href={`${apiUrl}/api/proxy/docs`}
+                                href={apiUrl ? `${apiUrl}/api/proxy/docs` : "/api/proxy/docs"}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="border border-black bg-white px-3 py-1.5 text-xs font-bold font-mono uppercase hover:bg-black hover:text-white transition-colors"
+                                className="border border-black bg-white px-3 py-1.5 text-xs font-bold font-mono uppercase hover:bg-black hover:text-white transition-colors flex items-center gap-1.5"
                             >
-                                Swagger UI
+                                <span>Swagger UI</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                             <a
-                                href={`${apiUrl}/api/proxy/openapi.json`}
+                                href={apiUrl ? `${apiUrl}/api/proxy/openapi.json` : "/api/proxy/openapi.json"}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="border border-black bg-black text-white px-3 py-1.5 text-xs font-bold font-mono uppercase hover:bg-neutral-800 transition-colors"
+                                className="border border-black bg-black text-white px-3 py-1.5 text-xs font-bold font-mono uppercase hover:bg-neutral-800 transition-colors flex items-center gap-1.5"
                             >
-                                openapi.json
+                                <span>openapi.json</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
                             </a>
                         </div>
                     </div>
@@ -580,19 +638,48 @@ print("Created Inventory ID:", response.json()["id"])`}
                     </section>
 
                     {/* Claude Desktop & Cursor Integration */}
-                    <section id="mcp-claude" className="space-y-4 border border-black p-6 bg-white">
-                        <h3 className="text-xl font-bold uppercase">Claude Desktop & Cursor Configuration</h3>
+                    <section id="mcp-claude" className="space-y-6 border border-black p-6 bg-white">
+                        <h3 className="text-xl font-bold uppercase">LLM & Editor Configurations (Claude, Cursor, Cline)</h3>
                         <p className="font-mono text-xs text-neutral-700 leading-relaxed">
-                            SmartInventory includes a lightweight stdio bridge (<code className="bg-neutral-100 px-1 font-bold">mcp_server.py</code>) allowing desktop LLM apps to connect directly. Add the snippet below to your configuration file (e.g. <code className="bg-neutral-100 px-1 font-bold">~/.config/Claude/claude_desktop_config.json</code>):
+                            SmartInventory supports both <strong>Direct Native HTTP MCP</strong> (recommended for HTTP-compatible agents) and a lightweight <strong>stdio bridge</strong> (<code className="bg-neutral-100 px-1 font-bold">mcp_server.py</code>) for desktop apps like Claude Desktop.
                         </p>
 
-                        <CodeBlock
-                            label="claude_desktop_config.json"
-                            code={`{
+                        <div className="space-y-4">
+                            <h4 className="font-mono text-xs font-bold uppercase text-black">
+                                Option A: Native HTTP MCP (Cursor, OpenWebUI, LibreChat, Custom Agents)
+                            </h4>
+                            <p className="font-mono text-[11px] text-neutral-600">
+                                Connect directly to the production MCP endpoint over HTTP with your API key header:
+                            </p>
+                            <CodeBlock
+                                label="HTTP MCP Server Configuration"
+                                code={`{
+  "mcpServers": {
+    "smartinventory": {
+      "url": "${apiUrl}/mcp",
+      "headers": {
+        "X-API-KEY": "sk_live_your_api_key_here"
+      }
+    }
+  }
+}`}
+                            />
+                        </div>
+
+                        <div className="space-y-4 pt-4 border-t border-dashed border-neutral-300">
+                            <h4 className="font-mono text-xs font-bold uppercase text-black">
+                                Option B: Claude Desktop (via Python Stdio Bridge)
+                            </h4>
+                            <p className="font-mono text-[11px] text-neutral-600">
+                                In <code className="bg-neutral-100 px-1 font-bold">claude_desktop_config.json</code>, execute the bridge script pointing to the production platform:
+                            </p>
+                            <CodeBlock
+                                label="claude_desktop_config.json"
+                                code={`{
   "mcpServers": {
     "smartinventory": {
       "command": "python3",
-      "args": ["${apiUrl}/mcp_server.py"],
+      "args": ["/path/to/smartinventory/mcp_server.py"],
       "env": {
         "SMARTINVENTORY_API_URL": "${apiUrl}",
         "SMARTINVENTORY_API_KEY": "sk_live_your_api_key_here"
@@ -600,7 +687,8 @@ print("Created Inventory ID:", response.json()["id"])`}
     }
   }
 }`}
-                        />
+                            />
+                        </div>
                     </section>
 
                     {/* 12 MCP Tools Reference Table */}

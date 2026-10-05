@@ -4,7 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # App
-    DOMAIN: str = "http://localhost:3000"
+    DOMAIN: str = ""
     
     # LLM
     LLM_API_KEY: Optional[str] = None

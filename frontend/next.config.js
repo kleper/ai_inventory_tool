@@ -25,6 +25,10 @@ const nextConfig = {
     async rewrites() {
         return [
             {
+                source: '/openapi.json',
+                destination: `${process.env.INTERNAL_API_URL || 'http://backend:8000'}/openapi.json`,
+            },
+            {
                 source: '/api/proxy/:path*',
                 destination: `${process.env.INTERNAL_API_URL || 'http://backend:8000'}/:path*`, // Proxy to Backend
             },

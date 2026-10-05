@@ -6,7 +6,7 @@ This bridge allows any standard stdio MCP client (Claude Desktop, Cursor, Cline,
 to interact with SmartInventory's secure HTTP MCP endpoint.
 
 Environment Variables:
-  SMARTINVENTORY_API_URL: Base URL of SmartInventory (default: http://localhost:8000)
+  SMARTINVENTORY_API_URL: Base URL of SmartInventory (default: https://inventario.sustrato.red)
   SMARTINVENTORY_API_KEY: User API Key (starts with sk_live_...)
 """
 
@@ -16,7 +16,7 @@ import json
 import urllib.request
 import urllib.error
 
-API_URL = os.environ.get("SMARTINVENTORY_API_URL", "http://localhost:8000").rstrip("/")
+API_URL = os.environ.get("SMARTINVENTORY_API_URL", "https://inventario.sustrato.red").rstrip("/")
 API_KEY = os.environ.get("SMARTINVENTORY_API_KEY", "")
 
 

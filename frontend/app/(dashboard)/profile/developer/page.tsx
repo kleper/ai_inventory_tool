@@ -1,23 +1,34 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { ApiKeyManager } from "@/components/features/ApiKeyManager";
 import { Terminal, Bot, BookOpen, Copy, ArrowRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
 export default function DeveloperPage() {
+    const [platformUrl, setPlatformUrl] = useState<string>("");
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.location.origin) {
+            setPlatformUrl(window.location.origin.replace(/\/$/, ""));
+        }
+    }, []);
+
     const handleCopy = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
         toast.success(`Copied ${label} to clipboard`);
     };
 
+    const activeUrl = platformUrl || "https://your-domain.com";
+
     const mcpConfigExample = `{
   "mcpServers": {
     "smartinventory": {
       "command": "python3",
-      "args": ["${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}/mcp_server.py"],
+      "args": ["/path/to/smartinventory/mcp_server.py"],
       "env": {
-        "SMARTINVENTORY_API_URL": "${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}",
+        "SMARTINVENTORY_API_URL": "${activeUrl}",
         "SMARTINVENTORY_API_KEY": "sk_live_your_api_key_here"
       }
     }
@@ -79,9 +90,10 @@ export default function DeveloperPage() {
                         <p className="text-xs text-neutral-600 leading-relaxed">
                             SmartInventory provides a native, secured HTTP MCP server mounted at <span className="bg-neutral-100 px-1 border border-neutral-300 font-bold">/mcp</span> with 12 specialized tools. LLMs can create inventory folders, search items, and add objects with strict user-level access isolation.
                         </p>
-                        <div className="border border-neutral-300 p-3 bg-neutral-50 text-xs space-y-1.5">
-                            <div><span className="font-bold">HTTP JSON-RPC:</span> <code className="text-neutral-700">POST /mcp</code></div>
-                            <div><span className="font-bold">SSE Stream:</span> <code className="text-neutral-700">GET /mcp/sse</code></div>
+                        <div className="border border-neutral-300 p-3 bg-neutral-50 text-xs space-y-1.5 font-mono">
+                            <div><span className="font-bold">Base Platform:</span> <code className="text-neutral-800 font-bold">{platformUrl || "Auto-detecting origin..."}</code></div>
+                            <div><span className="font-bold">HTTP JSON-RPC:</span> <code className="text-neutral-700">{platformUrl ? `${platformUrl}/mcp` : "/mcp"}</code></div>
+                            <div><span className="font-bold">SSE Stream:</span> <code className="text-neutral-700">{platformUrl ? `${platformUrl}/mcp/sse` : "/mcp/sse"}</code></div>
                             <div><span className="font-bold">Auth Header:</span> <code className="text-neutral-700">X-API-KEY: sk_live_...</code></div>
                         </div>
                     </div>

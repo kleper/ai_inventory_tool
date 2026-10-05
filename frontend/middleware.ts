@@ -17,7 +17,9 @@ const PUBLIC_PATHS = [
     '/icons',    // Manifest icons
     '/images',   // Other public images
     '/mcp',      // Model Context Protocol endpoint (handles own auth)
-    '/docs'      // Public API & MCP documentation
+    '/docs',     // Public API & MCP documentation
+    '/openapi.json', // OpenAPI 3.1.0 JSON specification
+    '/redoc'     // ReDoc interactive documentation
 ];
 
 export async function middleware(req: NextRequest) {
@@ -28,6 +30,9 @@ export async function middleware(req: NextRequest) {
         pathname.startsWith(path) || pathname === path
     ) || pathname.startsWith('/api/proxy/api/v1/auth')
         || pathname.startsWith('/api/proxy/api/v1/public')
+        || pathname.startsWith('/api/proxy/docs')
+        || pathname.startsWith('/api/proxy/openapi.json')
+        || pathname.startsWith('/api/proxy/redoc')
         || pathname.startsWith('/api/v1/'); // Allow direct backend API access (handled by X-API-KEY)
 
     // 2. Get token

@@ -10,6 +10,7 @@ from app.services.security import get_password_hash
 from sqlmodel import Session, select
 import os
 from app.core.limiter import limiter
+from app.core.config import settings
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
@@ -96,6 +97,21 @@ def custom_openapi():
         routes=app.routes,
         tags=app.openapi_tags,
     )
+    servers = [
+        {
+            "url": "/",
+            "description": "Current Environment (Auto-detected)"
+        }
+    ]
+    if settings.DOMAIN and settings.DOMAIN.strip() and settings.DOMAIN.strip() != "/":
+        domain_url = settings.DOMAIN.strip()
+        if not domain_url.startswith("http://") and not domain_url.startswith("https://"):
+            domain_url = f"https://{domain_url}"
+        servers.insert(0, {
+            "url": domain_url.rstrip("/"),
+            "description": "Configured Platform Server"
+        })
+    openapi_schema["servers"] = servers
     if "components" not in openapi_schema:
         openapi_schema["components"] = {}
     
