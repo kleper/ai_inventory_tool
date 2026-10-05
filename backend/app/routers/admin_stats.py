@@ -3,7 +3,7 @@ from sqlmodel import Session, select, func
 from app.database import get_session
 from app.models import AIUsageLog
 from app.dependencies.auth import require_admin
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -14,33 +14,39 @@ async def get_usage_stats(
     session: Session = Depends(get_session),
     admin: dict = Depends(require_admin)
 ):
-    # Calculate start date
-    start_date = datetime.utcnow() - timedelta(days=days)
+    # Calculate start date using timezone-aware UTC datetime (required by SQLModel)
+    start_date = datetime.now(timezone.utc) - timedelta(days=days)
     
-    # Aggregate usage by date
-    # Note: SQLite/Postgres date truncation might differ. Using python grouping for simplicity or SQL 'date()' function if Postgres.
-    # Assuming Postgres:
-    # We want: date, tokens (prompt+completion), cost
-    
-    # Let's fetch raw logs and aggregate in python for flexibility across DBs (since we used SQLite initially but switched to Postgres?)
-    # The summary says "PostgreSQL, NextAuth". So we can use Postgres SQL.
-    
+    # Aggregate usage by date (Postgres date_trunc)
+    date_group = func.date_trunc('day', AIUsageLog.created_at)
     statement = select(
-        func.date_trunc('day', AIUsageLog.created_at).label('date'),
+        date_group.label('date'),
         func.sum(AIUsageLog.prompt_tokens).label('prompt_tokens'),
         func.sum(AIUsageLog.completion_tokens).label('completion_tokens'),
         func.sum(AIUsageLog.cost).label('total_cost')
-    ).where(AIUsageLog.created_at >= start_date).group_by(func.date_trunc('day', AIUsageLog.created_at)).order_by('date')
+    ).where(AIUsageLog.created_at >= start_date).group_by(date_group).order_by(date_group)
     
     results = session.exec(statement).all()
     
     # Format for chart
     chart_data = []
     for row in results:
+        raw_date = row.date
+        if isinstance(raw_date, datetime):
+            date_str = raw_date.strftime("%Y-%m-%d")
+        elif hasattr(raw_date, "strftime"):
+            date_str = raw_date.strftime("%Y-%m-%d")
+        else:
+            date_str = str(raw_date)[:10] if raw_date is not None else ""
+
+        prompt_tok = int(row.prompt_tokens or 0)
+        comp_tok = int(row.completion_tokens or 0)
+        total_cost = float(row.total_cost or 0.0)
+
         chart_data.append({
-            "date": row.date.strftime("%Y-%m-%d"),
-            "tokens": row.prompt_tokens + row.completion_tokens,
-            "cost": row.total_cost
+            "date": date_str,
+            "tokens": prompt_tok + comp_tok,
+            "cost": total_cost
         })
         
     # User Cost Distribution
@@ -53,7 +59,13 @@ async def get_usage_stats(
     
     return {
         "daily_usage": chart_data,
-        "user_distribution": [{"user_id": r.user_id, "cost": r.total_cost} for r in user_results]
+        "user_distribution": [
+            {
+                "user_id": r.user_id if r.user_id is not None else 0,
+                "cost": float(r.total_cost or 0.0)
+            }
+            for r in user_results
+        ]
     }
 
 @router.get("/audit")

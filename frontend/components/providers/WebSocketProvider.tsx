@@ -27,20 +27,21 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
     const ws = useRef<WebSocket | null>(null);
     const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
 
+    const userId = (session?.user as any)?.id;
+    const isUnmounting = useRef(false);
+
     const connect = () => {
-        if (ws.current?.readyState === WebSocket.OPEN) return;
-        const user = session?.user as any;
-        if (!user?.id) return; // Wait for auth
+        if (!userId) return; // Wait for auth
+        if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) {
+            return;
+        }
 
         // Determine WS URL (use current window host which is the Next.js proxy)
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const host = window.location.host; // e.g. localhost:3000 or mydomain.com
+        const host = window.location.host;
 
         // Connect via the Proxy path: /api/proxy/api/v1/inventory/ws/{user_id}
-        // The rewrite rule /api/proxy/:path* -> INTERNAL/:path* will handle this.
-        // If INTERNAL is http://backend:8000, then /api/proxy/api/v1... -> http://backend:8000/api/v1...
-        // Note: For WS, Next.js rewrites support upgrade.
-        const wsUrl = `${protocol}//${host}/api/proxy/api/v1/inventory/ws/${user.id}`;
+        const wsUrl = `${protocol}//${host}/api/proxy/api/v1/inventory/ws/${userId}`;
 
         console.log(`Msg: Connecting WS to ${wsUrl}`);
         const socket = new WebSocket(wsUrl);
@@ -48,7 +49,10 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         socket.onopen = () => {
             console.log("WebSocket Connected");
             setIsConnected(true);
-            if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+            if (reconnectTimeout.current) {
+                clearTimeout(reconnectTimeout.current);
+                reconnectTimeout.current = null;
+            }
         };
 
         socket.onmessage = (event) => {
@@ -64,23 +68,32 @@ export const WebSocketProvider = ({ children }: { children: React.ReactNode }) =
         socket.onclose = () => {
             console.log("WebSocket Disconnected");
             setIsConnected(false);
-            // Reconnect logic
-            reconnectTimeout.current = setTimeout(connect, 3000);
+            if (!isUnmounting.current && userId) {
+                if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+                reconnectTimeout.current = setTimeout(connect, 3000);
+            }
         };
 
         ws.current = socket;
     };
 
     useEffect(() => {
-        const user = session?.user as any;
-        if (user?.id) {
+        isUnmounting.current = false;
+        if (userId) {
             connect();
         }
         return () => {
-            if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
-            ws.current?.close();
+            isUnmounting.current = true;
+            if (reconnectTimeout.current) {
+                clearTimeout(reconnectTimeout.current);
+                reconnectTimeout.current = null;
+            }
+            if (ws.current) {
+                ws.current.close();
+                ws.current = null;
+            }
         };
-    }, [session]);
+    }, [userId]);
 
     const sendMessage = (msg: any) => {
         if (ws.current?.readyState === WebSocket.OPEN) {
